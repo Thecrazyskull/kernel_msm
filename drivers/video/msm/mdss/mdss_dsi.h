@@ -250,6 +250,10 @@ struct mdss_dsi_ctrl_pdata {
 	int (*check_status) (struct mdss_dsi_ctrl_pdata *pdata);
 	int (*cmdlist_commit)(struct mdss_dsi_ctrl_pdata *ctrl, int from_mdp);
 	void (*switch_mode) (struct mdss_panel_data *pdata, int mode);
+	int (*reg_read) (struct mdss_panel_data *pdata, u8 reg,
+			int mode, size_t size, u8 *buffer);
+	int (*reg_write) (struct mdss_panel_data *pdata,
+			int mode, size_t size, u8 *buffer);
 	struct mdss_panel_data panel_data;
 	struct dss_module_power panel_vregs;
 	unsigned char *ctrl_base;
@@ -359,6 +363,7 @@ irqreturn_t mdss_dsi_isr(int irq, void *ptr);
 void mdss_dsi_irq_handler_config(struct mdss_dsi_ctrl_pdata *ctrl_pdata);
 
 void mdss_dsi_set_tx_power_mode(int mode, struct mdss_panel_data *pdata);
+int mdss_get_tx_power_mode(struct mdss_panel_data *pdata);
 int mdss_dsi_clk_div_config(struct mdss_panel_info *panel_info,
 			    int frame_rate);
 int mdss_dsi_clk_init(struct platform_device *pdev,
