@@ -35,6 +35,8 @@
 #include "mdss_mdp.h"
 #include "mdss_mdp_rotator.h"
 
+#include "mdss_timeout.h"
+
 #define VSYNC_PERIOD 16
 #define BORDERFILL_NDX	0x0BF000BF
 #define CHECK_BOUNDS(offset, size, max_size) \
@@ -3386,6 +3388,9 @@ int mdss_mdp_overlay_init(struct msm_fb_data_type *mfd)
 
 	if (mdss_mdp_pp_overlay_init(mfd))
 		pr_warn("Failed to initialize pp overlay data.\n");
+
+	mdss_timeout_init(mfd);
+
 	return rc;
 init_fail:
 	kfree(mdp5_data);
