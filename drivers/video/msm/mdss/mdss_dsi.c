@@ -109,12 +109,6 @@ static int mdss_dsi_panel_power_on(struct mdss_panel_data *pdata, int enable)
 			}
 		}
 	} else {
-		ret = mdss_dsi_panel_reset(pdata, 0);
-		if (ret) {
-			pr_err("%s: Panel reset failed. rc=%d\n",
-					__func__, ret);
-			goto error;
-		}
 		ret = msm_dss_enable_vreg(
 			ctrl_pdata->power_data.vreg_config,
 			ctrl_pdata->power_data.num_vreg, 0);
@@ -127,7 +121,7 @@ error:
 	return ret;
 }
 
-static void mdss_dsi_put_dt_vreg_data(struct device *dev,
+void mdss_dsi_put_dt_vreg_data(struct device *dev,
 	struct dss_module_power *module_power)
 {
 	if (!module_power) {
@@ -142,8 +136,8 @@ static void mdss_dsi_put_dt_vreg_data(struct device *dev,
 	module_power->num_vreg = 0;
 }
 
-static int mdss_dsi_get_dt_vreg_data(struct device *dev,
-	struct dss_module_power *mp)
+int mdss_dsi_get_dt_vreg_data(struct device *dev,
+			struct dss_module_power *mp, struct device_node *node)
 {
 	int i = 0, rc = 0;
 	u32 tmp = 0;
@@ -155,7 +149,10 @@ static int mdss_dsi_get_dt_vreg_data(struct device *dev,
 		return rc;
 	}
 
-	of_node = dev->of_node;
+	if (node)
+		of_node = node;
+	else
+		of_node = dev->of_node;
 
 	mp->num_vreg = 0;
 	for_each_child_of_node(of_node, supply_node) {
@@ -395,7 +392,7 @@ static int mdss_dsi_off(struct mdss_panel_data *pdata)
 		panel_info->mipi.frame_rate = panel_info->new_fps;
 
 	mutex_unlock(&ctrl_pdata->mutex);
-	pr_debug("%s-:\n", __func__);
+	pr_info("%s-:\n", __func__);
 
 	return ret;
 }
@@ -781,7 +778,7 @@ int mdss_dsi_on(struct mdss_panel_data *pdata)
 	if (pdata->panel_info.type == MIPI_CMD_PANEL)
 		mdss_dsi_clk_ctrl(ctrl_pdata, DSI_ALL_CLKS, 0);
 
-	pr_debug("%s-:\n", __func__);
+	pr_info("%s-:\n", __func__);
 	return 0;
 }
 
@@ -1336,7 +1333,7 @@ static int __devinit mdss_dsi_ctrl_probe(struct platform_device *pdev)
 
 	/* Parse the regulator information */
 	rc = mdss_dsi_get_dt_vreg_data(&pdev->dev,
-				       &ctrl_pdata->power_data);
+			        &ctrl_pdata->power_data, NULL);
 	if (rc) {
 		pr_err("%s: failed to get vreg data from dt. rc=%d\n",
 		       __func__, rc);
@@ -1367,6 +1364,7 @@ static int __devinit mdss_dsi_ctrl_probe(struct platform_device *pdev)
 
 	cmd_cfg_cont_splash = mdss_panel_get_boot_cfg() ? true : false;
 
+	ctrl_pdata->pdev = pdev;
 	rc = mdss_dsi_panel_init(dsi_pan_node, ctrl_pdata, cmd_cfg_cont_splash);
 	if (rc) {
 		pr_err("%s: dsi panel init failed\n", __func__);
