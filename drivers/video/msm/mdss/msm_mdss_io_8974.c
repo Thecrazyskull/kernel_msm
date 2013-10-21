@@ -25,6 +25,7 @@
 #define SW_RESET BIT(2)
 #define SW_RESET_PLL BIT(0)
 #define PWRDN_B BIT(7)
+#define CLK_PREPARE_RETRY_MAX 4
 
 static struct dsi_clk_desc dsi_pclk;
 
