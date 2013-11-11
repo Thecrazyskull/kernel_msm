@@ -264,6 +264,7 @@ struct mdss_dsi_ctrl_pdata {
 	int (*cmdlist_commit)(struct mdss_dsi_ctrl_pdata *ctrl, int from_mdp);
 	void (*switch_mode) (struct mdss_panel_data *pdata, int mode);
 	int (*set_hbm)(struct mdss_dsi_ctrl_pdata *ctrl, int state);
+	int (*cont_splash_on) (struct mdss_panel_data *pdata);
 	struct mdss_panel_data panel_data;
 	struct mdss_panel_config panel_config;
 	struct mdss_panel_esd_pdata panel_esd_data;

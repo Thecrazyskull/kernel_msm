@@ -23,6 +23,7 @@
 #include <linux/err.h>
 #include <linux/uaccess.h>
 #include <linux/msm_mdp.h>
+#include <mach/mmi_panel_notifier.h>
 
 #include "mdss_dsi.h"
 #include "mdss_fb.h"
@@ -610,6 +611,12 @@ static int mdss_dsi_panel_regulator_on(struct mdss_panel_data *pdata,
 error:
 	return ret;
 }
+static int mdss_dsi_panel_cont_splash_on(struct mdss_panel_data *pdata)
+{
+	mmi_panel_notify(MMI_PANEL_EVENT_DISPLAY_ON, NULL);
+	//mdss_dsi_panel_esd(pdata);
+	return 0;
+}
 
 #define MAX_DISON_RECOVERY_CNT	2
 static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
@@ -661,9 +668,14 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 	} else
 		dison_recovery = 0;
 
+	/* Send display on notification.  This will need to be revisited once
+	   we implement command mode support the way we want, since display
+	   may not be made visible to user until a point later than this */
+	mmi_panel_notify(MMI_PANEL_EVENT_DISPLAY_ON, NULL);
+
 	pr_info("%s-. Pwr_mode(0x0A) = 0x%x\n", __func__, pwr_mode);
 end:
-	//pinfo->blank_state = MDSS_PANEL_BLANK_UNBLANK;
+	pinfo->blank_state = MDSS_PANEL_BLANK_UNBLANK;
 	return 0;
 }
 
@@ -683,6 +695,7 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 	pr_info("%s+: ctrl=%p ndx=%d\n", __func__, ctrl, ctrl->ndx);
 
 	mipi  = &pdata->panel_info.mipi;
+	mmi_panel_notify(MMI_PANEL_EVENT_PRE_DISPLAY_OFF, NULL);
 
 	if (ctrl->panel_config.bare_board == true)
 		goto end;
@@ -1873,6 +1886,7 @@ int mdss_dsi_panel_init(struct device_node *node,
 	ctrl_pdata->check_status = mdss_panel_check_status;
 
 	ctrl_pdata->set_hbm = mdss_dsi_panel_set_hbm;
+	ctrl_pdata->cont_splash_on = mdss_dsi_panel_cont_splash_on;
 
 	return 0;
 }
