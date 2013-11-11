@@ -21,6 +21,7 @@
 #include <linux/leds.h>
 #include <linux/qpnp/pwm.h>
 #include <linux/err.h>
+#include <mach/mmi_panel_notifier.h>
 
 #include "mdss_dsi.h"
 
@@ -505,6 +506,13 @@ error:
 	return ret;
 }
 
+static int mdss_dsi_panel_cont_splash_on(struct mdss_panel_data *pdata)
+{
+	mmi_panel_notify(MMI_PANEL_EVENT_DISPLAY_ON, NULL);
+	mdss_dsi_panel_esd(pdata);
+	return 0;
+}
+
 static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 {
 	struct mipi_panel_info *mipi;
@@ -524,6 +532,12 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 	mdss_dsi_panel_regulator_on(pdata, 1);
 
 	mdss_dsi_panel_reset(pdata, 1);
+
+	/* Send display on notification.  This will need to be revisited once
+	   we implement command mode support the way we want, since display
+	   may not be made visible to user until a point later than this */
+	mmi_panel_notify(MMI_PANEL_EVENT_DISPLAY_ON, NULL);
+
 	if (ctrl->on_cmds.cmd_cnt)
 		mdss_dsi_panel_cmds_send(ctrl, &ctrl->on_cmds);
 
@@ -548,6 +562,7 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 	pr_info("%s+: ctrl=%p ndx=%d\n", __func__, ctrl, ctrl->ndx);
 
 	mipi  = &pdata->panel_info.mipi;
+	mmi_panel_notify(MMI_PANEL_EVENT_PRE_DISPLAY_OFF, NULL);
 
 	if (ctrl->off_cmds.cmd_cnt)
 		mdss_dsi_panel_cmds_send(ctrl, &ctrl->off_cmds);
@@ -1712,6 +1727,8 @@ int mdss_dsi_panel_init(struct device_node *node,
 	ctrl_pdata->switch_mode = mdss_dsi_panel_switch_mode;
 	ctrl_pdata->reg_read = mdss_dsi_panel_reg_read;
 	ctrl_pdata->reg_write = mdss_dsi_panel_reg_write;
+	ctrl_pdata->cont_splash_on = mdss_dsi_panel_cont_splash_on;
+
 
 	return 0;
 }

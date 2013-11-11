@@ -869,6 +869,8 @@ int mdss_dsi_cont_splash_on(struct mdss_panel_data *pdata)
 				ctrl_pdata, ctrl_pdata->ndx);
 
 	mdss_dsi_sw_reset(pdata);
+	if (ctrl_pdata->cont_splash_on)
+		ctrl_pdata->cont_splash_on(pdata);
 	mdss_dsi_host_init(pdata);
 	mdss_dsi_op_mode_config(mipi->mode, pdata);
 	pr_debug("%s-:End\n", __func__);
