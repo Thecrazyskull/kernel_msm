@@ -136,6 +136,7 @@ struct mdss_panel_recovery {
  *				based on the dsi mode passed as argument.
  *				- 0: update to video mode
  *				- 1: update to command mode
+ * @MDSS_EVENT_ENABLE_TE: Change TE state, used for factory testing only
  */
 enum mdss_intf_events {
 	MDSS_EVENT_RESET = 1,
@@ -157,6 +158,7 @@ enum mdss_intf_events {
 	MDSS_EVENT_DSI_ULPS_CTRL,
 	MDSS_EVENT_REGISTER_RECOVERY_HANDLER,
 	MDSS_EVENT_DSI_DYNAMIC_SWITCH,
+	MDSS_EVENT_ENABLE_TE,
 };
 
 struct lcd_panel_info {
