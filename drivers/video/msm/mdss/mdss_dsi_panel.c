@@ -529,6 +529,8 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 
 	pr_info("%s+: ctrl=%p ndx=%d\n", __func__, ctrl, ctrl->ndx);
 
+	mmi_panel_notify(MMI_PANEL_EVENT_PRE_DISPLAY_ON, NULL);
+
 	mdss_dsi_panel_regulator_on(pdata, 1);
 
 	mdss_dsi_panel_reset(pdata, 1);
@@ -569,6 +571,9 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 
 	mdss_dsi_panel_reset(pdata, 0);
 	mdss_dsi_panel_regulator_on(pdata, 0);
+
+	mmi_panel_notify(MMI_PANEL_EVENT_DISPLAY_OFF, NULL);
+
 	pr_info("%s:-\n", __func__);
 
 	return 0;
