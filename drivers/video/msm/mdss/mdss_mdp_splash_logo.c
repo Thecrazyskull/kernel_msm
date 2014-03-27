@@ -211,7 +211,7 @@ int mdss_mdp_splash_cleanup(struct msm_fb_data_type *mfd,
 		 * refresh from their internal memory if no data is sent
 		 * out on the dsi lanes.
 		 */
-		if (mdp5_data->handoff && ctl && ctl->is_video_mode) {
+		if (mdp5_data->handoff && ctl && ctl->is_video_mode && !ctl->no_solid_fill) {
 			rc = mdss_mdp_display_commit(ctl, NULL);
 			if (!IS_ERR_VALUE(rc)) {
 				mdss_mdp_display_wait4comp(ctl);
@@ -228,14 +228,14 @@ int mdss_mdp_splash_cleanup(struct msm_fb_data_type *mfd,
 		}
 	}
 
+	mdss_mdp_ctl_splash_finish(ctl, mdp5_data->handoff);
+
 	if (rc || mdp5_data->handoff) {
 		/* Add all the handed off pipes to the cleanup list */
 		mdss_mdp_handoff_cleanup_pipes(mfd, MDSS_MDP_PIPE_TYPE_RGB);
 		mdss_mdp_handoff_cleanup_pipes(mfd, MDSS_MDP_PIPE_TYPE_VIG);
 		mdss_mdp_handoff_cleanup_pipes(mfd, MDSS_MDP_PIPE_TYPE_DMA);
 	}
-
-	mdss_mdp_ctl_splash_finish(ctl, mdp5_data->handoff);
 
 	if (mdp5_data->splash_mem_addr) {
 		/* Give back the reserved memory to the system */
