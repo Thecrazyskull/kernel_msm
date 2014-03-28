@@ -63,6 +63,12 @@ void mdss_check_dsi_ctrl_status(struct work_struct *work, uint32_t interval)
 	ctl = mfd_to_ctl(pstatus_data->mfd);
 
 	if (!ctl) {
+		pr_warn("%s: mdss_mdp_ctl data not available\n", __func__);
+		return;
+	}
+
+	mutex_lock(&ctl->offlock);
+	if (!ctl) {
 		pr_err("%s: Display is off\n", __func__);
 		return;
 	}
@@ -117,6 +123,7 @@ void mdss_check_dsi_ctrl_status(struct work_struct *work, uint32_t interval)
 	if (mipi->mode == DSI_CMD_MODE)
 		mutex_unlock(&mdp5_data->ov_lock);
 	mutex_unlock(&ctrl_pdata->mutex);
+	mutex_unlock(&ctl->offlock);
 
 	if ((pstatus_data->mfd->panel_power_on)) {
 		if (ret > 0) {
