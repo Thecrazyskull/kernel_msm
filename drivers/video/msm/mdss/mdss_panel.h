@@ -137,6 +137,7 @@ struct mdss_panel_recovery {
  *				- 0: update to video mode
  *				- 1: update to command mode
  * @MDSS_EVENT_ENABLE_TE: Change TE state, used for factory testing only
+ * @MDSS_EVENT_ENABLE_HBM:	Enable "High Brightness Mode" feature on panel
  */
 enum mdss_intf_events {
 	MDSS_EVENT_RESET = 1,
@@ -159,6 +160,7 @@ enum mdss_intf_events {
 	MDSS_EVENT_REGISTER_RECOVERY_HANDLER,
 	MDSS_EVENT_DSI_DYNAMIC_SWITCH,
 	MDSS_EVENT_ENABLE_TE,
+	MDSS_EVENT_ENABLE_HBM,
 };
 
 struct lcd_panel_info {
@@ -348,6 +350,8 @@ struct mdss_panel_info {
 	u32 partial_update_enabled;
 	struct ion_handle *splash_ihdl;
 	u32 panel_power_on;
+	bool hbm_feature_enabled;
+	bool hbm_state;
 
 	uint32_t panel_dead;
 	bool dynamic_switch_pending;
