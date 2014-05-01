@@ -723,6 +723,7 @@ int mdss_mdp_cmd_stop(struct mdss_mdp_ctl *ctl)
 	int need_wait = 0;
 	int ret = 0;
 	int hz;
+	int turn_off_panel = 0;
 
 	ctx = (struct mdss_mdp_cmd_ctx *) ctl->priv_data;
 	if (!ctx) {
@@ -771,6 +772,7 @@ int mdss_mdp_cmd_stop(struct mdss_mdp_ctl *ctl)
 			MDSS_EVENT_REGISTER_RECOVERY_HANDLER,
 			NULL);
 
+	turn_off_panel = ctx->panel_on;
 	ctx->panel_on = 0;
 	mdss_mdp_cmd_clk_off(ctx);
 
