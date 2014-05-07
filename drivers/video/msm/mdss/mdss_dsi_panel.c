@@ -540,6 +540,10 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 	   may not be made visible to user until a point later than this */
 	mmi_panel_notify(MMI_PANEL_EVENT_DISPLAY_ON, NULL);
 
+	/* Default CABC mode is UI while turning on display */
+	if (pdata->panel_info.dynamic_cabc_enabled)
+		pdata->panel_info.cabc_mode = CABC_UI_MODE;
+
 	if (ctrl->on_cmds.cmd_cnt)
 		mdss_dsi_panel_cmds_send(ctrl, &ctrl->on_cmds);
 
@@ -569,6 +573,9 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 	if (ctrl->off_cmds.cmd_cnt)
 		mdss_dsi_panel_cmds_send(ctrl, &ctrl->off_cmds);
 
+	if (pdata->panel_info.dynamic_cabc_enabled)
+		pdata->panel_info.cabc_mode = CABC_OFF_MODE;
+
 	mdss_dsi_panel_reset(pdata, 0);
 	mdss_dsi_panel_regulator_on(pdata, 0);
 
@@ -576,6 +583,7 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 
 	pr_info("%s:-\n", __func__);
 
+	pr_debug("%s:-\n", __func__);
 	return 0;
 }
 
@@ -1141,6 +1149,42 @@ static int mdss_dsi_set_refresh_rate_range(struct device_node *pan_node,
 	return rc;
 }
 
+static int mdss_dsi_parse_optional_dcs_cmds(struct device_node *np,
+		struct dsi_panel_cmds *pcmds, char *cmd_key, char *link_key)
+{
+	int rc;
+
+	if (!of_get_property(np, cmd_key, NULL))
+		return 0;
+
+	rc = mdss_dsi_parse_dcs_cmds(np, pcmds, cmd_key, link_key);
+	if (rc)
+		pr_err("%s : Failed parsing %s commands, rc = %d\n",
+			__func__, cmd_key, rc);
+	return rc;
+}
+
+static int mdss_panel_parse_optional_prop(struct device_node *np,
+				struct mdss_panel_info *pinfo,
+				struct mdss_dsi_ctrl_pdata *ctrl)
+{
+	int rc = 0;
+
+	/* Dynamic CABC properties */
+	pinfo->dynamic_cabc_enabled = false;
+	rc |= mdss_dsi_parse_optional_dcs_cmds(np, &ctrl->cabc_ui_cmds,
+				"qcom,mdss-dsi-cabc-ui-command", NULL);
+	rc |= mdss_dsi_parse_optional_dcs_cmds(np, &ctrl->cabc_mv_cmds,
+				"qcom,mdss-dsi-cabc-mv-command", NULL);
+	if (ctrl->cabc_ui_cmds.cmd_cnt && ctrl->cabc_mv_cmds.cmd_cnt) {
+		pinfo->dynamic_cabc_enabled = true;
+		pinfo->cabc_mode = CABC_UI_MODE;
+		pr_info("%s: Dynamic CABC enabled.\n", __func__);
+	}
+
+	return rc;
+}
+
 static void mdss_dsi_parse_dfps_config(struct device_node *pan_node,
 			struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 {
@@ -1698,6 +1742,45 @@ bool mdss_dsi_match_chosen_panel(struct device_node *np,
 	return true;
 }
 
+int mdss_dsi_panel_set_cabc(struct mdss_dsi_ctrl_pdata *ctrl, int mode)
+{
+	int rc = -EINVAL;
+	const char *name;
+
+	if (!ctrl) {
+		pr_warn("%s: Invalid ctrl pointer.\n", __func__);
+		goto end;
+	}
+
+	name = mdss_panel_map_cabc_name(mode);
+	if (!name) {
+		pr_err("%s: Invalid mode: %d\n", __func__, mode);
+		goto end;
+	}
+
+	if (ctrl->panel_data.panel_info.cabc_mode == mode) {
+		pr_warn("%s: Already in requested mode: %s\n", __func__, name);
+		rc = 0;
+		goto end;
+	}
+
+	pr_debug("%s: Start to set %s mode\n", __func__, name);
+	if (mode == CABC_MV_MODE && ctrl->cabc_mv_cmds.cmd_cnt)
+		rc = mdss_dsi_panel_cmds_send(ctrl, &ctrl->cabc_mv_cmds);
+	else if (mode == CABC_UI_MODE && ctrl->cabc_ui_cmds.cmd_cnt)
+		rc = mdss_dsi_panel_cmds_send(ctrl, &ctrl->cabc_ui_cmds);
+
+	if (rc < 0)
+		pr_err("%s: Failed to set %s mode\n", __func__, name);
+	else {
+		pr_info("%s: Done setting %s mode\n", __func__, name);
+		ctrl->panel_data.panel_info.cabc_mode = mode;
+	}
+end:
+	return rc;
+}
+
+
 int mdss_dsi_panel_init(struct device_node *node,
 	struct mdss_dsi_ctrl_pdata *ctrl_pdata,
 	bool cmd_cfg_cont_splash)
@@ -1741,6 +1824,7 @@ int mdss_dsi_panel_init(struct device_node *node,
 	ctrl_pdata->switch_mode = mdss_dsi_panel_switch_mode;
 	ctrl_pdata->reg_read = mdss_dsi_panel_reg_read;
 	ctrl_pdata->reg_write = mdss_dsi_panel_reg_write;
+	ctrl_pdata->set_cabc = mdss_dsi_panel_set_cabc;
 	ctrl_pdata->cont_splash_on = mdss_dsi_panel_cont_splash_on;
 
 
