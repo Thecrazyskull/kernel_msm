@@ -91,6 +91,7 @@ void mdss_check_dsi_ctrl_status(struct work_struct *work, uint32_t interval)
 	 */
 
 	if (pstatus_data->mfd->shutdown_pending) {
+		mutex_unlock(&ctl->offlock);
 		mutex_unlock(&ctrl_pdata->mutex);
 		pr_err("%s: DSI turning off, avoiding panel status check\n",
 							__func__);
