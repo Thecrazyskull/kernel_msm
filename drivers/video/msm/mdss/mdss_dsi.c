@@ -1655,8 +1655,10 @@ int dsi_panel_device_register(struct device_node *pan_node,
 		ctrl_pdata->check_status = mdss_dsi_bta_status_check;
 
 	if (ctrl_pdata->status_mode == ESD_MAX) {
-		pr_err("%s: Using default BTA for ESD check\n", __func__);
-		ctrl_pdata->check_status = mdss_dsi_bta_status_check;
+		//pr_err("%s: Using default BTA for ESD check\n", __func__);
+		//ctrl_pdata->check_status = mdss_dsi_bta_status_check;
+		/* BTA can't be the default ESD Check mode, so just pass through it */
+		pr_err("%s: No ESD method selected, continue ...\n", __func__);
 	}
 	if (ctrl_pdata->bklt_ctrl == BL_PWM)
 		mdss_dsi_panel_pwm_cfg(ctrl_pdata);
