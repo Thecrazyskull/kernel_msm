@@ -542,7 +542,7 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 				panel_data);
 	mipi  = &pdata->panel_info.mipi;
 
-	pr_debug("%s: ctrl=%p ndx=%d\n", __func__, ctrl, ctrl->ndx);
+	pr_info("%s: ctrl=%p ndx=%d\n", __func__, ctrl, ctrl->ndx);
 
 	if (ctrl->panel_config.bare_board == true) {
 		pr_warn("%s: This is bare_board configuration\n", __func__);
@@ -554,10 +554,12 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 
 	mdss_dsi_get_pwr_mode(pdata, &pwr_mode, DSI_MODE_BIT_LP);
 	/* validate screen is actually on from the master control only */
-	if (!ctrl->ndx && (pwr_mode & 0x04) != 0x04)
+	if ((pwr_mode & 0x04) != 0x04)
 		pr_err("%s: Display failure: DISON (0x04) bit not set\n",
 								__func__);
+end:
 	pr_info("%s-. Pwr_mode(0x0A) = 0x%x\n", __func__, pwr_mode);
+
 	return 0;
 }
 
@@ -574,7 +576,8 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 	ctrl = container_of(pdata, struct mdss_dsi_ctrl_pdata,
 				panel_data);
 
-	pr_debug("%s: ctrl=%p ndx=%d\n", __func__, ctrl, ctrl->ndx);
+
+	pr_info("%s: ctrl=%p ndx=%d\n", __func__, ctrl, ctrl->ndx);
 
 	mipi  = &pdata->panel_info.mipi;
 
