@@ -590,10 +590,6 @@ static int mdss_dsi_ulps_config_sub(struct mdss_dsi_ctrl_pdata *ctrl_pdata,
 		mdss_dsi_phy_init(pdata);
 
 		__mdss_dsi_ctrl_setup(pdata);
-		mdss_dsi_sw_reset(pdata);
-		mdss_dsi_host_init(pdata);
-		mdss_dsi_op_mode_config(pdata->panel_info.mipi.mode,
-			pdata);
 
 		/*
 		 * ULPS Entry Request. This is needed because, after power
@@ -634,6 +630,10 @@ static int mdss_dsi_ulps_config_sub(struct mdss_dsi_ctrl_pdata *ctrl_pdata,
 		lane_status = MIPI_INP(ctrl_pdata->ctrl_base + 0xA8);
 		mdss_dsi_clk_ctrl(ctrl_pdata, DSI_LINK_CLKS, 0);
 		mdss_dsi_clk_ctrl(ctrl_pdata, DSI_BUS_CLKS, 0);
+
+		mdss_dsi_sw_reset(pdata);
+		mdss_dsi_host_init(pdata);
+		mdss_dsi_op_mode_config(pdata->panel_info.mipi.mode, pdata);
 		ctrl_pdata->ulps = false;
 	}
 
