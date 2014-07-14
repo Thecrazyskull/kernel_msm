@@ -229,6 +229,8 @@ struct mdss_mdp_ctl {
 	void *priv_data;
 	u32 wb_type;
 	u64 bw_pending;
+
+	struct mdss_mdp_ctl *main_ctl;
 };
 
 struct mdss_mdp_mixer {
