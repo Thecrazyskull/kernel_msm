@@ -231,6 +231,7 @@ struct mdss_mdp_ctl {
 	u64 bw_pending;
 
 	struct mdss_mdp_ctl *main_ctl;
+	bool wait4pingpong_tout;
 };
 
 struct mdss_mdp_mixer {

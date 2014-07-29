@@ -549,9 +549,15 @@ static int mdss_mdp_cmd_wait4pingpong(struct mdss_mdp_ctl *ctl, void *arg)
 
 	if (rc <= 0) {
 		if (!ctx->pp_timeout_report_cnt) {
-			WARN(1, "cmd kickoff timed out (%d) ctl=%d\n",
-					rc, ctl->num);
-			mdss_dsi_debug_check_te(pdata);
+			if (!ctl->wait4pingpong_tout) {
+				WARN(1, "cmd kickoff timed out (%d) ctl=%d\n",
+						rc, ctl->num);
+				ctl->wait4pingpong_tout = true;
+				mdss_dsi_debug_check_te(pdata);
+			} else
+				pr_err("cmd kickoff timed out (%d) ctl=%d\n",
+							rc, ctl->num);
+
 			MDSS_XLOG_TOUT_HANDLER("mdp", "dsi0", "dsi1",
 					"edp", "hdmi", "panic");
 		}
@@ -562,6 +568,7 @@ static int mdss_mdp_cmd_wait4pingpong(struct mdss_mdp_ctl *ctl, void *arg)
 	} else {
 		rc = 0;
 		ctx->pp_timeout_report_cnt = 0;
+		ctl->wait4pingpong_tout = false;
 	}
 
 	/* signal any pending ping pong done events */
