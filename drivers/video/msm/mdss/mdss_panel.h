@@ -353,6 +353,7 @@ struct mdss_panel_info {
 	u32 panel_power_on;
 	bool hbm_feature_enabled;
 	bool hbm_state;
+	u32 bl_shutdown_delay;
 
 	uint32_t panel_dead;
 	bool dynamic_switch_pending;
