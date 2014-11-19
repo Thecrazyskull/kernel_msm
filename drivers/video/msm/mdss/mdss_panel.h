@@ -358,6 +358,7 @@ struct mdss_panel_info {
 	u32 panel_power_on;
 	bool dynamic_cabc_enabled;
 	enum cabc_mode cabc_mode;
+	u32 bl_shutdown_delay;
 
 	uint32_t panel_dead;
 	bool dynamic_switch_pending;

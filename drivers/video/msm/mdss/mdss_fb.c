@@ -1047,6 +1047,13 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 			mfd->bl_updated = 0;
 			mutex_unlock(&mfd->bl_lock);
 
+			if (mfd->shutdown_pending &&
+			    mfd->panel_info->bl_shutdown_delay)
+				usleep_range(mfd->panel_info->bl_shutdown_delay
+				       * 1000,
+				       mfd->panel_info->bl_shutdown_delay
+				       * 1000);
+
 			ret = mfd->mdp.off_fnc(mfd);
 			if (ret)
 				mfd->panel_power_on = curr_pwr_state;
