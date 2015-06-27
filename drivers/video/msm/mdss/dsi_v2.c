@@ -17,6 +17,7 @@
 #include <linux/iopoll.h>
 #include <linux/of_device.h>
 #include <linux/of_gpio.h>
+#include <linux/uaccess.h>
 
 #include "dsi_v2.h"
 
@@ -139,6 +140,15 @@ static int dsi_panel_handler(struct mdss_panel_data *pdata, int enable)
 	}
 	return rc;
 }
+
+int dsi_panel_ioctl_handler(struct mdss_panel_data *pdata, u32 cmd, void *arg)
+{
+	int rc = -EINVAL;
+	rc = mdss_dsi_panel_ioctl_handler(pdata, cmd, arg);
+
+	return rc;
+}
+
 
 static int dsi_splash_on(struct mdss_panel_data *pdata)
 {

@@ -20,6 +20,7 @@
 #include <linux/slab.h>
 #include <linux/iopoll.h>
 #include <linux/kthread.h>
+#include <linux/dropbox.h>
 
 #include <mach/iommu_domains.h>
 
@@ -29,6 +30,20 @@
 #include "mdss_debug.h"
 
 #define VSYNC_PERIOD 17
+
+#define DROPBOX_DISPLAY_ISSUE "display_issue"
+#define ESD_DROPBOX_MSG "ESD event detected"
+#define ESD_TE_DROPBOX_MSG "ESD TE event detected"
+
+/*
+ * MDSS_PANEL_ESD_SELF_TRIGGER is triggered ESD recovery depending how many
+ * times of MDSS_PANEL_ESD_CNT_MAX detection
+ */
+#define MDSS_PANEL_ESD_CNT_MAX 3
+#define MDSS_PANEL_ESD_TE_TRIGGER (MDSS_PANEL_ESD_CNT_MAX * 2)
+#define TE_MONITOR_TO  68
+
+#define PWR_MODE_DISON 0x4
 
 struct mdss_dsi_ctrl_pdata *ctrl_list[DSI_CTRL_MAX];
 
@@ -387,6 +402,7 @@ void mdss_dsi_set_tx_power_mode(int mode, struct mdss_panel_data *pdata)
 	ctrl_pdata = container_of(pdata, struct mdss_dsi_ctrl_pdata,
 				panel_data);
 
+	mdss_dsi_clk_ctrl(ctrl_pdata, DSI_ALL_CLKS, 1);
 	data = MIPI_INP((ctrl_pdata->ctrl_base) + 0x3c);
 
 	if (mode == 0)
@@ -395,6 +411,7 @@ void mdss_dsi_set_tx_power_mode(int mode, struct mdss_panel_data *pdata)
 		data |= BIT(26);
 
 	MIPI_OUTP((ctrl_pdata->ctrl_base) + 0x3c, data);
+	mdss_dsi_clk_ctrl(ctrl_pdata, DSI_ALL_CLKS, 0);
 }
 
 int mdss_get_tx_power_mode(struct mdss_panel_data *pdata)
@@ -405,7 +422,9 @@ int mdss_get_tx_power_mode(struct mdss_panel_data *pdata)
 	ctrl_pdata = container_of(pdata, struct mdss_dsi_ctrl_pdata,
 				panel_data);
 
+	mdss_dsi_clk_ctrl(ctrl_pdata, DSI_ALL_CLKS, 1);
 	data = MIPI_INP((ctrl_pdata->ctrl_base) + 0x3c);
+	mdss_dsi_clk_ctrl(ctrl_pdata, DSI_ALL_CLKS, 0);
 	return !!(data & BIT(26));
 }
 
@@ -640,6 +659,28 @@ static int mdss_dsi_read_status(struct mdss_dsi_ctrl_pdata *ctrl)
 	return mdss_dsi_cmdlist_put(ctrl, &cmdreq);
 }
 
+#ifdef MDSS_PANEL_ESD_SELF_TRIGGER
+static char disp_off[2] = {0x28, 0x0};  /* DTYPE_DCS_WRITE1 */
+static struct dsi_cmd_desc dispoff_cmd = {
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 1, sizeof(disp_off)}, disp_off
+};
+
+static void mdss_dsi_panel_dispoff_dcs(struct mdss_dsi_ctrl_pdata *ctrl)
+{
+	struct dcs_cmd_req cmdreq;
+
+	pr_debug("%s+:\n", __func__);
+
+	memset(&cmdreq, 0, sizeof(cmdreq));
+	cmdreq.cmds = &dispoff_cmd;
+	cmdreq.cmds_cnt = 1;
+	cmdreq.flags = CMD_REQ_COMMIT | CMD_CLK_CTRL;
+	cmdreq.rlen = 0;
+	cmdreq.cb = NULL;
+
+	mdss_dsi_cmdlist_put(ctrl, &cmdreq);
+}
+#endif
 
 /**
  * mdss_dsi_reg_status_check() - Check dsi panel status through reg read
@@ -740,6 +781,104 @@ int mdss_dsi_bta_status_check(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 	return ret;
 }
 
+/**
+ * mdss_dsi_moto_status_check() - Check dsi panel status through Moto ESD detection method
+ * @ctrl_pdata: pointer to the dsi controller structure
+ *
+ * This function can be used to check status of the panel using Moto ESD detection method
+ * for the panel.
+ *
+ * Return: positive value if the panel is in good state, negative value or
+ * zero otherwise.
+ */
+int mdss_dsi_moto_status_check(struct mdss_dsi_ctrl_pdata *ctrl)
+{
+	static bool initialized, dropbox_sent;
+	int ret = 0;
+	u8 pwr_mode = 0;
+	struct mdss_panel_esd_pdata *esd_data = &ctrl->panel_esd_data;
+#ifdef MDSS_PANEL_ESD_SELF_TRIGGER
+	static int esd_count;
+	static int esd_trigger_cnt;
+#endif
+
+	if (!ctrl->panel_data.panel_info.panel_power_on) {
+		ret = 1;
+		goto end;
+	}
+
+	/* Set up TE pin monitor */
+	if (!initialized && esd_data->esd_detect_mode == ESD_TE_DET) {
+		pr_debug("%s: init ESD TE monitor.\n", __func__);
+		init_completion(&esd_data->te_detected);
+		esd_data->te_irq = gpio_to_irq(ctrl->disp_te_gpio);
+		if (request_irq(esd_data->te_irq,
+			mdss_panel_esd_te_irq_handler,
+			IRQF_TRIGGER_RISING, "mdss_panel_esd_te", ctrl)) {
+			pr_err("%s: unable to request IRQ %d\n",
+						__func__, ctrl->disp_te_gpio);
+			goto end;
+		}
+		initialized = true;
+	}
+
+	/* Check panel power mode */
+	pr_debug("%s: Checking power mode\n", __func__);
+	mdss_dsi_get_pwr_mode(&ctrl->panel_data, &pwr_mode);
+#ifdef MDSS_PANEL_ESD_SELF_TRIGGER
+	if (esd_count++ > MDSS_PANEL_ESD_TE_TRIGGER)
+		esd_count = 0;
+	if (esd_count == MDSS_PANEL_ESD_CNT_MAX) {
+		pr_info("%s(%d): Start ESD power mode test\n", __func__,
+				esd_trigger_cnt++);
+		pwr_mode = 0x00;
+	}
+#endif
+	if ((pwr_mode & esd_data->esd_pwr_mode_chk) !=
+					esd_data->esd_pwr_mode_chk) {
+		pr_warn("%s: ESD detected pwr_mode =0x%x expected = 0x%x\n",
+			__func__, pwr_mode, esd_data->esd_pwr_mode_chk);
+		if (!dropbox_sent) {
+			dropbox_queue_event_text(DROPBOX_DISPLAY_ISSUE,
+				ESD_DROPBOX_MSG, strlen(ESD_DROPBOX_MSG));
+			dropbox_sent = true;
+		}
+		goto end;
+	}
+
+	/* Check panel TE pin status */
+	if (esd_data->esd_detect_mode == ESD_TE_DET &&
+		(esd_data->esd_pwr_mode_chk & PWR_MODE_DISON)) {
+#ifdef MDSS_PANEL_ESD_SELF_TRIGGER
+		if (esd_count == MDSS_PANEL_ESD_TE_TRIGGER) {
+			pr_warn("%s(%d): Start ESD TE test.\n", __func__,
+				esd_trigger_cnt);
+			mdss_dsi_panel_dispoff_dcs(ctrl);
+			esd_count = 0;
+		}
+#endif
+		pr_debug("%s: Checking TE status.\n", __func__);
+		INIT_COMPLETION(ctrl->panel_esd_data.te_detected);
+		enable_irq(ctrl->panel_esd_data.te_irq);
+		if (wait_for_completion_timeout(
+			&ctrl->panel_esd_data.te_detected,
+			msecs_to_jiffies(TE_MONITOR_TO)) == 0) {
+			pr_warn("%s: No TE sig for %d usec.\n",  __func__,
+							TE_MONITOR_TO);
+			if (!dropbox_sent) {
+				dropbox_queue_event_text(DROPBOX_DISPLAY_ISSUE,
+					ESD_TE_DROPBOX_MSG,
+					strlen(ESD_TE_DROPBOX_MSG));
+				dropbox_sent = true;
+			}
+			goto end;
+		}
+	}
+	ret = 1;
+end:
+	return ret;
+}
+
 int mdss_dsi_cmd_reg_tx(u32 data,
 			unsigned char *ctrl_base)
 {
@@ -775,6 +914,30 @@ static int mdss_dsi_cmd_dma_tx(struct mdss_dsi_ctrl_pdata *ctrl,
 
 static int mdss_dsi_cmd_dma_rx(struct mdss_dsi_ctrl_pdata *ctrl,
 			struct dsi_buf *rp, int rlen);
+
+void mdss_dsi_reg_dump(struct mdss_dsi_ctrl_pdata *ctrl, char *prestring)
+{
+	static int count;
+	u32 tmp0x0, tmp0x4, tmp0x8, tmp0xc;
+	int i;
+
+	if (count >= 5)
+		return;
+
+	count++;
+	pr_err("%s: =============%s==============\n", prestring, __func__);
+	mdss_dsi_clk_ctrl(ctrl, DSI_ALL_CLKS, 1);
+	for (i = 0; i < 91; i++) {
+		tmp0x0 = MIPI_INP(ctrl->ctrl_base + (i*16) + 0x0);
+		tmp0x4 = MIPI_INP(ctrl->ctrl_base + (i*16) + 0x4);
+		tmp0x8 = MIPI_INP(ctrl->ctrl_base + (i*16) + 0x8);
+		tmp0xc = MIPI_INP(ctrl->ctrl_base + (i*16) + 0xc);
+		pr_err("[%04x] : %08x %08x %08x %08x\n",
+			i*16, tmp0x0, tmp0x4, tmp0x8, tmp0xc);
+	}
+	mdss_dsi_clk_ctrl(ctrl, DSI_ALL_CLKS, 0);
+	pr_err("%s: ============= END ==============\n", __func__);
+}
 
 static int mdss_dsi_cmds2buf_tx(struct mdss_dsi_ctrl_pdata *ctrl,
 			struct dsi_cmd_desc *cmds, int cnt)
@@ -1011,8 +1174,9 @@ int mdss_dsi_cmds_rx(struct mdss_dsi_ctrl_pdata *ctrl,
 		ret = mdss_dsi_cmd_dma_tx(ctrl, tp);
 		if (IS_ERR_VALUE(ret)) {
 			mdss_dsi_disable_irq(ctrl, DSI_CMD_TERM);
-			pr_err("%s: failed to tx max_pkt_size\n",
+			pr_err("%s: failed to tx max packet size\n",
 				__func__);
+			mdss_dsi_reg_dump(ctrl, "mdss_dsi_cmds_rx max packet");
 			rp->len = 0;
 			goto end;
 		}
@@ -1034,8 +1198,9 @@ int mdss_dsi_cmds_rx(struct mdss_dsi_ctrl_pdata *ctrl,
 		ret = mdss_dsi_cmd_dma_tx(ctrl, tp);
 		if (IS_ERR_VALUE(ret)) {
 			mdss_dsi_disable_irq(ctrl, DSI_CMD_TERM);
-			pr_err("%s: failed to tx cmd = 0x%x\n",
-				__func__,  cmds->payload[0]);
+		pr_err("%s: failed to tx read request\n",
+			__func__);
+		mdss_dsi_reg_dump(ctrl, "mdss_dsi_cmds_rx read req");
 			rp->len = 0;
 			goto end;
 		}
@@ -1374,9 +1539,10 @@ int mdss_dsi_cmdlist_commit(struct mdss_dsi_ctrl_pdata *ctrl, int from_mdp)
 	if (req->flags & CMD_REQ_HS_MODE)
 		mdss_dsi_set_tx_power_mode(0, &ctrl->panel_data);
 
-	if (req->flags & CMD_REQ_RX)
-		ret = mdss_dsi_cmdlist_rx(ctrl, req);
-	else
+	if (req->flags & CMD_REQ_RX) {
+		mdss_dsi_cmdlist_rx(ctrl, req);
+		ret = ctrl->rx_buf.len;
+	} else
 		ret = mdss_dsi_cmdlist_tx(ctrl, req);
 
 	if (req->flags & CMD_REQ_HS_MODE)

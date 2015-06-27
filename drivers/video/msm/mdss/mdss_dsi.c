@@ -24,6 +24,8 @@
 #include <linux/regulator/consumer.h>
 
 #include "mdss.h"
+#include "mdss_mdp.h"
+#include "dsi_v2.h"
 #include "mdss_panel.h"
 #include "mdss_dsi.h"
 #include "mdss_debug.h"
@@ -851,6 +853,8 @@ static int mdss_dsi_blank(struct mdss_panel_data *pdata)
 
 int mdss_dsi_cont_splash_on(struct mdss_panel_data *pdata)
 {
+	int ret = 0;
+	struct mipi_panel_info *mipi;
 	struct mdss_dsi_ctrl_pdata *ctrl_pdata = NULL;
 
 	pr_info("%s:%d DSI on for continuous splash.\n", __func__, __LINE__);
@@ -859,6 +863,8 @@ int mdss_dsi_cont_splash_on(struct mdss_panel_data *pdata)
 		pr_err("%s: Invalid input data\n", __func__);
 		return -EINVAL;
 	}
+
+	mipi = &pdata->panel_info.mipi;
 
 	ctrl_pdata = container_of(pdata, struct mdss_dsi_ctrl_pdata,
 				panel_data);
@@ -1216,101 +1222,43 @@ end:
 	return dsi_pan_node;
 }
 
-static int mdss_dsi_ioctl_panel_reg_write(struct mdss_panel_data *pdata,
-					void __user *arg)
-{
-	struct mdss_dsi_ctrl_pdata *ctrl_pdata = NULL;
-	int ret = 0;
-	struct msmfb_reg_access reg_access;
-	u8 *reg_access_buf;
-	int mode = DSI_MODE_BIT_LP;
-
-	ctrl_pdata = container_of(pdata, struct mdss_dsi_ctrl_pdata,
-				panel_data);
-
-	if (!pdata->panel_info.panel_power_on) {
-		pr_err("%s: Panel is off\n", __func__);
-		return -EPERM;
-	}
-
-	if (copy_from_user(&reg_access, arg, sizeof(reg_access)))
-		return -EFAULT;
-
-	reg_access_buf = kmalloc(reg_access.buffer_size + 1, GFP_KERNEL);
-	if (reg_access_buf == NULL)
-		return -ENOMEM;
-
-	reg_access_buf[0] = reg_access.address;
-	if (copy_from_user(&reg_access_buf[1], reg_access.buffer,
-				reg_access.buffer_size)) {
-		kfree(reg_access_buf);
-		return -EFAULT;
-	}
-
-	if (reg_access.use_hs_mode)
-		mode = DSI_MODE_BIT_HS;
-
-	ret = ctrl_pdata->reg_write(pdata, mode,
-				reg_access.buffer_size + 1, reg_access_buf);
-
-	kfree(reg_access_buf);
-	return ret;
-}
-
-static int mdss_dsi_ioctl_panel_reg_read(struct mdss_panel_data *pdata,
-					void __user *arg)
-{
-	struct mdss_dsi_ctrl_pdata *ctrl_pdata = NULL;
-	int ret = 0;
-	struct msmfb_reg_access reg_access;
-	u8 *reg_access_buf;
-	int mode = DSI_MODE_BIT_LP;
-
-	ctrl_pdata = container_of(pdata, struct mdss_dsi_ctrl_pdata,
-				panel_data);
-
-	if (!pdata->panel_info.panel_power_on) {
-		pr_err("%s: Panel is off\n", __func__);
-		return -EPERM;
-	}
-
-	if (copy_from_user(&reg_access, arg, sizeof(reg_access)))
-		return -EFAULT;
-
-	reg_access_buf = kmalloc(reg_access.buffer_size, GFP_KERNEL);
-	if (reg_access_buf == NULL)
-		return -ENOMEM;
-
-	if (reg_access.use_hs_mode)
-		mode = DSI_MODE_BIT_HS;
-
-	ret = ctrl_pdata->reg_read(pdata, reg_access.address,
-				mode,
-				reg_access.buffer_size, reg_access_buf);
-
-	if ((ret == 0) &&
-		(copy_to_user(reg_access.buffer, reg_access_buf,
-			reg_access.buffer_size))) {
-		ret = -EFAULT;
-	}
-
-	kfree(reg_access_buf);
-	return ret;
-}
-
 int mdss_dsi_ioctl_handler(struct mdss_panel_data *pdata, u32 cmd, void *arg)
 {
-	int ret = -ENOSYS;
+	int rc = -ENOSYS;
+	struct msmfb_reg_access reg_access;
+	int old_tx_mode;
+	int mode = DSI_MODE_BIT_LP;
+
+	if (!pdata->panel_info.panel_power_on) {
+		pr_err("%s: Panel is off\n", __func__);
+		return -EPERM;
+	}
 
 	switch (cmd) {
 	case MSMFB_REG_WRITE:
-		ret = mdss_dsi_ioctl_panel_reg_write(pdata, arg);
-		break;
 	case MSMFB_REG_READ:
-		ret = mdss_dsi_ioctl_panel_reg_read(pdata, arg);
+		if (copy_from_user(&reg_access, arg, sizeof(reg_access)))
+			return -EFAULT;
+
+		if (reg_access.use_hs_mode)
+			mode = DSI_MODE_BIT_HS;
+
+		old_tx_mode = mdss_get_tx_power_mode(pdata);
+		if (mode != old_tx_mode)
+			mdss_dsi_set_tx_power_mode(mode, pdata);
+
+		rc = mdss_dsi_panel_ioctl_handler(pdata, cmd, arg);
+
+		if (mode != old_tx_mode)
+			mdss_dsi_set_tx_power_mode(old_tx_mode, pdata);
+		break;
+	default:
+		pr_err("%s: unsupport ioctl =0x%x\n", __func__, cmd);
+		rc = -EFAULT;
 		break;
 	}
-	return ret;
+
+	return rc;
 }
 
 static int __devinit mdss_dsi_ctrl_probe(struct platform_device *pdev)
@@ -1622,25 +1570,27 @@ int dsi_panel_device_register(struct device_node *pan_node,
 		pr_err("%s:%d, Disp_en gpio not specified\n",
 						__func__, __LINE__);
 
-	if (pinfo->type == MIPI_CMD_PANEL) {
-		ctrl_pdata->disp_te_gpio = of_get_named_gpio(ctrl_pdev->dev.of_node,
+	ctrl_pdata->disp_te_gpio = of_get_named_gpio(ctrl_pdev->dev.of_node,
 						"qcom,platform-te-gpio", 0);
-		if (!gpio_is_valid(ctrl_pdata->disp_te_gpio)) {
-			pr_err("%s:%d, Disp_te gpio not specified\n",
-						__func__, __LINE__);
-		}
-	}
-
-	if (gpio_is_valid(ctrl_pdata->disp_te_gpio) &&
-					pinfo->type == MIPI_CMD_PANEL) {
+	if (!gpio_is_valid(ctrl_pdata->disp_te_gpio)) {
+		pr_err("%s:%d, Disp_te gpio not specified\n",
+			__func__, __LINE__);
+	} else {
+		int func;
 		rc = gpio_request(ctrl_pdata->disp_te_gpio, "disp_te");
 		if (rc) {
 			pr_err("request TE gpio failed, rc=%d\n",
 			       rc);
 			return -ENODEV;
 		}
+
+		if (pinfo->type == MIPI_CMD_PANEL)
+			func = 1;
+		else
+			func = 0;
+
 		rc = gpio_tlmm_config(GPIO_CFG(
-				ctrl_pdata->disp_te_gpio, 1,
+				ctrl_pdata->disp_te_gpio, func,
 				GPIO_CFG_INPUT,
 				GPIO_CFG_PULL_DOWN,
 				GPIO_CFG_2MA),
@@ -1700,6 +1650,10 @@ int dsi_panel_device_register(struct device_node *pan_node,
 		ctrl_pdata->check_status = mdss_dsi_reg_status_check;
 	else if (ctrl_pdata->status_mode == ESD_BTA)
 		ctrl_pdata->check_status = mdss_dsi_bta_status_check;
+	else if (ctrl_pdata->status_mode == ESD_MOTO) {
+		ctrl_pdata->check_status = mdss_dsi_moto_status_check;
+		pr_info("%s: Using Moto ESD method for ESD check\n", __func__);
+	}
 
 	if (ctrl_pdata->status_mode == ESD_MAX) {
 		pr_err("%s: Using default BTA for ESD check\n", __func__);
