@@ -188,10 +188,6 @@ struct msm_gpio_set_tbl {
 	uint32_t delay;
 };
 
-struct msm_camera_gpio_num_info {
-	uint16_t gpio_num[10];
-	uint8_t valid[10];
-};
 
 struct msm_camera_gpio_conf {
 	void *cam_gpiomux_conf_tbl;
@@ -524,6 +520,14 @@ struct msm_mhl_platform_data {
  *       unprepare_disable) is controlled by i2c-transaction's begining and
  *       ending. When false, the clock's state is controlled by runtime-pm
  *       events.
+ * @extended_recovery : Bitfield.
+ *       Bit 0 will make the driver will try to do extra 1-pulse
+ *       bit-banged recovery if the HW-driven 9-clk bus recovery
+ *	 has failed. SDA and CLK GPIOs have to be configured
+ *	 to make the extra recovery work.
+ *	 Bit 1 will make the driver attempt recovery regardless
+ *	 of current mastership of the bus (useful for some
+ *	 single-master devices with badly misbehaving slaves)
  * @active_only when set, votes when system active and removes the vote when
  *       system goes idle (optimises for performance). When unset, voting using
  *       runtime pm (optimizes for power).
@@ -533,6 +537,7 @@ struct msm_mhl_platform_data {
 struct msm_i2c_platform_data {
 	int clk_freq;
 	bool clk_ctl_xfer;
+	uint32_t extended_recovery;
 	uint32_t rmutex;
 	const char *rsl_id;
 	uint32_t pm_lat;

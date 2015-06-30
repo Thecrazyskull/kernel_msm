@@ -61,15 +61,34 @@ void mdp3_check_dsi_ctrl_status(struct work_struct *work,
 	}
 
 	mdp3_session = pdsi_status->mfd->mdp.private1;
+
+	if (!pdata->panel_info.cont_splash_esd_rdy) {
+		pr_warn("%s: Splash not complete, reschedule check status\n",
+			__func__);
+		schedule_delayed_work(&pdsi_status->check_status,
+				msecs_to_jiffies(interval));
+		return;
+	}
+
+	if (!ctl) {
+		pr_warn("%s: mdss_mdp_ctl data not available\n", __func__);
+		return;
+	}
+
+	if (!pdsi_status->mfd->panel_power_on) {
+		pr_err("%s: panel off\n", __func__);
+		return;
+	}
+
 	if (!mdp3_session) {
 		pr_err("%s: Display is off\n", __func__);
 		return;
 	}
 
-	mutex_lock(&mdp3_session->lock);
+	mutex_lock(&mdp3_session->offlock);
 	if (!mdp3_session->status) {
 		pr_info("display off already\n");
-		mutex_unlock(&mdp3_session->lock);
+		mutex_unlock(&mdp3_session->offlock);
 		return;
 	}
 
@@ -80,7 +99,7 @@ void mdp3_check_dsi_ctrl_status(struct work_struct *work,
 		ret = ctrl_pdata->check_status(ctrl_pdata);
 	else
 		pr_err("%s: wait_for_dma_done error\n", __func__);
-	mutex_unlock(&mdp3_session->lock);
+	mutex_unlock(&mdp3_session->offlock);
 
 	if ((pdsi_status->mfd->panel_power_on)) {
 		if (ret > 0) {

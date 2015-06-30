@@ -131,6 +131,12 @@ enum {
 	I2C_CLK_FORCED_LOW_STATE	= 5,
 };
 
+static struct gpiomux_setting recovery_config = {
+	.func = GPIOMUX_FUNC_GPIO,
+	.drv = GPIOMUX_DRV_8MA,
+	.pull = GPIOMUX_PULL_DOWN,
+};
+
 enum msm_i2c_state {
 	MSM_I2C_PM_ACTIVE,
 	MSM_I2C_PM_SUSPENDED,
@@ -144,12 +150,6 @@ enum msm_i2c_state {
 #define I2C_GPIOS_DT_CNT		(2)		/* sda and scl */
 
 static char const * const i2c_rsrcs[] = {"i2c_clk", "i2c_sda"};
-
-static struct gpiomux_setting recovery_config = {
-	.func = GPIOMUX_FUNC_GPIO,
-	.drv = GPIOMUX_DRV_8MA,
-	.pull = GPIOMUX_PULL_NONE,
-};
 
 /**
  * qup_i2c_clk_path_vote: data to use bus scaling driver for clock path vote
@@ -167,6 +167,7 @@ struct qup_i2c_clk_path_vote {
 	bool                        reg_err;
 };
 
+#define RECOVER_FAILED_PANIC_COUNT	100
 struct qup_i2c_dev {
 	struct device                *dev;
 	void __iomem                 *base;		/* virtual */
@@ -198,6 +199,7 @@ struct qup_i2c_dev {
 	void                         *complete;
 	int                          i2c_gpios[ARRAY_SIZE(i2c_rsrcs)];
 	struct qup_i2c_clk_path_vote clk_path_vote;
+	unsigned int                 recover_failed_count;
 };
 
 #ifdef CONFIG_PM
@@ -229,12 +231,6 @@ qup_i2c_interrupt(int irq, void *devid)
 	uint32_t status = 0;
 	uint32_t status1 = 0;
 	uint32_t op_flgs = 0;
-	int err = 0;
-
-	if (atomic_read(&dev->xfer_progress) != 1) {
-		dev_err(dev->dev, "irq:%d when PM suspended\n", irq);
-		return IRQ_NONE;
-	}
 
 	status = readl_relaxed(dev->base + QUP_I2C_STATUS);
 	status1 = readl_relaxed(dev->base + QUP_ERROR_FLAGS);
@@ -253,7 +249,7 @@ qup_i2c_interrupt(int irq, void *devid)
 	if (status & I2C_STATUS_ERROR_MASK) {
 		dev_err(dev->dev, "QUP: I2C status flags :0x%x, irq:%d\n",
 			status, irq);
-		err = status;
+		dev->err = status;
 		/* Clear Error interrupt if it's a level triggered interrupt*/
 		if (dev->num_irqs == 1) {
 			writel_relaxed(QUP_RESET_STATE, dev->base+QUP_STATE);
@@ -265,7 +261,7 @@ qup_i2c_interrupt(int irq, void *devid)
 
 	if (status1 & 0x7F) {
 		dev_err(dev->dev, "QUP: QUP status flags :0x%x\n", status1);
-		err = -status1;
+		dev->err = -status1;
 		/* Clear Error interrupt if it's a level triggered interrupt*/
 		if (dev->num_irqs == 1) {
 			writel_relaxed((status1 & QUP_STATUS_ERROR_FLAGS),
@@ -303,7 +299,6 @@ intr_done:
 	dev_dbg(dev->dev, "QUP intr= %d, i2c status=0x%x, qup status = 0x%x\n",
 			irq, status, status1);
 	qup_print_status(dev);
-	dev->err = err;
 	complete(dev->complete);
 	return IRQ_HANDLED;
 }
@@ -888,6 +883,46 @@ qup_set_wr_mode(struct qup_i2c_dev *dev, int rem)
 	return ret;
 }
 
+static void qup_i2c_recover_gpio(struct qup_i2c_dev *dev)
+{
+	int i;
+	int gpio_clk;
+	int gpio_dat;
+	struct gpiomux_setting old_gpio_setting[ARRAY_SIZE(i2c_rsrcs)];
+
+	if (dev->pdata->msm_i2c_config_gpio)
+		return;
+	gpio_clk = dev->i2c_gpios[0];
+	gpio_dat = dev->i2c_gpios[1];
+	if ((gpio_clk == -1) && (gpio_dat == -1)) {
+		dev_err(dev->dev, "GPIO Recovery failed due to undefined GPIO's\n");
+		return;
+	}
+	for (i = 0; i < ARRAY_SIZE(i2c_rsrcs); ++i) {
+		if (msm_gpiomux_write(dev->i2c_gpios[i], GPIOMUX_ACTIVE,
+				&recovery_config, &old_gpio_setting[i])) {
+			dev_err(dev->dev, "GPIO pins have no active setting\n");
+			return;
+		}
+	}
+	dev_info(dev->dev, "i2c_scl: %d, i2c_sda: %d\n",
+		 gpio_get_value(gpio_clk), gpio_get_value(gpio_dat));
+
+	gpio_direction_output(gpio_clk, 0);
+	udelay(5);
+	gpio_direction_output(gpio_dat, 1);
+	udelay(20);
+	gpio_direction_input(gpio_clk);
+	udelay(5);
+	gpio_direction_input(gpio_dat);
+
+	udelay(20);
+	/* Configure ALT funciton to QUP I2C*/
+	for (i = 0; i < ARRAY_SIZE(i2c_rsrcs); ++i) {
+		msm_gpiomux_write(dev->i2c_gpios[i], GPIOMUX_ACTIVE,
+				&old_gpio_setting[i], NULL);
+	}
+}
 
 static void qup_i2c_recover_bus_busy(struct qup_i2c_dev *dev)
 {
@@ -960,6 +995,28 @@ static void qup_i2c_recover_bus_busy(struct qup_i2c_dev *dev)
 	}
 
 	dev_warn(dev->dev, "Bus still busy, status %x\n", status);
+
+	if (dev->pdata->extended_recovery & 0x1 &&
+					(status & I2C_STATUS_BUS_ACTIVE)) {
+		dev_info(dev->dev,
+		"9 clk pulse bus recovery did not help, try 1 clk pulse\n");
+		qup_i2c_recover_gpio(dev);
+		status = readl_relaxed(dev->base + QUP_I2C_STATUS);
+		dev_info(dev->dev, "Extended Bus recovery %s\n",
+			(status & I2C_STATUS_BUS_ACTIVE) ? "fail" : "success");
+
+		/* Only panic on extended-recovery enabled bus */
+		if (status & I2C_STATUS_BUS_ACTIVE &&
+		    dev->recover_failed_count > RECOVER_FAILED_PANIC_COUNT) {
+			pr_info("BUG: Bus recovery failed trigger panic\n");
+			BUG();
+		}
+	}
+
+	if (status & I2C_STATUS_BUS_ACTIVE)
+		dev->recover_failed_count++;
+	else
+		dev->recover_failed_count = 0;
 
 recovery_end:
 	enable_irq(dev->err_irq);
@@ -1178,35 +1235,51 @@ qup_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[], int num)
 			qup_print_status(dev);
 			timeout = wait_for_completion_timeout(&complete,
 					msecs_to_jiffies(dev->out_fifo_sz));
-			if (!timeout) {
-				uint32_t istatus = readl_relaxed(dev->base +
-							QUP_I2C_STATUS);
-				uint32_t qstatus = readl_relaxed(dev->base +
-							QUP_ERROR_FLAGS);
-				uint32_t op_flgs = readl_relaxed(dev->base +
-							QUP_OPERATIONAL);
 
+			if (!timeout) {
+				uint32_t istatus =
+				readl_relaxed(dev->base + QUP_I2C_STATUS);
+				uint32_t qstatus =
+				readl_relaxed(dev->base + QUP_ERROR_FLAGS);
+				uint32_t op_flgs =
+				readl_relaxed(dev->base + QUP_OPERATIONAL);
+
+				/* ISR may have already cleared I2C status,
+				 *  but then it has been saved into dev->err.
+				 */
+				if (!istatus && dev->err > 0)
+					istatus = dev->err;
 				/*
 				 * Dont wait for 1 sec if i2c sees the bus
 				 * active and controller is not master.
 				 * A slave has pulled line low. Try to recover
 				 */
-				if (!(istatus & I2C_STATUS_BUS_ACTIVE) ||
-					(istatus & I2C_STATUS_BUS_MASTER)) {
+				if (!(istatus & I2C_STATUS_BUS_ACTIVE)
+					|| istatus & I2C_STATUS_BUS_MASTER
+					|| dev->pdata->extended_recovery & 0x2){
 					timeout =
 					wait_for_completion_timeout(&complete,
 									HZ);
 					if (timeout)
 						goto timeout_err;
+					/* Try to recover, since either we are
+					 * the master or no one claims to be.
+					 * There may or may not be an I2C error,
+					 * but recovery code will try up to
+					 * RECOVER_FAILED_PANIC_COUNT times
+					 * and then BUG out.
+					 */
+					qup_i2c_recover_bus_busy(dev);
 				}
-				qup_i2c_recover_bus_busy(dev);
 				dev_err(dev->dev,
 					"Transaction timed out, SL-AD = 0x%x\n",
 					dev->msg->addr);
-
-				dev_err(dev->dev, "I2C Status: %x\n", istatus);
-				dev_err(dev->dev, "QUP Status: %x\n", qstatus);
-				dev_err(dev->dev, "OP Flags: %x\n", op_flgs);
+				dev_err(dev->dev, "I2C Status: %x\n",
+						istatus);
+				dev_err(dev->dev, "QUP Status: %x\n",
+						qstatus);
+				dev_err(dev->dev, "OP Flags: %x\n",
+						op_flgs);
 				writel_relaxed(1, dev->base + QUP_SW_RESET);
 				/* Make sure that the write has gone through
 				 * before returning from the function
@@ -1226,18 +1299,22 @@ timeout_err:
 				} else if (dev->err < 0) {
 					dev_err(dev->dev,
 					"QUP data xfer error %d\n", dev->err);
-					ret = dev->err;
+					ret = -EIO;
 					goto out_err;
 				} else if (dev->err > 0) {
 					/*
 					 * ISR returns +ve error if error code
 					 * is I2C related, e.g. unexpected start
 					 * So you may call recover-bus-busy when
-					 * this error happens
+					 * this error happens, but only if we
+					 * are the master or the bus is idle.
 					 */
-					qup_i2c_recover_bus_busy(dev);
+					if (!(dev->err & I2C_STATUS_BUS_ACTIVE)
+					 || dev->err & I2C_STATUS_BUS_MASTER
+					 || dev->pdata->extended_recovery & 0x2)
+						qup_i2c_recover_bus_busy(dev);
 				}
-				ret = -dev->err;
+				ret = -EBUSY;
 				goto out_err;
 			}
 			if (dev->msg->flags & I2C_M_RD) {
@@ -1295,6 +1372,8 @@ timeout_err:
 		}
 	}
 
+	/* reset failed count in case recovered by hardware reset */
+	dev->recover_failed_count = 0;
 	ret = num;
  out_err:
 	disable_irq(dev->err_irq);
@@ -1350,6 +1429,8 @@ int __devinit msm_i2c_rsrcs_dt_to_pdata_map(struct platform_device *pdev,
 	{"qcom,scl-gpio",      gpios,               DT_OPTIONAL,  DT_GPIO, -1},
 	{"qcom,sda-gpio",      gpios + 1,           DT_OPTIONAL,  DT_GPIO, -1},
 	{"qcom,clk-ctl-xfer", &pdata->clk_ctl_xfer, DT_OPTIONAL,  DT_BOOL, -1},
+	{"qcom,extended-recovery", &pdata->extended_recovery,
+							DT_OPTIONAL, DT_U32, 0},
 	{"qcom,active-only",  &pdata->active_only,  DT_OPTIONAL,  DT_BOOL,  0},
 	{NULL,                 NULL,                0,            0,        0},
 	};
@@ -1597,7 +1678,8 @@ blsp_core_init:
 	 * then we reset the core before registering for interrupts.
 	 */
 	writel_relaxed(1, dev->base + QUP_SW_RESET);
-	if (qup_i2c_poll_state(dev, 0, true) != 0)
+	ret = qup_i2c_poll_state(dev, 0, true);
+	if (ret)
 		goto err_reset_failed;
 	clk_disable_unprepare(dev->clk);
 	clk_disable_unprepare(dev->pclk);

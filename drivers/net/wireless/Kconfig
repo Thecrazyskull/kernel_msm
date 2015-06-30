@@ -324,6 +324,11 @@ config WCNSS_REGISTER_DUMP_ON_BITE
 	 register access failures. So this feature is to enable/disable the
 	 register dump on WCNSS WDOG bite.
 
+config MOTO_PRIMA
+	bool "Motorola Qualcomm MSM Prima MMI-LXE22.92-30 Driver"
+	---help---
+	  Say Y here to use the Motorola MMI-LXE22.92-30 version of prima
+
 source "drivers/net/wireless/ath/Kconfig"
 source "drivers/net/wireless/b43/Kconfig"
 source "drivers/net/wireless/b43legacy/Kconfig"
@@ -343,5 +348,12 @@ source "drivers/net/wireless/wl1251/Kconfig"
 source "drivers/net/wireless/wl12xx/Kconfig"
 source "drivers/net/wireless/zd1211rw/Kconfig"
 source "drivers/net/wireless/mwifiex/Kconfig"
+if MOTO_PRIMA
+source "drivers/net/wireless/moto_prima/Kconfig"
+endif
+if !MOTO_PRIMA
+source "drivers/net/wireless/prima/Kconfig"
+endif
+
 
 endif # WLAN

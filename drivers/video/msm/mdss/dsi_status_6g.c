@@ -57,9 +57,24 @@ void mdss_check_dsi_ctrl_status(struct work_struct *work, uint32_t interval)
 		return;
 	}
 
+	if (!pdata->panel_info.cont_splash_esd_rdy) {
+		pr_warn("%s: Splash not complete, reschedule check status\n",
+			__func__);
+		schedule_delayed_work(&pstatus_data->check_status,
+				msecs_to_jiffies(interval));
+		return;
+	}
+
+	if (!pstatus_data->mfd->panel_power_on) {
+		pr_err("%s: panel off\n", __func__);
+		return;
+	}
+
 	mdp5_data = mfd_to_mdp5_data(pstatus_data->mfd);
 	ctl = mfd_to_ctl(pstatus_data->mfd);
-
+	if (!ctl) {
+		pr_warn("%s: mdss_mdp_ctl data not available\n", __func__);
+	}
 	if (!ctl) {
 		pr_err("%s: Display is off\n", __func__);
 		return;
@@ -73,6 +88,7 @@ void mdss_check_dsi_ctrl_status(struct work_struct *work, uint32_t interval)
 	}
 
 	mutex_lock(&ctrl_pdata->mutex);
+	mutex_lock(&ctl->offlock);
 	if (ctl->shared_lock)
 		mutex_lock(ctl->shared_lock);
 	mutex_lock(&mdp5_data->ov_lock);
@@ -87,20 +103,6 @@ void mdss_check_dsi_ctrl_status(struct work_struct *work, uint32_t interval)
 		return;
 	}
 
-	/*
-	 * For the command mode panels, we return pan display
-	 * IOCTL on vsync interrupt. So, after vsync interrupt comes
-	 * and when DMA_P is in progress, if the panel stops responding
-	 * and if we trigger BTA before DMA_P finishes, then the DSI
-	 * FIFO will not be cleared since the DSI data bus control
-	 * doesn't come back to the host after BTA. This may cause the
-	 * display reset not to be proper. Hence, wait for DMA_P done
-	 * for command mode panels before triggering BTA.
-	 */
-	if (ctl->wait_pingpong)
-		ctl->wait_pingpong(ctl, NULL);
-
-	pr_debug("%s: DSI ctrl wait for ping pong done\n", __func__);
 
 	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_ON, false);
 	ret = ctrl_pdata->check_status(ctrl_pdata);
@@ -109,6 +111,7 @@ void mdss_check_dsi_ctrl_status(struct work_struct *work, uint32_t interval)
 	mutex_unlock(&mdp5_data->ov_lock);
 	if (ctl->shared_lock)
 		mutex_unlock(ctl->shared_lock);
+	mutex_unlock(&ctl->offlock);
 	mutex_unlock(&ctrl_pdata->mutex);
 
 	if ((pstatus_data->mfd->panel_power_on)) {

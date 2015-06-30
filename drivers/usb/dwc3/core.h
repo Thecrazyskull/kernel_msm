@@ -795,6 +795,7 @@ struct dwc3 {
 	bool			tx_fifo_reduced;
 	bool			err_evt_seen;
 	unsigned long		irq_cnt;
+	int                     charge_enabled; /* unconditional charging */
 };
 
 /* -------------------------------------------------------------------------- */

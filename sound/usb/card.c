@@ -275,6 +275,7 @@ static int snd_usb_create_streams(struct snd_usb_audio *chip, int ctrlif)
 		break;
 	}
 	}
+
 	return 0;
 }
 

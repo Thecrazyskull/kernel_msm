@@ -176,6 +176,7 @@ struct mdss_mdp_ctl {
 	u32 flush_bits;
 
 	bool is_video_mode;
+	bool no_solid_fill;
 	u32 play_cnt;
 	u32 vsync_cnt;
 	u32 underrun_cnt;
@@ -196,6 +197,7 @@ struct mdss_mdp_ctl {
 	struct mdss_mdp_mixer *mixer_left;
 	struct mdss_mdp_mixer *mixer_right;
 	struct mutex lock;
+	struct mutex offlock;
 	struct mutex *shared_lock;
 	spinlock_t spin_lock;
 
@@ -224,6 +226,8 @@ struct mdss_mdp_ctl {
 				struct mdss_mdp_ctl *sctl, int new_fps);
 
 	struct blocking_notifier_head notifier_head;
+	void (*ctx_dump_fnc) (struct mdss_mdp_ctl *ctl);
+	int (*panel_on_locked) (struct mdss_mdp_ctl *ctl);
 
 	void *priv_data;
 	u32 wb_type;
@@ -564,12 +568,6 @@ int mdss_mdp_overlay_get_buf(struct msm_fb_data_type *mfd,
 			     struct msmfb_data *planes,
 			     int num_planes,
 			     u32 flags);
-int mdss_mdp_overlay_pipe_setup(struct msm_fb_data_type *mfd,
-	struct mdp_overlay *req, struct mdss_mdp_pipe **ppipe);
-void mdss_mdp_handoff_cleanup_pipes(struct msm_fb_data_type *mfd,
-							u32 type);
-int mdss_mdp_overlay_release(struct msm_fb_data_type *mfd, int ndx);
-int mdss_mdp_overlay_start(struct msm_fb_data_type *mfd);
 int mdss_mdp_video_addr_setup(struct mdss_data_type *mdata,
 		u32 *offsets,  u32 count);
 int mdss_mdp_video_start(struct mdss_mdp_ctl *ctl);
@@ -577,6 +575,8 @@ int mdss_mdp_cmd_start(struct mdss_mdp_ctl *ctl);
 int mdss_mdp_writeback_start(struct mdss_mdp_ctl *ctl);
 int mdss_mdp_overlay_kickoff(struct msm_fb_data_type *mfd,
 		struct mdp_display_commit *data);
+void mdss_mdp_overlay_cleanup(struct msm_fb_data_type *mfd,
+		struct list_head *destroy_pipes);
 
 struct mdss_mdp_ctl *mdss_mdp_ctl_init(struct mdss_panel_data *pdata,
 					struct msm_fb_data_type *mfd);
@@ -597,7 +597,7 @@ int mdss_mdp_perf_bw_check(struct mdss_mdp_ctl *ctl,
 		struct mdss_mdp_pipe **right_plist, int right_cnt);
 int mdss_mdp_perf_calc_pipe(struct mdss_mdp_pipe *pipe,
 	struct mdss_mdp_perf_params *perf, struct mdss_mdp_img_rect *roi,
-	bool apply_fudge);
+	bool apply_fudge, int tune);
 int mdss_mdp_ctl_notify(struct mdss_mdp_ctl *ctl, int event);
 void mdss_mdp_ctl_notifier_register(struct mdss_mdp_ctl *ctl,
 	struct notifier_block *notifier);
@@ -724,6 +724,7 @@ void mdss_mdp_crop_rect(struct mdss_mdp_img_rect *src_rect,
 
 int mdss_mdp_wb_kickoff(struct msm_fb_data_type *mfd);
 int mdss_mdp_wb_ioctl_handler(struct msm_fb_data_type *mfd, u32 cmd, void *arg);
+int mdss_dsi_ioctl_handler(struct mdss_panel_data *pdata, u32 cmd, void *arg);
 
 int mdss_mdp_get_ctl_mixers(u32 fb_num, u32 *mixer_id);
 u32 mdss_mdp_fb_stride(u32 fb_index, u32 xres, int bpp);
@@ -761,4 +762,11 @@ int mdss_mdp_pipe_program_pixel_extn(struct mdss_mdp_pipe *pipe);
 				(mfd->mdp.private1))->wb)
 
 int  mdss_mdp_ctl_reset(struct mdss_mdp_ctl *ctl);
+
+int mdss_mdp_overlay_set(struct msm_fb_data_type *mfd, struct mdp_overlay *req);
+int mdss_mdp_overlay_play(struct msm_fb_data_type *mfd,
+			  struct msmfb_overlay_data *req);
+int mdss_mdp_overlay_unset(struct msm_fb_data_type *mfd, int ndx);
+void mdss_mdp_footswitch_ctrl(struct mdss_data_type *mdata, int on);
+
 #endif /* MDSS_MDP_H */

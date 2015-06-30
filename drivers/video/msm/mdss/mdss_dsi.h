@@ -78,12 +78,6 @@ enum dsi_trigger_type {
 	DSI_CMD_MODE_MDP,
 };
 
-enum dsi_panel_bl_ctrl {
-	BL_PWM,
-	BL_WLED,
-	BL_DCS_CMD,
-	UNKNOWN_CTRL,
-};
 
 enum dsi_panel_status_mode {
 	ESD_BTA,
@@ -105,6 +99,13 @@ enum dsi_lane_map_type {
 	DSI_LANE_MAP_1032,
 	DSI_LANE_MAP_2103,
 	DSI_LANE_MAP_3210,
+};
+
+enum mdss_dsi_panel_state {
+	DSI_DISP_OFF_SLEEP_OUT,
+	DSI_DISP_ON_SLEEP_OUT,
+	DSI_DISP_OFF_SLEEP_IN,
+	DSI_DISP_INVALID_STATE
 };
 
 #define CTRL_STATE_UNKNOWN		0x00
@@ -156,6 +157,8 @@ enum dsi_lane_map_type {
 #define DSI_BTA_TERM    BIT(1)
 #define DSI_CMD_TERM    BIT(0)
 
+#define DCS_CMD_GET_POWER_MODE 0x0A    /* get power_mode */
+
 extern struct device dsi_dev;
 extern u32 dsi_irq;
 extern struct mdss_dsi_ctrl_pdata *ctrl_list[];
@@ -201,6 +204,8 @@ struct dsi_clk_desc {
 	u32 pre_div_func;
 };
 
+#define DSI_MODE_BIT_HS 0
+#define DSI_MODE_BIT_LP 1
 
 struct dsi_panel_cmds {
 	char *buf;
@@ -214,6 +219,26 @@ struct dsi_kickoff_action {
 	struct list_head act_entry;
 	void (*action) (void *);
 	void *data;
+};
+
+enum {
+	ESD_TE_DET = 1,
+};
+
+struct mdss_panel_esd_pdata {
+	int esd_pwr_mode_chk;
+	int esd_detect_mode;
+	int te_irq;
+	struct completion te_detected;
+};
+
+struct mdss_panel_config {
+	bool esd_enable;
+	bool esd_disable_bl;
+	bool bare_board;
+	char panel_name[32];
+	u64 panel_ver;
+	bool disallow_panel_pwr_off;
 };
 
 struct dsi_drv_cm_data {
@@ -248,9 +273,19 @@ struct mdss_dsi_ctrl_pdata {
 	int (*off) (struct mdss_panel_data *pdata);
 	int (*partial_update_fnc) (struct mdss_panel_data *pdata);
 	int (*check_status) (struct mdss_dsi_ctrl_pdata *pdata);
-	int (*cmdlist_commit)(struct mdss_dsi_ctrl_pdata *ctrl, int from_mdp);
 	void (*switch_mode) (struct mdss_panel_data *pdata, int mode);
+	int (*cmdlist_commit)(struct mdss_dsi_ctrl_pdata *ctrl, int from_mdp,
+						struct dcs_cmd_req *cmdreq);
+	int (*cont_splash_on) (struct mdss_panel_data *pdata);
+	int (*get_dt_vreg_data) (struct device *dev,
+			struct dss_module_power *mp, struct device_node *node);
+	int (*set_hbm)(struct mdss_dsi_ctrl_pdata *ctrl, int state);
+	int (*set_cabc)(struct mdss_dsi_ctrl_pdata *ctrl, int mode);
+	void (*bl_on_defer)(struct mdss_dsi_ctrl_pdata *ctrl);
 	struct mdss_panel_data panel_data;
+	struct mdss_panel_config panel_config;
+	struct mdss_panel_esd_pdata panel_esd_data;
+	struct dss_module_power panel_vregs;
 	unsigned char *ctrl_base;
 	struct dss_io_data ctrl_io;
 	struct dss_io_data mmss_misc_io;
@@ -287,6 +322,10 @@ struct mdss_dsi_ctrl_pdata {
 	u32 pclk_rate;
 	u32 byte_clk_rate;
 	struct dss_module_power power_data;
+	int rst_seq[MDSS_DSI_RST_SEQ_LEN];
+	int rst_seq_len;
+	int dis_rst_seq[MDSS_DSI_RST_SEQ_LEN];
+	int dis_rst_seq_len;
 	u32 dsi_irq_mask;
 	struct mdss_hw *dsi_hw;
 	struct mdss_panel_recovery *recovery;
@@ -298,6 +337,8 @@ struct mdss_dsi_ctrl_pdata {
 
 	struct dsi_panel_cmds video2cmd;
 	struct dsi_panel_cmds cmd2video;
+	struct dsi_panel_cmds cabc_ui_cmds;
+	struct dsi_panel_cmds cabc_mv_cmds;
 
 	struct dcs_cmd_list cmdlist;
 	struct completion dma_comp;
@@ -316,6 +357,15 @@ struct mdss_dsi_ctrl_pdata {
 	struct dsi_buf rx_buf;
 	struct dsi_buf status_buf;
 	int status_mode;
+	struct platform_device *pdev;
+	bool check_status_disabled;
+	int mipi_d0_sel;
+	bool partial_mode_enabled;
+
+	struct dsi_panel_cmds hbm_on_cmds;
+	struct dsi_panel_cmds hbm_off_cmds;
+	u32 hbm_on_brts;
+	u32 hbm_off_brts;
 };
 
 struct dsi_status_data {
@@ -327,6 +377,10 @@ struct dsi_status_data {
 int dsi_panel_device_register(struct device_node *pan_node,
 				struct mdss_dsi_ctrl_pdata *ctrl_pdata);
 
+int mdss_dsi_get_dt_vreg_data(struct device *dev,
+			struct dss_module_power *mp, struct device_node *node);
+void mdss_dsi_put_dt_vreg_data(struct device *dev,
+				struct dss_module_power *module_power);
 int mdss_dsi_cmds_tx(struct mdss_dsi_ctrl_pdata *ctrl,
 		struct dsi_cmd_desc *cmds, int cnt);
 
@@ -352,7 +406,8 @@ void mdss_dsi_sw_reset(struct mdss_panel_data *pdata);
 irqreturn_t mdss_dsi_isr(int irq, void *ptr);
 void mdss_dsi_irq_handler_config(struct mdss_dsi_ctrl_pdata *ctrl_pdata);
 
-void mdss_dsi_set_tx_power_mode(int mode, struct mdss_panel_data *pdata);
+void mdss_set_tx_power_mode(int mode, struct mdss_panel_data *pdata);
+int mdss_get_tx_power_mode(struct mdss_panel_data *pdata);
 int mdss_dsi_clk_div_config(struct mdss_panel_info *panel_info,
 			    int frame_rate);
 int mdss_dsi_clk_init(struct platform_device *pdev,
@@ -371,7 +426,8 @@ void mdss_dsi_panel_pwm_cfg(struct mdss_dsi_ctrl_pdata *ctrl);
 void mdss_dsi_ctrl_init(struct mdss_dsi_ctrl_pdata *ctrl);
 void mdss_dsi_cmd_mdp_busy(struct mdss_dsi_ctrl_pdata *ctrl);
 void mdss_dsi_wait4video_done(struct mdss_dsi_ctrl_pdata *ctrl);
-int mdss_dsi_cmdlist_commit(struct mdss_dsi_ctrl_pdata *ctrl, int from_mdp);
+int mdss_dsi_cmdlist_commit(struct mdss_dsi_ctrl_pdata *ctrl, int from_mdp,
+					struct dcs_cmd_req *cmdreq);
 void mdss_dsi_cmdlist_kickoff(int intf);
 int mdss_dsi_bta_status_check(struct mdss_dsi_ctrl_pdata *ctrl);
 int mdss_dsi_reg_status_check(struct mdss_dsi_ctrl_pdata *ctrl);
@@ -385,6 +441,11 @@ int mdss_panel_get_dst_fmt(u32 bpp, char mipi_mode, u32 pixel_packing,
 
 int mdss_dsi_register_recovery_handler(struct mdss_dsi_ctrl_pdata *ctrl,
 		struct mdss_panel_recovery *recovery);
+int mdss_panel_parse_panel_config_dt(struct mdss_dsi_ctrl_pdata *ctrl_pdata);
+bool mdss_dsi_match_chosen_panel(struct device_node *np,
+				struct mdss_panel_config *pconfig);
+int mdss_dsi_panel_ioctl_handler(struct mdss_panel_data *pdata,
+					u32 cmd, void *arg);
 
 static inline bool mdss_dsi_broadcast_mode_enabled(void)
 {

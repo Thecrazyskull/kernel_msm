@@ -19,6 +19,10 @@ Required properties:
  - qcom,i2c-bus-freq : desired I2C bus clock frequency is Hz
 
 Optional property:
+ - qcom,noise-rjct-scl : Number of low samples on clock line to consider it low.
+		       Range of values is 0-3. When missing default to 0.
+ - qcom,noise-rjct-sda : Number of low samples on data  line to consider it low.
+		       Range of values is 0-3. When missing default to 0.
  - qcom,i2c-src-freq : Frequency of the source clocking this bus in Hz.
 		      Divider value is set based on soruce-frequency and
 		      desired I2C bus frequency. If this value is not
@@ -40,6 +44,14 @@ Optional property:
 		      unprepare_disable) is controlled by i2c-transaction's
 		      begining and ending. When missing, the clock's state
 		      is controlled by runtime-pm events.
+ - qcom,extended-recovery : Bitfield.
+		       Bit 0 will make the driver will try to do extra 1-pulse
+		       bit-banged recovery if the HW-driven 9-clk bus recovery
+		       has failed. SDA and CLK GPIOs have to be configured
+		       to make the extra recovery work.
+		       Bit 1 will make the driver attempt recovery regardless
+		       of current mastership of the bus (useful for some
+		       single-master devices with badly misbehaving slaves)
 
 Example:
 	i2c_3: i2c@f9966000 {

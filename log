@@ -1,0 +1,2962 @@
+commit 27aca190a8459ce7241916aaf9cb54f305cd8222
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Tue Jun 30 20:56:27 2015 +0200
+
+    Fix prima again
+
+commit b7961669d42df9a43dc8a09f73ab7c65737d579b
+Author: Mihir Shete <smihir@codeaurora.org>
+Date:   Sat Sep 28 02:39:44 2013 +0530
+
+    cfg80211: Add wiphy flag to disable 11D hints
+    
+    Some drivers may not want to support 11D or
+    may have their own internal implementation to
+    handle 11D spec, add support to disable 11D
+    hints from the core for such drivers.
+    
+    Change-Id: I3f55e51ba44d41542120102708f2a47568d0e60b
+    CRs-Fixed: 542802
+    Acked-by: Sameer Thalappil <sameert@codeaurora.org>
+    Signed-off-by: Mihir Shete <smihir@codeaurora.org>
+    Reviewed-on: http://gerrit.pcs.mot.com/571872
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Check Patch <CHEKPACH@motorola.com>
+    Reviewed-by: Klocwork kwcheck <klocwork-kwcheck@sourceforge.mot.com>
+    Reviewed-by: Binesh Balasingh <binesh@motorola.com>
+    Reviewed-by: Prashanth Chakravarthy <a19110@motorola.com>
+    Reviewed-by: Christopher Fries <c.fries@motorola.com>
+
+commit 047cadeb5329f945b4bf93ec10d1d5112908ebc0
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Tue Jun 30 18:35:42 2015 +0200
+
+    Fix prima
+
+commit a1777037055ad834b05541769067f7799dfe50ce
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Tue Jun 30 18:23:14 2015 +0200
+
+    Fixes
+
+commit a5bb83fc3ed42c45f9deb021210c6467bafe7e97
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Tue Jun 30 12:16:22 2015 +0200
+
+    Fix leftover mistakes
+
+commit 6835fbe76ab2c32952c3bebc7ef4072c27dfc868
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Sat Jun 27 11:50:25 2015 +0200
+
+    mdss : MMI Support 10
+    
+     drivers/video/msm/mdss/dsi_host_v2.c     |  7 +++
+     drivers/video/msm/mdss/dsi_v2.c          |  7 +++
+     drivers/video/msm/mdss/mdp3.c            | 96 +------------------------------
+     drivers/video/msm/mdss/mdp3.h            |  1 -
+     drivers/video/msm/mdss/mdss_dsi.c        | 30 ++++++----
+     drivers/video/msm/mdss/mdss_dsi.h        |  3 +
+     drivers/video/msm/mdss/mdss_dsi_panel.c  | 97 ++++++++++++++++++++++++++++++--
+     drivers/video/msm/mdss/mdss_dsi_status.c | 18 +++---
+     drivers/video/msm/mdss/mdss_fb.c         | 43 ++++++++++----
+     drivers/video/msm/mdss/mdss_fb.h         |  1 +
+     drivers/video/msm/mdss/mdss_panel.h      |  5 ++
+     11 files changed, 176 insertions(+), 132 deletions(-)
+
+commit fcb1349f514c0d68d6a5f36fcaf15045682cb98c
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Sat Jun 27 11:50:25 2015 +0200
+
+    mdss : MMI Support 5
+    
+     drivers/video/msm/mdss/mdss_dsi.c          | 26 +++------
+     drivers/video/msm/mdss/mdss_dsi_panel.c    | 67 +++++++++++++----------
+     drivers/video/msm/mdss/mdss_fb.c           | 88 ++++++++++++++++++++++++++++--
+     drivers/video/msm/mdss/mdss_fb.h           |  7 +++
+     drivers/video/msm/mdss/mdss_mdp.c          |  4 +-
+     drivers/video/msm/mdss/mdss_mdp_intf_cmd.c |  8 +++
+     6 files changed, 149 insertions(+), 51 deletions(-)
+
+commit 420137c175ca6b70c54142614aa29dd9ebdcf595
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Sat Jun 27 11:50:25 2015 +0200
+
+    mdss : MMI Support 3
+    
+     drivers/video/msm/mdss/dsi_host_v2.c      |   8 +-
+     drivers/video/msm/mdss/mdss.h             |   2 +-
+     drivers/video/msm/mdss/mdss_dsi.c         |  12 ++-
+     drivers/video/msm/mdss/mdss_dsi.h         |   7 +-
+     drivers/video/msm/mdss/mdss_dsi_cmd.c     |  23 +++---
+     drivers/video/msm/mdss/mdss_dsi_host.c    |  38 +++++++++-
+     drivers/video/msm/mdss/mdss_dsi_panel.c   |  90 +++++++++++++++--------
+     drivers/video/msm/mdss/mdss_dsi_status.c  |   9 +++
+     drivers/video/msm/mdss/mdss_fb.c          |  24 +++++-
+     drivers/video/msm/mdss/mdss_fb.h          |   2 +-
+     drivers/video/msm/mdss/mdss_mdp.c         | 118 ++++++++++++------------------
+     drivers/video/msm/mdss/mdss_mdp.h         |   1 +
+     drivers/video/msm/mdss/mdss_mdp_overlay.c |  22 ++----
+     drivers/video/msm/mdss/mdss_panel.h       |   1 +
+     drivers/video/msm/mdss/mdss_quickdraw.c   |  26 ++++++-
+     15 files changed, 237 insertions(+), 146 deletions(-)
+
+commit d47ca97f5562cb29db8bf4f2eca801cfa1011713
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Sat Jun 27 11:50:25 2015 +0200
+
+    mdss : MMI Support 2
+    
+     drivers/video/msm/mdss/mdss_dsi.c          | 103 +++++++++++--------
+     drivers/video/msm/mdss/mdss_dsi.h          |   3 +
+     drivers/video/msm/mdss/mdss_dsi_panel.c    | 112 ++++++++++++++++-----
+     drivers/video/msm/mdss/mdss_dsi_status.c   |  19 ----
+     drivers/video/msm/mdss/mdss_fb.c           |   7 ++
+     drivers/video/msm/mdss/mdss_mdp_intf_cmd.c |   3 +-
+     drivers/video/msm/mdss/mdss_mdp_overlay.c  |  96 ++++++++++++++++--
+     drivers/video/msm/mdss/mdss_mdp_pipe.c     |  36 ++++++-
+     drivers/video/msm/mdss/mdss_mdp_rotator.c  |   6 --
+     drivers/video/msm/mdss/mdss_panel.h        |  28 ++++++
+     drivers/video/msm/mdss/mdss_quickdraw.c    | 153 ++++++++++++++++++++++-------
+     11 files changed, 431 insertions(+), 135 deletions(-)
+
+commit f2767165882f4108133d1818a988045cbcf6661f
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Tue Jun 30 10:59:10 2015 +0200
+
+    Fixes
+
+commit 3c8fb5b1dabc243c0830ca03171b14c4df4101ac
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Sat Jun 27 11:50:25 2015 +0200
+
+    mdss : MMI Support 1
+    
+     drivers/video/msm/mdss/Kconfig               |  19 +
+     drivers/video/msm/mdss/Makefile              |   8 +-
+     drivers/video/msm/mdss/dsi_host_v2.c         |  43 +-
+     drivers/video/msm/mdss/dsi_v2.c              |  59 +-
+     drivers/video/msm/mdss/dsi_v2.h              |   9 +
+     drivers/video/msm/mdss/mdp3.c                |  19 +-
+     drivers/video/msm/mdss/mdp3_ctrl.c           |  49 +-
+     drivers/video/msm/mdss/mdp3_ctrl.h           |   1 +
+     drivers/video/msm/mdss/mdp3_dma.c            |  84 ++-
+     drivers/video/msm/mdss/mdp3_dma.h            |   1 +
+     drivers/video/msm/mdss/mdss_dsi.c            | 242 +++++--
+     drivers/video/msm/mdss/mdss_dsi.h            |  69 +-
+     drivers/video/msm/mdss/mdss_dsi_host.c       | 214 +++---
+     drivers/video/msm/mdss/mdss_dsi_panel.c      | 974 ++++++++++++++++++++++++++-
+     drivers/video/msm/mdss/mdss_dsi_status.c     |  68 +-
+     drivers/video/msm/mdss/mdss_fb.c             | 158 +++--
+     drivers/video/msm/mdss/mdss_fb.h             |  13 +-
+     drivers/video/msm/mdss/mdss_io_util.c        |  20 +-
+     drivers/video/msm/mdss/mdss_mdp.h            |  15 +-
+     drivers/video/msm/mdss/mdss_mdp_ctl.c        |  14 +-
+     drivers/video/msm/mdss/mdss_mdp_intf_cmd.c   |  73 +-
+     drivers/video/msm/mdss/mdss_mdp_intf_video.c |  45 +-
+     drivers/video/msm/mdss/mdss_mdp_overlay.c    | 330 ++++++++-
+     drivers/video/msm/mdss/mdss_mdp_pipe.c       |  36 +-
+     drivers/video/msm/mdss/mdss_mdp_rotator.c    |   9 +-
+     drivers/video/msm/mdss/mdss_panel.h          |  47 +-
+     drivers/video/msm/mdss/mdss_quickdraw.c      | 419 ++++++++++++
+     drivers/video/msm/mdss/mdss_quickdraw.h      |  29 +
+     drivers/video/msm/mdss/mdss_timeout.c        |  68 ++
+     drivers/video/msm/mdss/mdss_timeout.h        |  62 ++
+     drivers/video/msm/mdss/mmi_panel_notifier.c  |  69 ++
+     drivers/video/msm/mdss/msm_mdss_io_8974.c    |  18 +-
+     32 files changed, 2877 insertions(+), 407 deletions(-)
+
+commit af33a8c93c2bcd6a8e53dfb33d8193f24724a579
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Tue Jun 30 10:03:12 2015 +0200
+
+    Revert "msm: mdss: Add support for dynamic mode switch on mdp3"
+    
+    This reverts commit c86bcef70b4d71a0e9a9884eed0c8e8a613f81f5.
+    
+    Conflicts:
+    	drivers/video/msm/mdss/dsi_v2.c
+    	drivers/video/msm/mdss/mdp3_ctrl.c
+
+commit f1c8ddb8e5f1b6f03e4a07e734bb200d92aa9390
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Sun Jun 28 21:12:15 2015 +0200
+
+    Revert "msm: mdss: Move splash thread functionality"
+    
+    This reverts commit fa15ca6454c90d902d1519836f377846991d83a7.
+    
+    Conflicts:
+    	drivers/video/msm/mdss/mdss_fb.c
+    	drivers/video/msm/mdss/mdss_mdp.h
+    	drivers/video/msm/mdss/mdss_mdp_overlay.c
+    	drivers/video/msm/mdss/mdss_mdp_splash_logo.c
+
+commit 28389b996b47ebdebf3a6dcd26bc51bd00a1753d
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Tue Jun 30 09:35:13 2015 +0200
+
+    Restore CAF
+
+commit 6e903511e8826a19502270c118df352e2ec0381e
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Tue Jun 30 09:33:51 2015 +0200
+
+    Fixes
+
+commit 5d816df6c09c719bf4363e84be50439de673610c
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Sat Jun 27 11:50:25 2015 +0200
+
+    binder : mmi : Patch 1
+
+commit 93300c1610fd45bdda67e413e55905c5a6827b07
+Author: Dong-Dong Yang <gdb746@motorola.com>
+Date:   Thu Mar 14 15:07:31 2013 -0400
+
+    binder: Lower binder debug mask.
+    
+    To avoid redundance with binder debugfs items output,
+    the binder debug mask BINDER_DEBUG_FAILED_TRANSACTION
+    is restricted to quiet in kernel log.
+    
+    Change-Id: Ie342311d154c6e8d0489d4734ec710ff0fbd6682
+    Signed-off-by: Dong-Dong Yang <gdb746@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/524644
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Check Patch <CHEKPACH@motorola.com>
+    Reviewed-by: Klocwork kwcheck <klocwork-kwcheck@sourceforge.mot.com>
+    SLT-Approved: Gerrit Code Review <gerrit-blurdev@motorola.com>
+    Reviewed-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    (cherry picked from commit 8c2a61c264d990dfb36d6628fdebb9a6fcc9403c)
+
+commit f4423ee1e7867965badee59ccba7f84e18fae745
+Author: Jason Hrycay <jason.hrycay@motorola.com>
+Date:   Wed Apr 11 22:04:59 2012 -0500
+
+    android: binder: reduce memory for binder debugfs
+    
+    Reduce the amount of memory the binder debugfs seq_file's need
+    to output the large amount of data they provide.  This breaks up
+    the individual reads into smaller objects to limit the kmalloc'd
+    memory to a PAGE.  This helps reduce OOM conditions when these
+    files are read in mildly fragmented systems.
+    
+    PROPAGATED_from: (CR)
+    Change-Id: I368573914f73975321270ea1cafe3fb3ef7de28a
+    Signed-off-by: Jason Hrycay <jason.hrycay@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/391877
+    Tested-by: Jira Key <JIRAKEY@motorola.com>
+    Reviewed-by: Igor Kovalenko <Igor.Kovalenko@motorola.com>
+    Reviewed-by: Check Patch <CHEKPACH@motorola.com>
+    Reviewed-by: Klocwork kwcheck <klocwork-kwcheck@sourceforge.mot.com>
+    Reviewed-by: Christopher Fries <C.Fries@motorola.com>
+    (cherry picked from commit 9f6c9a4758d372039f1bef9b22dc7c90b3164558)
+    
+    Conflicts:
+    
+    	drivers/staging/android/binder.c
+    
+    Signed-off-by: Jason Hrycay <jason.hrycay@motorola.com>
+    Change-Id: Ibdaa5a659ba2267a17716139da601a7711dd5fd7
+    Reviewed-on: http://gerrit.pcs.mot.com/520867
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Check Patch <CHEKPACH@motorola.com>
+    Reviewed-by: Klocwork kwcheck <klocwork-kwcheck@sourceforge.mot.com>
+    Reviewed-by: Yi-Wei Zhao <gbjc64@motorola.com>
+    Reviewed-by: Christopher Fries <qcf001@motorola.com>
+    Reviewed-by: Igor Kovalenko <cik009@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    (cherry picked from commit 2a4028119f6b88b6d26a37383935edc77af388d3)
+    Signed-off-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+
+commit 050293f68c4a7caae1f65cab278370cabdf5f902
+Author: GAO LIANG-TAO <w20048@motorola.com>
+Date:   Tue Jan 22 00:31:43 2013 +0800
+
+    staging: android: binder: Debugging FD leak
+    
+    Signed-off-by: GAO LIANG-TAO <w20048@motorola.com>
+    (cherry picked from commit cdae4b7951c96c28030daf3d801dcc322989c946)
+    
+    Change-Id: Ic876b03f82cc8d400c9bd5901001ff0852afef84
+
+commit 3706e0b8d92f61933142483e9941dcd9563fa3ca
+Author: Yi-wei Zhao <gbjc64@motorola.com>
+Date:   Tue Dec 18 17:19:30 2012 -0600
+
+    staging: android: binder:add ioctl BINDER_GET_PEER_PID
+    
+    Add new ioctl BINDER_GET_PEER_PID to let user-space app to
+    inquire peer's pid of current transaction.
+    
+    This is ported from
+    
+     *(CR): Scorpion_mini:UT: System Server Watchdog
+      Reviewed-on: http://gerrit.pcs.mot.com/466351
+    
+    Change-Id: Idfffd7e3bb9a81e52068ba599c25e605b612675e
+    Signed-off-by: Yi-wei Zhao <gbjc64@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/506479
+    Tested-by: Jira Key <JIRAKEY@motorola.com>
+    Reviewed-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+    (cherry picked from commit 40b6938286a96c80f27ad9ccbe013b44599dd9ad)
+
+commit 93481564655940165c530ce740f0d9ec2685f696
+Author: Arve Hjønnevåg <arve@android.com>
+Date:   Tue Oct 16 15:29:55 2012 -0700
+
+    Staging: android: binder: Allow using highmem for binder buffers
+    
+    commit 585650dcec88e704a19bb226a34b6a7166111623 upstream.
+    
+    The default kernel mapping for the pages allocated for the binder
+    buffers is never used. Set the __GFP_HIGHMEM flag when allocating
+    these pages so we don't needlessly use low memory pages that may
+    be required elsewhere.
+    
+    Signed-off-by: Arve Hjønnevåg <arve@android.com>
+    Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+commit 703c1a0320c0ee6a49277b35d57dad4b1c037299
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Mon Jun 29 20:18:35 2015 +0200
+
+    Reset binder
+
+commit 25a49bd2e898a927d1dafe95652f2a7958e0a9fb
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Mon Jun 29 16:31:59 2015 +0200
+
+    Fix device file track
+
+commit cb726fc024b0c41a3a3582013ae59d3d3cd384d2
+Author: Christopher Palmer <crpalmer@gmail.com>
+Date:   Wed Dec 24 06:05:16 2014 -0500
+
+    msm: vidc: MMI firmware does not support extradata
+    
+    Change-Id: Ib6277246d319ccde4d6405dc12556e512e8395c9
+
+commit 1c25e79cbe001d1505c3885103e331fbb6715e25
+Author: Ricardo Cerqueira <ricardo@cyngn.com>
+Date:   Thu Jan 8 13:33:16 2015 -0800
+
+    media: radio: Fix building and loading the IRIS transport
+    
+    Break the initialization dependency on module-load and tie it to
+    opening up the actual v4l device.
+    
+    Change-Id: I12d5226e7e9b15d14cf62e2dc666612f4cb608f1
+
+commit 24eee887e2de49b97ca94cf8dce59898b08cb398
+Author: SpaceKiller <alexisalbo.1@gmail.com>
+Date:   Sun Jan 19 18:42:10 2014 -0300
+
+    drivers: platform: msm: qpnp-vibrator: Add sysfs interface for intensity
+    
+    To control the Haptic intensity using sysfs interface.
+    
+    Signed-off-by: SpaceKiller <alexisalbo.1@gmail.com>
+    
+    Fix vibrator sysfs
+    
+    Change-Id: Ic33ab91b35039bb3ca9f42949dfffdb34b6276b1
+
+commit 2a69edeaf2d818ee1c957e8291f46ce60cd187bf
+Author: dhacker29 <davidhackerdvm@gmail.com>
+Date:   Fri Jan 3 06:05:55 2014 -0600
+
+    ALSA: Export audio effects header
+    
+    Export audio_effects.h for userland to use
+    
+    Change-Id: Ib4b040a87bcf89542d8c9dfb363fcd5f9a1bfc76
+
+commit e775cd8eeb75e3c292ca9893622cfd15d38c7e07
+Author: Vineeta Srivastava <vsrivastava@google.com>
+Date:   Wed Dec 18 14:37:35 2013 -0800
+
+    Fix sizeof-pointer-memaccess warning with gcc 4.8
+    
+    This patch fixes wrong memcpy size when copying ltk value to
+    HCI_OP_LE_LTK_REPLY command.
+    
+    Change-Id: I44e5e3da15369d4b424581720ccd3bac820ef2e0
+
+commit c370f368b3507d6b2f486c5380db6ce4ac21e3a5
+Author: Cody Ferber <codyf86@gmail.com>
+Date:   Sun Aug 24 12:32:46 2014 -0400
+
+    Fix uninitialized div_s64 for gcc 4.9
+    
+    I know we aren't even close to using gcc 4.9, so this might not get merged
+    for a while, but here it is for when the time comes. :)  4.9 is even more finicky.
+    
+    Missing include.
+    
+    Change-Id: Ia1a0b675f37623735bc1c041fbdd0be61cdaa427
+
+commit 606c85b654b2e1dc4bec50c579ec8825ad0a8f6f
+Author: D.S. Ljungmark <ljungmark@modio.se>
+Date:   Wed Mar 25 09:28:15 2015 +0100
+
+    ipv6: Don't reduce hop limit for an interface
+    
+    A local route may have a lower hop_limit set than global routes do.
+    
+    RFC 3756, Section 4.2.7, "Parameter Spoofing"
+    
+    >   1.  The attacker includes a Current Hop Limit of one or another small
+    >       number which the attacker knows will cause legitimate packets to
+    >       be dropped before they reach their destination.
+    
+    >   As an example, one possible approach to mitigate this threat is to
+    >   ignore very small hop limits.  The nodes could implement a
+    >   configurable minimum hop limit, and ignore attempts to set it below
+    >   said limit.
+    
+    Change-Id: I6370ef9fb43bb5554406ef8bd4af89cbade35f2b
+    Signed-off-by: D.S. Ljungmark <ljungmark@modio.se>
+    Acked-by: Hannes Frederic Sowa <hannes@stressinduktion.org>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+commit 9feae93f4b855f72e20e5ffb9d1a01d8b90c82a5
+Author: Andrey Vagin <avagin@openvz.org>
+Date:   Fri Mar 28 13:54:32 2014 +0400
+
+    netfilter: nf_conntrack: reserve two bytes for nf_ct_ext->len
+    
+    "len" contains sizeof(nf_ct_ext) and size of extensions. In a worst
+    case it can contain all extensions. Bellow you can find sizes for all
+    types of extensions. Their sum is definitely bigger than 256.
+    
+    nf_ct_ext_types[0]->len = 24
+    nf_ct_ext_types[1]->len = 32
+    nf_ct_ext_types[2]->len = 24
+    nf_ct_ext_types[3]->len = 32
+    nf_ct_ext_types[4]->len = 152
+    nf_ct_ext_types[5]->len = 2
+    nf_ct_ext_types[6]->len = 16
+    nf_ct_ext_types[7]->len = 8
+    
+    I have seen "len" up to 280 and my host has crashes w/o this patch.
+    
+    The right way to fix this problem is reducing the size of the ecache
+    extension (4) and Florian is going to do this, but these changes will
+    be quite large to be appropriate for a stable tree.
+    
+    Change-Id: Id8720f7a80c895fd114fdea3b5b36d691db8b586
+    Fixes: 5b423f6a40a0 (netfilter: nf_conntrack: fix racy timer handling with reliable)
+    Cc: Pablo Neira Ayuso <pablo@netfilter.org>
+    Cc: Patrick McHardy <kaber@trash.net>
+    Cc: Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
+    Cc: "David S. Miller" <davem@davemloft.net>
+    Signed-off-by: Andrey Vagin <avagin@openvz.org>
+    Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+
+commit 3d99f5039b20ba847c94531dcfde5a49e7543d09
+Author: Chih-Wei Huang <cwhuang@linux.org.tw>
+Date:   Tue Dec 24 17:51:55 2013 +0800
+
+    cpufreq: interactive: fix compiling warnings
+    
+    The gcc warns like:
+    
+      cpufreq_interactive.c:745:6: warning: operation on 'ret' may be
+    undefined [-Wsequence-point]
+    
+    It was introduced by commit cf0fad49d17cb8273ce555dd5b7afab67d7923bf.
+    
+    Since sprintf(...) just return 1 (one character) in this case, ret
+    should not changed.
+    Just discarding the result of sprintf(...) leads to the result that
+    the committer of cf0fad49d17cb8273ce555dd5b7afab67d7923bf wants.
+    
+    Change-Id: Ifed1cef6d6a31c3ed23dad03a567b3b9eddf3a57
+    Signed-off-by: Chih-Wei Huang <cwhuang@android-x86.org>
+    Signed-off-by: Dave Daynard <nardholio@gmail.com>
+
+commit adeba0252ed17bc39284abf0cb23ae592e17be33
+Author: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>
+Date:   Fri Dec 20 15:10:03 2013 +0200
+
+    mm: Fix NULL pointer dereference in madvise(MADV_WILLNEED) support
+    
+    Sasha Levin found a NULL pointer dereference that is due to a missing
+    page table lock, which in turn is due to the pmd entry in question being
+    a transparent huge-table entry.
+    
+    The code - introduced in commit 1998cc048901 ("mm: make
+    madvise(MADV_WILLNEED) support swap file prefetch") - correctly checks
+    for this situation using pmd_none_or_trans_huge_or_clear_bad(), but it
+    turns out that that function doesn't work correctly.
+    
+    pmd_none_or_trans_huge_or_clear_bad() expected that pmd_bad() would
+    trigger if the transparent hugepage bit was set, but it doesn't do that
+    if pmd_numa() is also set. Note that the NUMA bit only gets set on real
+    NUMA machines, so people trying to reproduce this on most normal
+    development systems would never actually trigger this.
+    
+    Fix it by removing the very subtle (and subtly incorrect) expectation,
+    and instead just checking pmd_trans_huge() explicitly.
+    
+    Reported-by: Sasha Levin <sasha.levin@oracle.com>
+    Acked-by: Andrea Arcangeli <aarcange@redhat.com>
+    [ Additionally remove the now stale test for pmd_trans_huge() inside the
+      pmd_bad() case - Linus ]
+    Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+    
+    Change-Id: Ia5a4e246d2a11574deca34222140704dd4178205
+
+commit 2c284ca8bed33101da5d9a715aaf166900685cb3
+Author: Sasha Levin <sasha.levin@oracle.com>
+Date:   Wed Jan 28 20:30:43 2015 -0600
+
+    vfs: read file_handle only once in handle_to_path
+    
+    We used to read file_handle twice. Once to get the amount of extra bytes, and
+    once to fetch the entire structure.
+    
+    This may be problematic since we do size verifications only after the first
+    read, so if the number of extra bytes changes in userspace between the first
+    and second calls, we'll have an incoherent view of file_handle.
+    
+    Instead, read the constant size once, and copy that over to the final
+    structure without having to re-read it again.
+    
+    Change-Id: Ib8f008e79d919a733419d1e040b8c6bbc07724f6
+    Signed-off-by: Sasha Levin <sasha.levin@oracle.com>
+
+commit 30a1908679444ea4a0c8aaa778e2059a173c1f57
+Author: Daniel Borkmann <dborkman@redhat.com>
+Date:   Mon Jan 6 00:57:54 2014 +0100
+
+    netfilter: nf_conntrack_dccp: fix skb_header_pointer API usages
+    
+    Some occurences in the netfilter tree use skb_header_pointer() in
+    the following way ...
+    
+      struct dccp_hdr _dh, *dh;
+      ...
+      skb_header_pointer(skb, dataoff, sizeof(_dh), &dh);
+    
+    ... where dh itself is a pointer that is being passed as the copy
+    buffer. Instead, we need to use &_dh as the forth argument so that
+    we're copying the data into an actual buffer that sits on the stack.
+    
+    Currently, we probably could overwrite memory on the stack (e.g.
+    with a possibly mal-formed DCCP packet), but unintentionally, as
+    we only want the buffer to be placed into _dh variable.
+    
+    Fixes: 2bc780499aa3 ("[NETFILTER]: nf_conntrack: add DCCP protocol support")
+    Signed-off-by: Daniel Borkmann <dborkman@redhat.com>
+    Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+
+commit 409ab50b77abd8e24443ac8fb9fb5c5c5245bd49
+Author: Eric W. Biederman <ebiederm@xmission.com>
+Date:   Wed Oct 8 10:42:27 2014 -0700
+
+    mnt: Prevent pivot_root from creating a loop in the mount tree
+    
+    Andy Lutomirski recently demonstrated that when chroot is used to set
+    the root path below the path for the new ``root'' passed to pivot_root
+    the pivot_root system call succeeds and leaks mounts.
+    
+    In examining the code I see that starting with a new root that is
+    below the current root in the mount tree will result in a loop in the
+    mount tree after the mounts are detached and then reattached to one
+    another.  Resulting in all kinds of ugliness including a leak of that
+    mounts involved in the leak of the mount loop.
+    
+    Prevent this problem by ensuring that the new mount is reachable from
+    the current root of the mount tree.
+    
+    [Added stable cc.  Fixes CVE-2014-7970.  --Andy]
+    
+    Change-Id: I2d2474ec866a1f3fcf6e69f0406ca16f5daa9996
+    Cc: stable@vger.kernel.org
+    Reported-by: Andy Lutomirski <luto@amacapital.net>
+    Reviewed-by: Andy Lutomirski <luto@amacapital.net>
+    Link: http://lkml.kernel.org/r/87bnpmihks.fsf@x220.int.ebiederm.org
+    Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
+    Signed-off-by: Andy Lutomirski <luto@amacapital.net>
+
+commit e8a1a8606c134e3b00e6c76090e01202e9c2dd89
+Author: Eric W. Biederman <ebiederm@xmission.com>
+Date:   Mon Jul 28 16:26:53 2014 -0700
+
+    mnt: Only change user settable mount flags in remount
+    
+    Kenton Varda <kenton@sandstorm.io> discovered that by remounting a
+    read-only bind mount read-only in a user namespace the
+    MNT_LOCK_READONLY bit would be cleared, allowing an unprivileged user
+    to the remount a read-only mount read-write.
+    
+    Correct this by replacing the mask of mount flags to preserve
+    with a mask of mount flags that may be changed, and preserve
+    all others.   This ensures that any future bugs with this mask and
+    remount will fail in an easy to detect way where new mount flags
+    simply won't change.
+    
+    Change-Id: I2bc9aa8957c1b36fede031c9fe72961b2136510e
+    Cc: stable@vger.kernel.org
+    Acked-by: Serge E. Hallyn <serge.hallyn@ubuntu.com>
+    Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
+
+commit 90ff7d18a0daa5e0eaf82f612f45e9a360b8e37c
+Author: Florian Westphal <fw@strlen.de>
+Date:   Fri Sep 26 11:35:42 2014 +0200
+
+    netfilter: conntrack: disable generic tracking for known protocols
+    
+    Given following iptables ruleset:
+    
+    -P FORWARD DROP
+    -A FORWARD -m sctp --dport 9 -j ACCEPT
+    -A FORWARD -p tcp --dport 80 -j ACCEPT
+    -A FORWARD -p tcp -m conntrack -m state ESTABLISHED,RELATED -j ACCEPT
+    
+    One would assume that this allows SCTP on port 9 and TCP on port 80.
+    Unfortunately, if the SCTP conntrack module is not loaded, this allows
+    *all* SCTP communication, to pass though, i.e. -p sctp -j ACCEPT,
+    which we think is a security issue.
+    
+    This is because on the first SCTP packet on port 9, we create a dummy
+    "generic l4" conntrack entry without any port information (since
+    conntrack doesn't know how to extract this information).
+    
+    All subsequent packets that are unknown will then be in established
+    state since they will fallback to proto_generic and will match the
+    'generic' entry.
+    
+    Our originally proposed version [1] completely disabled generic protocol
+    tracking, but Jozsef suggests to not track protocols for which a more
+    suitable helper is available, hence we now mitigate the issue for in
+    tree known ct protocol helpers only, so that at least NAT and direction
+    information will still be preserved for others.
+    
+     [1] http://www.spinics.net/lists/netfilter-devel/msg33430.html
+    
+    Joint work with Daniel Borkmann.
+    
+    Signed-off-by: Florian Westphal <fw@strlen.de>
+    Signed-off-by: Daniel Borkmann <dborkman@redhat.com>
+    Acked-by: Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
+    Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+    
+    Change-Id: I9bac2de7bc1eb406c1df53510dedaba6440a9f07
+
+commit e9d8440452ea4d6b0b1a4762e61fe0f0ebe9d432
+Author: Hannes Frederic Sowa <hannes@stressinduktion.org>
+Date:   Fri Jan 23 12:01:26 2015 +0100
+
+    ipv4: try to cache dst_entries which would cause a redirect
+    
+    Not caching dst_entries which cause redirects could be exploited by hosts
+    on the same subnet, causing a severe DoS attack. This effect aggravated
+    since commit f88649721268999 ("ipv4: fix dst race in sk_dst_get()").
+    
+    Lookups causing redirects will be allocated with DST_NOCACHE set which
+    will force dst_release to free them via RCU.  Unfortunately waiting for
+    RCU grace period just takes too long, we can end up with >1M dst_entries
+    waiting to be released and the system will run OOM. rcuos threads cannot
+    catch up under high softirq load.
+    
+    Attaching the flag to emit a redirect later on to the specific skb allows
+    us to cache those dst_entries thus reducing the pressure on allocation
+    and deallocation.
+    
+    This issue was discovered by Marcelo Leitner.
+    
+    Cc: Julian Anastasov <ja@ssi.bg>
+    Signed-off-by: Marcelo Leitner <mleitner@redhat.com>
+    Signed-off-by: Florian Westphal <fw@strlen.de>
+    Signed-off-by: Hannes Frederic Sowa <hannes@stressinduktion.org>
+    Signed-off-by: Julian Anastasov <ja@ssi.bg>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+    
+    Conflicts:
+    	include/net/ip.h
+    	net/ipv4/route.c
+    
+    Change-Id: I53e4b500a4db2f5fece937a42a3bd810b2640c44
+
+commit 8297d1369feb079a7b7bc336b8d02947d61f68af
+Author: Sasha Levin <sasha.levin@oracle.com>
+Date:   Mon Dec 29 09:39:01 2014 -0500
+
+    KEYS: close race between key lookup and freeing
+    
+    commit a3a8784454692dd72e5d5d34dcdab17b4420e74c upstream.
+    
+    When a key is being garbage collected, it's key->user would get put before
+    the ->destroy() callback is called, where the key is removed from it's
+    respective tracking structures.
+    
+    This leaves a key hanging in a semi-invalid state which leaves a window open
+    for a different task to try an access key->user. An example is
+    find_keyring_by_name() which would dereference key->user for a key that is
+    in the process of being garbage collected (where key->user was freed but
+    ->destroy() wasn't called yet - so it's still present in the linked list).
+    
+    This would cause either a panic, or corrupt memory.
+    
+    Fixes CVE-2014-9529.
+    
+    Change-Id: I22bee631f32f9296f9db612793150fa05e2534b4
+    Signed-off-by: Sasha Levin <sasha.levin@oracle.com>
+    Signed-off-by: David Howells <dhowells@redhat.com>
+    Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+commit fe69b00ff1a75f0043976527079e202dfe65beef
+Author: Rabin Vincent <rabin@rab.in>
+Date:   Wed Oct 29 23:06:58 2014 +0100
+
+    tracing/syscalls: Ignore numbers outside NR_syscalls' range
+    
+    commit 086ba77a6db00ed858ff07451bedee197df868c9 upstream.
+    
+    ARM has some private syscalls (for example, set_tls(2)) which lie
+    outside the range of NR_syscalls.  If any of these are called while
+    syscall tracing is being performed, out-of-bounds array access will
+    occur in the ftrace and perf sys_{enter,exit} handlers.
+    
+     # trace-cmd record -e raw_syscalls:* true && trace-cmd report
+     ...
+     true-653   [000]   384.675777: sys_enter:            NR 192 (0, 1000, 3, 4000022, ffffffff, 0)
+     true-653   [000]   384.675812: sys_exit:             NR 192 = 1995915264
+     true-653   [000]   384.675971: sys_enter:            NR 983045 (76f74480, 76f74000, 76f74b28, 76f74480, 76f76f74, 1)
+     true-653   [000]   384.675988: sys_exit:             NR 983045 = 0
+     ...
+    
+     # trace-cmd record -e syscalls:* true
+     [   17.289329] Unable to handle kernel paging request at virtual address aaaaaace
+     [   17.289590] pgd = 9e71c000
+     [   17.289696] [aaaaaace] *pgd=00000000
+     [   17.289985] Internal error: Oops: 5 [#1] PREEMPT SMP ARM
+     [   17.290169] Modules linked in:
+     [   17.290391] CPU: 0 PID: 704 Comm: true Not tainted 3.18.0-rc2+ #21
+     [   17.290585] task: 9f4dab00 ti: 9e710000 task.ti: 9e710000
+     [   17.290747] PC is at ftrace_syscall_enter+0x48/0x1f8
+     [   17.290866] LR is at syscall_trace_enter+0x124/0x184
+    
+    Fix this by ignoring out-of-NR_syscalls-bounds syscall numbers.
+    
+    Commit cd0980fc8add "tracing: Check invalid syscall nr while tracing syscalls"
+    added the check for less than zero, but it should have also checked
+    for greater than NR_syscalls.
+    
+    Link: http://lkml.kernel.org/p/1414620418-29472-1-git-send-email-rabin@rab.in
+    
+    Fixes: cd0980fc8add "tracing: Check invalid syscall nr while tracing syscalls"
+    Signed-off-by: Rabin Vincent <rabin@rab.in>
+    Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
+    [lizf: Backported to 3.4: adjust context]
+    Signed-off-by: Zefan Li <lizefan@huawei.com>
+
+commit 24ad154686f2fd98583b7f2f29f5c74066b1f9ef
+Author: Will Deacon <will.deacon@arm.com>
+Date:   Thu Aug 16 18:14:14 2012 +0100
+
+    tracing/syscalls: Fix perf syscall tracing when syscall_nr == -1
+    
+    commit 60916a9382e88fbf5e54fd36a3e658efd7ab7bed upstream.
+    
+    syscall_get_nr can return -1 in the case that the task is not executing
+    a system call.
+    
+    This patch fixes perf_syscall_{enter,exit} to check that the syscall
+    number is valid before using it as an index into a bitmap.
+    
+    Link: http://lkml.kernel.org/r/1345137254-7377-1-git-send-email-will.deacon@arm.com
+    
+    Cc: Jason Baron <jbaron@redhat.com>
+    Cc: Wade Farnsworth <wade_farnsworth@mentor.com>
+    Cc: Frederic Weisbecker <fweisbec@gmail.com>
+    Signed-off-by: Will Deacon <will.deacon@arm.com>
+    Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
+    Signed-off-by: Zefan Li <lizefan@huawei.com>
+
+commit 618a27c08ccd15de4a47aa34cf8ca7ad90ff1334
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Mon Jun 29 13:20:18 2015 +0200
+
+    Import prima
+
+commit 186c34858dd0a6ae7830b6e5d73de46cc1d61335
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Mon Jun 29 13:11:35 2015 +0200
+
+    Fix build errors
+
+commit 56fc81bc13dbcbc6c8c2ba5c63763f7cfcf92aec
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Mon Jun 29 10:08:59 2015 +0200
+
+    mmi : Import F2fs
+
+commit ce391e2ae5e613b9369fb57771c8620519d5d7b6
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Mon Jun 29 09:58:40 2015 +0200
+
+    Last changes
+
+commit eac961a8f23f5016c410038cbbd2573b1e0ac821
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Sat Jun 27 11:50:25 2015 +0200
+
+    mdss : MMI Support
+
+commit 0aed978af37af4d29167b2ee90addba7df6e1909
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Sun Jun 28 21:12:15 2015 +0200
+
+    Revert "msm: mdss: Move splash thread functionality"
+    
+    This reverts commit fa15ca6454c90d902d1519836f377846991d83a7.
+    
+    Conflicts:
+    	drivers/video/msm/mdss/mdss_fb.c
+    	drivers/video/msm/mdss/mdss_mdp.h
+    	drivers/video/msm/mdss/mdss_mdp_overlay.c
+    	drivers/video/msm/mdss/mdss_mdp_splash_logo.c
+
+commit 2391880aaccaaf409fc479871788753c32da5fd4
+Author: Kevin Wells <kwells@motorola.com>
+Date:   Thu Oct 17 15:04:54 2013 -0400
+
+    char: diag: fix compile errors with DIAG_OVER_TTY
+    
+    fix compile errors in diag driver when CONFIG_DIAG_OVER_TTY
+    is turned off
+    
+    Change-Id: I11c559ca815b4a0c52249f008d3bb36927c6b644
+    Signed-off-by: Kevin Wells <kwells@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/575276
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Jason Hrycay <jason.hrycay@motorola.com>
+    Reviewed-by: Kevin L Wells <kewells@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+
+commit 10e73a6ad6ad42287394c671b9077f870a811695
+Author: John Michelau <w14107@motorola.com>
+Date:   Thu May 16 11:51:15 2013 -0500
+
+    ttydiag* don't enumerate in factory
+    
+    The following merge introduced a new error check that didn't consider
+    our custom TTY_MODE.
+    
+    commit 6dba7574bdc903a5191ad85f05e2d21a09c0d815
+    Author: Dixon Peterson <dixonp@codeaurora.org>
+    Date:   Fri Apr 12 18:45:16 2013 -0700
+    
+        diag: Fix concurrency issues when processing userspace inputs
+    
+    Change-Id: Iccba406efc77f5422c374e08099f4e58e2df713f
+
+commit d230dafcb6bff58733b76fc13cf0582f6f02691a
+Author: Yumin Tang (gvm346) <gvm346@motorola.com>
+Date:   Wed Apr 24 08:22:54 2013 -0500
+
+    char: diag: add motorola optimized logging
+    
+    Qcom 23231 1st CPL drop caused a conflict with optimized logging
+    implementaiton. To resolve this conflict, Qcom CPL drop is used as baseline
+    and optimized logging changes is made on top of it.
+    
+    Change-Id: I9258f1a01d5f04484d5ebd5312453868dc39c264
+    Signed-off-by: Yumin Tang (gvm346) <gvm346@motorola.com>
+    (cherry picked from commit b7f3412075c0afba7e76d2b542d973aa5645ae8b)
+    
+    Conflicts:
+    	drivers/char/diag/diagchar.h
+    	drivers/char/diag/diagchar_core.c
+    	drivers/char/diag/diagfwd.c
+    	drivers/char/diag/diagfwd_cntl.c
+
+commit e4eeb0db6f7d85d5849614390559bd3022db2959
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Sun Jun 28 18:31:55 2015 +0200
+
+    Freeze moto cam
+
+commit 0d757bdb5971fd734036fa53f21390bc9cf2e4d4
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Sat Jun 27 11:50:25 2015 +0200
+
+    mmi : MMC Support (includes)
+
+commit 2cdfda26cf9ef5b59af3a32947224801632ce622
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Sun Jun 28 17:55:29 2015 +0200
+
+    Reset MMC includes
+
+commit 9b82f94f9aec76b73945477919898242dab696c4
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Sun Jun 28 17:50:47 2015 +0200
+
+    Patch MMC
+
+commit 542be07eaebfae39dbbe1ad306c2526107d4b3fe
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Tue Feb 25 15:58:01 2014 -0600
+
+    mmc: card health reporting
+    
+    Previous card recovery improvments will hide ailing and problematic
+    cards from user space.  This commit exposes some information about
+    the health of the card via the block-level sysfs tree:
+    
+    total_requests - number of MMC command requests processed
+    total_errors - number of requests that resulted in errors
+    current_health - the current health of the card (0-100%)
+    
+    Change-Id: I09df55b0f0d0620a91b6a733b37c6f43ee4110ce
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/613548
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Reviewed-by: Jason Hrycay <jason.hrycay@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/card/block.c
+    	drivers/mmc/core/core.c
+
+commit 98fa48458ed5fb1921832583863d9bc392183305
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Wed Mar 19 15:00:42 2014 -0500
+
+    mmc: sdhci-msm: improve voltage regulator management
+    
+    Directly address the voltage management issues that were being danced-
+    around using a special flag.  This resolves problems with leaking
+    enable references and race conditions around this special flag, while
+    ensuring that we enable power at the correct voltage on resume.
+    
+    Change-Id: I804fe2b66a8de9849407d7125df8ca4a55ae9c38
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/619526
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Reviewed-by: Jason Hrycay <jason.hrycay@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/host/sdhci-msm.c
+
+commit cba7d434a34d408febd9ad33aaf8ff22cb0ef0d8
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Wed Mar 19 15:05:30 2014 -0500
+
+    mmc: sdhci: fix voltage transition recovery
+    
+    The way that sdhci was recovering from a failed voltage transition
+    did not actually work.  This commit ensures that the card actually
+    gets reset and that we restart the sequence in the right place.
+    
+    Change-Id: Ie243686d067e8e80f54ebafe168fb174e61e9b39
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/619527
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Reviewed-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+    Reviewed-by: Jason Hrycay <jason.hrycay@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+
+commit 91344bb6d9ca64ca4842f9a710f40de6eb5c3c27
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Wed Mar 19 15:07:47 2014 -0500
+
+    mmc: add sysfs knobs for card recovery logic
+    
+    This commit exports the failure and forgivness ratios to sysfs, so
+    that the values can be tweaked from user space.  Problematic hosts
+    may wish to relax the parameters under which we drop an error-
+    producing card, for example.  The defaults ratios are 10 for both.
+    
+    Change-Id: I20b4048b6870f6b62b710fb3e67b8937447cd6e6
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/619528
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/card/block.c
+
+commit db2be0557c42963472636988952fd4a3944b1253
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Mon Mar 31 10:22:25 2014 -0500
+
+    mmc: fix frequency scaling tuning logic for HS400
+    
+    The way that clock frequency scaling ramps up from DDR50 to HS400
+    causes tuning to happen a second time using the wrong configuration
+    and tuning block.  Simplify mmc_change_bus_speed() to avoid this.
+    
+    Change-Id: I0606ee9beefd7df39a91679ede98e93fb71b7779
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/622760
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    SLTApproved: Christopher Fries <c.fries@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/core/mmc.c
+
+commit ec02e23bfcfbe146dacbdde144b53bc19d4fc39f
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Fri Apr 4 08:24:00 2014 -0500
+
+    mmc: support eMMC driver strength configuration
+    
+    eMMC v4.5 specifies a method to change the card driver strengths to
+    better match board impedance requirements.  The strength types roughly
+    match those in the SD v3.00 spec, but are configured differently
+    and do not take advantage of the SDHCI implementation.  In addition,
+    eMMC v5.0 introduced a new driver strength type that has no equivalent
+    in the current SD spec.  The two functionally map as follows:
+    
+      SD   eMMC   Impedance   Relative Drive
+      B    0      50 ohms     x1  (default)
+      A    1      33 ohms     x1.5
+      C    2      66 ohms     x0.75
+      D    3      100 ohms    x0.5
+      x    4      40 ohms     x1.2
+    
+    This commit implements card drive strengths for eMMC.  Because the
+    four SD driver strength types are closely coupled to the SDHCI
+    HOST_CONTROL2 register and it has no extra, adjacent bits available
+    for the new drive strengths defined by eMMC v5.0, a new group of
+    driver types are defined.  This commit does take advantage of the
+    existing CAP bits for SD driver types A-D.
+    
+    Change-Id: Iafe4e6b756963ab18a8f8d8b7c4b02f69937ecd6
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/624280
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/core/mmc.c
+    	include/linux/mmc/card.h
+    	include/linux/mmc/host.h
+    	include/linux/mmc/mmc.h
+
+commit cc415d8493e29751556cfbfbac7df24e3a44c868
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Fri Apr 4 08:24:21 2014 -0500
+
+    mmc: sdhci-msm: eMMC driver strength support
+    
+    Implement the driver strength selection by choosing the lowest
+    strength supported by the host, the card, and the board
+    implementation (via a new device tree node).
+    
+    Change-Id: I038998ae7960c608882f79c6da4cb8abb2a77c17
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/624281
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+
+commit 74ca8ce9690be616101a1f3eb04e315f130b6944
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Thu Apr 10 15:32:50 2014 -0500
+
+    mmc: hold a wakeup source during card detection
+    
+    Previously, the PM notifier tried to flush the card detection work
+    queue before unblocking system suspend.  If the detection worker
+    is blocked for a long period due to a very slow request or a card
+    generating errors, a temporary deadlock can occur.
+    
+    This commit reverses that situation by holding a wake source while
+    card detection is actively occuring and aborting system suspend if
+    it happens to have started before the wake source was held.
+    
+    Change-Id: I3761be314118ed484165e347b5f1a69afb63354b
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/626810
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Christopher Fries <c.fries@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/core/core.c
+
+commit ecdf0c96b7479d3e02306c2ec92218f4be63cd85
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Thu Apr 17 10:19:55 2014 -0500
+
+    mmc: health and performance reporting
+    
+    Expose device health and performance attributes that are available
+    in the eMMC v5.0 and SD v3.0 specs.
+    
+    Change-Id: Ib56caac9d2cb439f24e851fc13c6e451e04f0358
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/628586
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/core/mmc.c
+    	include/linux/mmc/mmc.h
+
+commit 6264baf4765cdf554f431921eb3ed6077753f241
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Thu Apr 17 16:51:17 2014 -0500
+
+    mmc: move card statistic to host
+    
+    If a card gets dropped, the statistics are lost when the card
+    structure is freed.  Move those statistics to the host structure
+    and expose them from the host's sysfs tree.
+    
+    Change-Id: I6a012372a5ab39627fe0d394a85b67d1c7715a56
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/628750
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/card/block.c
+    	drivers/mmc/core/cd-gpio.c
+    	drivers/mmc/core/core.c
+    	drivers/mmc/host/msm_sdcc.c
+    	include/linux/mmc/host.h
+
+commit a622e5437d7aaad1a3bd7050c43e81847a01764d
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Mon Apr 21 09:35:25 2014 -0500
+
+    mmc: throttle back the bus on CRC errors
+    
+    Some host platforms have marginal bus timings.  While many cards
+    are immune to this, some are not.  This is a particular problem
+    with reads, since driver strength support is optional for some
+    UHS card types.
+    
+    If a card exhibits CRC errors, throttle back the bus speed and try
+    again.  This version implements bus throttling for UHS SD cards and
+    will drop the bus speed as far as SDR12.
+    
+    Change-Id: Ia31a14be773d86ae59e5a7e65b77e9efccd2c9af
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/629212
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Christopher Fries <c.fries@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Andrey Gostev <fga022c@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/card/block.c
+    	drivers/mmc/core/core.c
+    	drivers/mmc/core/sd.c
+
+commit d70d711dd1baff31844c46a35318bd8d617b15ef
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Mon Apr 21 09:42:42 2014 -0500
+
+    mmc: sdhci: don't spew on CRC errors
+    
+    Register dumps for CRC errors are not very useful and they spam
+    the logs.
+    
+    Change-Id: I057ba45e6a9b0ae34d997f0f9e465e9ad63f3f62
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/629213
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+
+commit c631fd2ba43b76692cc91542dc88443f35bb5f62
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Wed May 21 16:57:25 2014 -0500
+
+    mmc: don't blindly retry on timed-out flushes
+    
+    The commit "mmc: block: flush request requeue after timeout"
+    introduced logic that blindly requeues flush requests that have
+    timed-out without checking the card state or taking advantage of
+    any of the error recovery logic in the driver.  This leads to an
+    infinite loop if the card continues to time out because of how
+    flush requests are prioritized over other requests.
+    
+    This commit disables the retry except in the case of Hynix cards.
+    
+    Change-Id: Ie545de673cc6588fa193dc31f43f150db7490c90
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/638228
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    SLTApproved: Connie Zhao <czhao1@motorola.com>
+    Reviewed-by: Sergio Silva Vilela <sergiov@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/card/block.c
+    	include/linux/mmc/card.h
+
+commit 194b94275f7b01578a2cd92fb163506d0d9f5ce4
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Wed May 28 12:06:38 2014 -0500
+
+    mmc: only extend the detect wakeup source once
+    
+    If the card has been removed or has gone bad, we hold a timed wakeup
+    source to make sure that userspace handles the event before the system
+    suspends.  Only extend it once and make sure we release the runtime PM
+    hold in the bad card case.
+    
+    Change-Id: I0ccb630c376b1c6edf354c4ff446fd2aab04c97f
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/639898
+    SLTApproved: Christopher Fries <cfries@motorola.com>
+    Submit-Approved: Christopher Fries <cfries@motorola.com>
+    Tested-by: Christopher Fries <cfries@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/core/core.c
+
+commit eb8a51e17905a4492d62225e3261b2d561e52758
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Tue Jun 3 09:05:32 2014 -0500
+
+    mmc: silence a noisy driver strength log
+    
+    A driver strength debug log slipped through as KERN_INFO.
+    
+    Change-Id: Ia239d7ba5c13796f23b516564d71efbeb5588be3
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/641447
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    SLTApproved: Christopher Fries <cfries@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/core/mmc.c
+
+commit a86fa875976654d11c76b602a1bd582929dce82d
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Wed Jun 4 13:09:34 2014 -0500
+
+    mmc: throttle back high voltage cards too
+    
+    Throttle back high speed legacy cards if they experience CRC errors.
+    Also, throttle back on CRC errors on the command bus as well.  This
+    handles the case where a lower speed is actually less stable than the
+    speed we are coming from so that we can take the next step down more
+    quickly (typically SDR104->DDR50->SDR25).
+    
+    Change-Id: Ie03166853f1bd0b977719b656a72d498a3fdd218
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/641997
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    SLTApproved: Christopher Fries <cfries@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/card/block.c
+    	drivers/mmc/core/sd.c
+
+commit e6114bce7eeecff5e7d630972a387a4e3fb83b4b
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Mon Jun 30 16:11:38 2014 -0500
+
+    mmc: Sandisk eMMC quirks
+    
+    Certain Sandisk iNAND devices have a race condition during an HPI
+    that causes the card to enter the incorrect state.  Add a small
+    delay between the STOP and HPI to make sure the card doesn't miss
+    the HPI.  Make sure that, during the post-HPI mop-up process on a
+    write, we try a little harder to determine how many sectors were
+    written.  If the register read fails, double-check the card state,
+    re-send a STOP if needed, and try again.
+    
+    Also, remove an old Sandisk quirk that doesn't apply.
+    
+    Change-Id: I555226615ba1a934b94692c1489bbcbcfc27bfcb
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/650018
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Jason Hrycay <jason.hrycay@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    SLTApproved: Christopher Fries <cfries@motorola.com>
+    
+    Conflicts:
+    	include/linux/mmc/card.h
+
+commit 0a7d79374e21ca594ba1a9395842456edfa3f63b
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Mon Jul 7 09:52:27 2014 -0500
+
+    mmc: cleanup raw command logging
+    
+    The raw command logger has suffered some bit rot after being merged
+    a few times.  This commit cleans that up, hooks it into sdhci, fixes
+    some usability bugs, reduces the performance impact when disabled, and
+    makes it a bit easier to configure from internal test code.
+    
+    Change-Id: I1ca7366734af0f4a91d80470ff0ecc75b006c5aa
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/651201
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    SLTApproved: Christopher Fries <cfries@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/core/debugfs.c
+    	include/linux/mmc/host.h
+
+commit 55b50c09ffa21a450d7fc1c2a3c819132b7310ee
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Thu Jun 26 10:59:11 2014 -0500
+
+    mmc: don't rescan if the card is not there
+    
+    The sdhci driver does not implement a card detection hook and the generic
+    GPIO card detection is only used by the low-level host driver.  Check the
+    card slot status before doing a full rescan as part of card detection.
+    
+    Change-Id: I7ec3d929f5cca085414a5d3cb31476bee7b8477c
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/651942
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    SLTApproved: Christopher Fries <cfries@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/core/core.c
+
+commit 40f7f79fd7c0efaa18f366f1ff5a84a743aac53e
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Thu Jun 26 11:07:23 2014 -0500
+
+    mmc: skip extra initialization steps for known MMCs
+    
+    For devices that use eMMCs, there is no need to probe for SDIO and SD cards
+    on that host.  This commit adds a CAP to allow a host driver to skip these
+    steps.
+    
+    Change-Id: I70e26d33c762d745b55fd79b4966689b9b678d72
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/651943
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Christopher Fries <cfries@motorola.com>
+    SLTApproved: Christopher Fries <cfries@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	include/linux/mmc/host.h
+
+commit 9acb025218aaf2a26f95cf144a184821a79900a0
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Thu Jun 26 11:09:36 2014 -0500
+
+    sdhci-msm: skip SDIO and SD probing for eMMCs
+    
+    If a host is attached to a non-removable card, assume it is an eMMC and
+    avoid probing for other card types.  This saves >20ms on each probe.
+    
+    Change-Id: I8a9bcc757adf52cef4e645fb2805a4bd4884b569
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/651944
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    SLTApproved: Christopher Fries <cfries@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/host/sdhci-msm.c
+
+commit ee7b93b9adb4f4fef43c1eee00f391e420550fd6
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Thu Jun 26 11:12:28 2014 -0500
+
+    mmc: fix mmc_pm_notify error handling
+    
+    In order to actually prevent suspend, the PM notifier needs to set a flag
+    that will get through the NOTIFY_STOP_MASK.  The notifier_from_errno()
+    helper will take care of this.
+    
+    Change-Id: Idcc8d798870948b6cab1fab02482664a8afab483
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/651945
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Christopher Fries <cfries@motorola.com>
+    SLTApproved: Christopher Fries <cfries@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+
+commit a8b021b8d36bf30c73a997d046ca27a48a3c5c10
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Fri Jul 25 10:16:02 2014 -0500
+
+    mmc: sdhci-msm: shutdown clock after probe
+    
+    The sdhci-msm host driver leaves the clock running at 400kHz after probe
+    completes, but the sdhci platform driver assumes the clock is off.  When
+    the MMC core calls mmc_power_off(), the clocks are not actually disabled
+    until they are enabled once first.  In the case of a non-existant card,
+    that never happens and the clock is left running forever.
+    
+    This commit shuts the clock down at the end of probe.
+    
+    Change-Id: If7c9ee010c74435268f6b44d3c59d43e46b37db5
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/657021
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    SLTApproved: Christopher Fries <cfries@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/host/sdhci-msm.c
+
+commit 05871cf425ab3ead029900947608c0496180043c
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Wed Jul 30 11:28:25 2014 -0500
+
+    mmc: drive strength tuning
+    
+    Implement a hook to allow a host to tune its interface when the driver
+    encounters a CRC error.  This can avoid an unnecessary throttle-back of
+    the bus speed if the error was due to impedance matching rather than bus
+    timing.
+    
+    Change-Id: I87d1c7c4be9bae1c81325a162782c92a69161431
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/658199
+    Tested-by: Jira Key <jirakey@motorola.com>
+    SLTApproved: Christopher Fries <cfries@motorola.com>
+    Reviewed-by: Christopher Fries <cfries@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/core/sd.c
+    	include/linux/mmc/host.h
+
+commit 1c985184b086cbc70eb4b5d69069860d68e8c2cd
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Wed Jul 30 11:48:48 2014 -0500
+
+    sdhci-msm: implement drive strength tuning
+    
+    Implement a drive strength tuning hook that iterates through a list of
+    available drive strengths on each call.  Once the end of the list is
+    reached, return an error.  The list is provided via the device tree and
+    is currently only implemented for the CLK line.
+    
+    Change-Id: Iec4a5e617ef6724d0c7a67d85ddfad256af3161d
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/658200
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Christopher Fries <cfries@motorola.com>
+    SLTApproved: Christopher Fries <cfries@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/host/sdhci-msm.c
+
+commit 195c1642fbe27d0ea94aac0df86a9da4d8af6f96
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Fri Aug 1 15:55:56 2014 -0500
+
+    mmc: improve CRC error accounting
+    
+    Keep a running total of CRC errors encountered so that transient
+    failures are accounted for when deciding whether or not to tune
+    or throttle back the interface.
+    
+    Change-Id: I150e9e3eefccd97743a5e25fb914f2546de91cac
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/659293
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    SLTApproved: Robert Neely <wrn002@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/card/block.c
+    	drivers/mmc/core/core.c
+    	include/linux/mmc/card.h
+
+commit bb9d02ea2689d10b98163c6a48b5132deb9be87d
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Tue Aug 26 10:45:38 2014 -0500
+
+    mmc: give up on cards that fail for too long
+    
+    Some cards get into situations where commands will alternately
+    succeed and fail for long periods of time.  The 10x failure count
+    is meant to catch these, but that requires a total of 100 failures
+    which can take a long time when those failures are timeouts.  This
+    commit adds a sanity timer to this process so that we give up after
+    10 seconds of misbehavior.
+    
+    Change-Id: I3633fcc0270704aa1898db8ed886dae17d1491ec
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/666214
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    SLTApproved: Connie Zhao <czhao1@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/card/block.c
+    	include/linux/mmc/card.h
+
+commit f927847d72978e844f4af273b24d7095abd8843a
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Thu Sep 25 12:57:59 2014 -0500
+
+    mmc: release the host on throttle failure
+    
+    Don't forget to release the host when bus throttling runs out of speeds.
+    Also mute a noisy log when a platform doesn't support drive strength
+    tuning.
+    
+    Change-Id: I81baf7b6c1bae8e0546576d5b5ce6a31f96d244c
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/674529
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Russell Knize <rknize@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/host/sdhci-msm.c
+
+commit 405cbf73edd3de0688062d1882d2a88da0922ac6
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Wed Oct 8 10:53:01 2014 -0500
+
+    mmc: check for host->card in throttle_back()
+    
+    Make sure we have a valid card inserted when throttling the bus speed,
+    since it is possible for the user to pull the card while throttling
+    is active.
+    
+    Change-Id: I606b791d92dc99a7db881baad9abf7364f9dc4eb
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/677300
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/core/sd.c
+
+commit e4bd4d7d236d197affd974d302c57fd49d563489
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Thu Nov 6 15:17:13 2014 -0600
+
+    mmc: improve deKinzie during slow card removal
+    
+    If the SD card slot design is such that during removal the card detect
+    switch interrupt is handled while the card's pins are still in contact
+    with the bus, we may be tricked into thinking the card is still there.
+    This can happen if the card is removed very slowly.  This commit schedules
+    a bus rescan 500ms later and makes sure that the detect handler is called
+    even when CONFIG_MMC_PARANOID_SD_INIT is enabled.
+    
+    Change-Id: Iface57aa96ebbaea58136f793c51aa1f563aaf96
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/686994
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Christopher Fries <cfries@motorola.com>
+    SLTApproved: Christopher Fries <cfries@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/core/core.c
+
+commit 3dee9c29d1c2fc5de49364c857e1f68c0bb2be33
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Tue Nov 11 16:32:46 2014 -0600
+
+    mmc: avoid unnecessary rescans on resume
+    
+    Don't initiate card detection for non-removable cards or on empty card
+    slots that where empty when we suspended.
+    
+    Change-Id: Ie1afd7eaf33c21df25781b404c4dd61003c3d8a2
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/688335
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+    Reviewed-by: Christopher Fries <cfries@motorola.com>
+    SLTApproved: Christopher Fries <cfries@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	drivers/mmc/core/core.c
+
+commit 96f5c0be6fd48877110c940f5e21ecd17337e087
+Author: Russ W. Knize <Russ.Knize@motorola.com>
+Date:   Wed Mar 4 11:12:27 2015 -0600
+
+    mmc: sdhci: ignore interrupts when the clock is off
+    
+    If a spurious interrupt occurs while the host clock is off, just ignore
+    it to avoid cases where a register access might occur when the host's
+    peripheral clock is gated.
+    
+    Change-Id: Iacfdedadd7c615f5a4bb7cea368c08415bf2ea62
+    Signed-off-by: Russ Knize <Russ.Knize@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/721690
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Jae-Un Hong <michaelhong@motorola.com>
+    Reviewed-by: Christopher Fries <cfries@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    (cherry picked from commit c397e7f812a7eaa2476a87c79c5b9e96064ffef7)
+
+commit b22b8d7d8144904b2c9df7cad2ac2762c34f5d8e
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Sun Jun 28 16:21:36 2015 +0200
+
+    Fixes
+
+commit f970e618265132cb993d605284f4a79206b7329b
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Sun Jun 28 16:17:56 2015 +0200
+
+    Fix missmerge
+
+commit 12d825c7725e6a4221e058dd71347c0d0aeccbaf
+Author: Ravi Vembu <raviv@motorola.com>
+Date:   Thu Dec 18 23:09:42 2014 -0600
+
+    power: qpnp-charger-mmi: Remove forced USB LPM
+    
+    Remove the mechanism to force USB LPM from the Charging Driver. This
+    has been seen to cause unclocked usb access in certain scenarios where
+    the chg detection work is still running due to a quick reconnection.
+    Instead of this, just log a dropbox entry from the charging heartbeat
+    function whenever this condition happens so that we are aware of the
+    frequency of this non-fatal issue.
+    
+    Change-Id: Ie14e8673be6831ca776b9a07f8ffbc84acee9fac
+    Signed-off-by: Ravi Vembu <raviv@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/699485
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Kenneth Kessler <kennykessler@motorola.com>
+    Reviewed-by: Srihari Sathyanarayana <sriharis@motorola.com>
+    Reviewed-by: Vidyadhar Gurram <rnh786@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    SLTApproved: Connie Zhao <czhao1@motorola.com>
+
+commit 795c429a22452d78033551971c9419e9a56b846b
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Sun Jun 28 16:15:11 2015 +0200
+
+    OTG SUpport for MMi
+
+commit 45324f1f90e360bafb0b2fd02e1ae3d59c729eac
+Author: Vijayakumar Gn <vijaygn@motorola.com>
+Date:   Wed Oct 22 05:50:00 2014 -0500
+
+    netlink: Eliminate kmalloc in netlink dump operation.
+    
+    This patch is to fix Kernel panic due to racearound between
+    sock_release & sock_recvmsg path. Fix can be provided in 2 ways as
+    explained in CR. This patch will backport the LKML fix.
+    
+    LKML Commit ID: 16b304f3404f8e0243d5ee2b70b68767b7b59b2b
+    
+    Following patch stores struct netlink_callback in netlink_sock
+    to avoid allocating and freeing it on every netlink dump msg.
+    Only one dump operation is allowed for a given socket at a time
+    therefore we can safely convert cb pointer to cb struct inside
+    netlink_sock.
+    
+    Change-Id: Ic2ca6c6e77cc89209442cccf1146766ac53329d1
+    Signed-off-by: Vijayakumar Gn <vijaygn@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/680254
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Sudharsan Yettapu <sudharsan.yettapu@motorola.com>
+    
+    Conflicts:
+    	net/netlink/af_netlink.c
+
+commit 2d1ec84b6f45aa5c38152db7669ece874d97a1be
+Author: Li RongQing <roy.qing.li@gmail.com>
+Date:   Tue Nov 18 18:05:26 2014 -0800
+
+    ipv6: always set the new created dst's from in ip6_rt_copy
+    
+    [ Upstream commit 24f5b855e17df7e355eacd6c4a12cc4d6a6c9ff0 ]
+    ip6_rt_copy only sets dst.from if ort has flag RTF_ADDRCONF
+    and RTF_DEFAULT. but the prefix routes which did get installed
+    by hand locally can have an expiration, and no any flag
+    combination which can ensure a potential from does never expire,
+    so we should always set the new created dst's from.
+    This also fixes the new created dst is always expired since
+    the ort, which is created by RA, maybe has RTF_EXPIRES and
+    RTF_ADDRCONF, but no RTF_DEFAULT.
+    
+    Suggested-by: Hannes Frederic Sowa <hannes@stressinduktion.org>
+    CC: Gao feng <gaofeng@cn.fujitsu.com>
+    Signed-off-by: Li RongQing <roy.qing.li@gmail.com>
+    Acked-by: Hannes Frederic Sowa <hannes@stressinduktion.org>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+    Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+    
+    Change-Id: I5d7b2f98b2a1832492ac62b43575b3f92d3ad8d2
+    Signed-off-by: Jane Zhou <a17711@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/690804
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Yi-Wei Zhao <gbjc64@motorola.com>
+    SLTApproved: Connie Zhao <czhao1@motorola.com>
+
+commit f11a51be780c430b30f5e4cce1c54f5c70c02c59
+Author: YOSHIFUJI Hideaki / 吉藤英明 <yoshfuji@linux-ipv6.org>
+Date:   Mon Nov 17 17:23:24 2014 -0800
+
+    net/ipv6: fix race condition regarding dst->expires and dst->from.
+    
+    porting from open source code patch
+    ecd9883724b78cc72ed92c98bcb1a46c764fff21
+    ("ipv6: fix race condition regarding dst->expires and dst->from")
+    author	YOSHIFUJI Hideaki <yoshfuji@linux-ipv6.org>
+    
+    Eric Dumazet wrote:
+    | Some strange crashes happen in rt6_check_expired(), with access
+    | to random addresses.
+    |
+    | At first glance, it looks like the RTF_EXPIRES and
+    | stuff added in commit 1716a96101c49186b
+    | (ipv6: fix problem with expired dst cache)
+    | are racy : same dst could be manipulated at the same time
+    | on different cpus.
+    |
+    | At some point, our stack believes rt->dst.from contains a dst pointer,
+    | while its really a jiffie value (as rt->dst.expires shares the same area
+    | of memory)
+    |
+    | rt6_update_expires() should be fixed, or am I missing something ?
+    |
+    | CC Neil because of https://bugzilla.redhat.com/show_bug.cgi?id=892060
+    Because we do not have any locks for dst_entry, we cannot change
+    essential structure in the entry; e.g., we cannot change reference
+    to other entity.
+    To fix this issue, split 'from' and 'expires' field in dst_entry
+    out of union.  Once it is 'from' is assigned in the constructor,
+    keep the reference until the very last stage of the life time of
+    the object.
+    Of course, it is unsafe to change 'from', so make rt6_set_from simple
+    just for fresh entries.
+    
+    Reported-by: Eric Dumazet <eric.dumazet@gmail.com>
+    Reported-by: Neil Horman <nhorman@tuxdriver.com>
+    CC: Gao Feng <gaofeng@cn.fujitsu.com>
+    Signed-off-by: YOSHIFUJI Hideaki <yoshfuji@linux-ipv6.org>
+    Reviewed-by: Eric Dumazet <edumazet@google.com>
+    Reported-by: Steinar H. Gunderson <sesse@google.com>
+    Reviewed-by: Neil Horman <nhorman@tuxdriver.com>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+    
+    Change-Id: I40598de4c98588cc9771642e05b90f4a876e88f5
+    Signed-off-by: Jane Zhou <a17711@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/690798
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Yi-Wei Zhao <gbjc64@motorola.com>
+    SLTApproved: Connie Zhao <czhao1@motorola.com>
+
+commit e9c80b73ce753116832dfd13978e68366fd8feb1
+Author: Hans de Goede <hdegoede@redhat.com>
+Date:   Fri Jan 11 13:19:27 2013 +0100
+
+    cgroup: Take css_set_lock from cgroup_css_sets_empty()
+    
+    As indicated in the comment above cgroup_css_sets_empty it needs the
+    css_set_lock. But neither of the 2 call points have it, so rather then fixing
+    the callers just take the lock inside cgroup_css_sets_empty().
+    
+    Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+    Change-Id: If7aea71824f6d0e3f2cc6c1ce236c3ae6be2037b
+    Reviewed-on: http://gerrit.mot.com/676703
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Reviewed-by: Yi-Wei Zhao <gbjc64@motorola.com>
+    
+    Conflicts:
+    	kernel/cgroup.c
+
+commit 401ccb988f35d964efb22d006f7ad41a777e7122
+Author: Chris Fries <C.Fries@motorola.com>
+Date:   Tue Mar 19 14:24:32 2013 -0500
+
+    cgroup: Fix uninitialized 'it' use
+    
+    Change-Id: I3d64e2330189a6493e9cb265c02b39f6b0d9c38f
+    Signed-off-by: Chris Fries <C.Fries@motorola.com>
+    (cherry picked from commit 43d581b64bf704680811b5315b7f1c325c75a16a)
+
+commit 37e7e456f0bcbd9ce6b3b3148db4728bed908060
+Author: Jane Zhou <a17711@motorola.com>
+Date:   Mon Jun 9 15:44:47 2014 -0700
+
+    xhci: Don't hold spinlock while stopping the command ring.
+    
+    xhci_abort_cmd_ring() spins for up to five seconds while waiting for a
+    register read to show that the command ring is stopped.  It is holding
+    the xhci->spinlock with IRQs disabled, which is not good on xHCI hosts
+    that share legacy PCI interrupts with other PCI devices.
+    Make the xhci_abort_cmd_ring() simply return true if we need to wait on
+    the command ring to stop, and make xhci_cancel_cmd() drop the spinlock
+    and wait on the command ring, if necessary.
+    Based on:
+     Sarah Sharp <sarah.a.sharp@linux.intel.com>
+    http://permalink.gmane.org/gmane.linux.usb.general/81855
+    
+    Change-Id: Ib037083c49649033287fbcdb22be5b8f955872e8
+    Signed-off-by: Jane Zhou <a17711@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/643526
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Ravikumar Vembu <raviv@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    SLTApproved: Christopher Fries <cfries@motorola.com>
+    
+    Conflicts:
+    	drivers/usb/host/xhci-ring.c
+
+commit 1902d16f84bd22707b9da45af00ec8f811a7d507
+Author: Vladimir Karpovich <cvk011c@motorola.com>
+Date:   Thu Apr 25 10:36:11 2013 -0500
+
+    WM5110 bringup : Fix critical build warnings intruced by Wolfson patches.
+    
+    Change-Id: Ie0159dcfe832fd0ce0a01ba5448fa749f975d42d
+    Signed-off-by: Vladimir Karpovich <cvk011c@motorola.com>
+
+commit c5c78015c00118d9714d5bbe1bcb63f30bcf21d0
+Author: Dimitris Papastamos <dp@opensource.wolfsonmicro.com>
+Date:   Thu Feb 14 12:05:28 2013 +0000
+
+    regmap: debugfs: Add a registers `range' file
+    
+    This file lists the register ranges in the register map.  The condition
+    to split the range is based on whether the block is readable or not.
+    
+    Ensure that we lock the `debugfs_off_cache' list whenever we access
+    and modify the list.  There is a possible race otherwise between the
+    read() operations of the `registers' file and the `range' file.
+    
+    Change-Id: If334f3ef805776bca1e4559b7875522851dbbe83
+    Signed-off-by: Dimitris Papastamos <dp@opensource.wolfsonmicro.com>
+
+commit 21434fec43741a5fbb6aca45343e837224612ca4
+Author: Dimitris Papastamos <dp@opensource.wolfsonmicro.com>
+Date:   Thu Feb 14 11:33:28 2013 +0000
+
+    regmap: debugfs: Simplify calculation of `c->max_reg'
+    
+    We don't need to use any of the file position information
+    to calculate the base and max register of each block.  Just
+    use the counter directly.
+    
+    The `i = base' at the top to avoid GCC flow analysis bugs.  The
+    value of `i' can never be undefined or 0 in the if (c) { ... }.
+    
+    Change-Id: Id6080b753952f2805c3642793b7db34e1a4c70e2
+    Signed-off-by: Dimitris Papastamos <dp@opensource.wolfsonmicro.com>
+
+commit 1d298ebb9126e728b80d53e13e4886bf62662b15
+Author: Dimitris Papastamos <dp@opensource.wolfsonmicro.com>
+Date:   Mon Feb 11 10:16:53 2013 +0000
+
+    regmap: debugfs: Factor out debugfs_tot_len calc into a function
+    
+    In preparation to support the regmap debugfs ranges functionality
+    factor this code out to a separate function.  We'll need to ensure
+    that the value has been correctly calculated from two separate places
+    in the code.
+    
+    Change-Id: I035780f1099ae410240e733e6cd328642d60bdce
+    Signed-off-by: Dimitris Papastamos <dp@opensource.wolfsonmicro.com>
+
+commit b257c66c6beca400b1fb5c1b90981ddfff8a33f8
+Author: Dimitris Papastamos <dp@opensource.wolfsonmicro.com>
+Date:   Thu Feb 7 11:11:36 2013 +0000
+
+    regmap: debugfs: Optimize seeking within blocks of registers
+    
+    Optimize this so that we can better guess where to start scanning
+    from.  We know the length of the register field format, therefore
+    given the file pointer position align to the nearest register
+    field and scan from there onwards.  We round down in this calculation
+    and we let the rest of the code figure out where to start scanning
+    from.
+    
+    Change-Id: I2515e0981ef6b17f784dd0e389d0d4a13d47123c
+    Signed-off-by: Dimitris Papastamos <dp@opensource.wolfsonmicro.com>
+
+commit 76b50ae16c1c68033717626148953715937f9d40
+Author: Dimitris Papastamos <dp@opensource.wolfsonmicro.com>
+Date:   Thu Feb 7 11:02:55 2013 +0000
+
+    regmap: debugfs: Add a `max_reg' member in struct regmap_debugfs_off_cache
+    
+    We are keeping track of the maximum register as well, this will make
+    things easier for us in sharing this code with the code implementing
+    the register ranges functionality.  It also simplifies a bit the
+    calculations when looking for the relevant block:offset from within
+    the cache.
+    
+    Change-Id: I961320c4a56fdd25d74f1a6cc1b470ff22d8dbca
+    Signed-off-by: Dimitris Papastamos <dp@opensource.wolfsonmicro.com>
+
+commit ea66a419439f447a44798498ecc552e6979b8021
+Author: Dimitris Papastamos <dp@opensource.wolfsonmicro.com>
+Date:   Thu Feb 7 10:47:11 2013 +0000
+
+    regmap: debugfs: Fix reading in register field units
+    
+    At the moment, if the length of the register field format is
+    N bytes, we can only get anything meaningful back to userspace
+    by providing a buffer that is N + 2 bytes large.  Fix this
+    so we that we only need to provide a buffer of N bytes.
+    
+    Change-Id: I0e543327c9020f992fb660d36dd1d0a694aab2af
+    Signed-off-by: Dimitris Papastamos <dp@opensource.wolfsonmicro.com>
+
+commit a2494804eb4e5650d9a51a0c87e1e3f294b64658
+Author: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date:   Thu Jan 17 00:33:36 2013 +0900
+
+    regmap: debugfs: Fix seeking from the cache
+    
+    We don't want to bomb out early if we failed to get the cache any more,
+    just soldier on instead and we won't get confused and always return the
+    first block.
+    
+    Change-Id: I2c7a151084162a042918777bf0e783b9205fba70
+    Reported-by: Philipp Zabel <p.zabel@pengutronix.de
+    Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+    (cherry picked from commit f32ca3db7f0b05a88edf37ccb00e262290a213e7)
+
+commit 2be5514d2f9418d5bb364f910a0d485e8232f601
+Author: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date:   Tue Jan 8 18:47:52 2013 +0000
+
+    regmap: debugfs: Make sure we store the last entry in the offset cache
+    
+    Change-Id: I1116c42eaeb6c5af5199f6667caf0e57c8a0713c
+    Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+    (cherry picked from commit e8d6539c8a94b88fc7ca5d6bdd9eeb0e64b434e4)
+
+commit a0becd17b6fdb9c52e534d735e750b9013490aaa
+Author: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date:   Tue Jan 8 13:44:50 2013 +0000
+
+    regmap: debugfs: Ensure a correct return value for empty caches
+    
+    This should never happen in the real world.
+    
+    Change-Id: If0a37f28577d7d6b9d91dcb4579b8a3ba8d0787c
+    Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+    (cherry picked from commit 5bd9f4bb34c16b62725b9486a290c01b1fdfec1c)
+
+commit 76535627368c60e830e14dfc66c9884ebd3bcb1f
+Author: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date:   Tue Jan 8 13:35:58 2013 +0000
+
+    regmap: debugfs: Discard the cache if we fail to allocate an entry
+    
+    Rather than trying to soldier on with a partially allocated cache just
+    throw the cache away and pretend we don't have one in case we can get a
+    full cache next time around.
+    
+    Change-Id: If5260cb737b9857003bbd18a1cec245590897b14
+    Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+    (cherry-pick of commit 95f971c745a343255744703dc4ae8d78508519cc)
+
+commit 5a09b77082ac5878848de99407dd1929739e97cc
+Author: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date:   Tue Dec 11 01:24:29 2012 +0900
+
+    regmap: debugfs: Cache offsets of valid regions for dump
+    
+    Avoid doing a linear scan of the entire register map for each read() of
+    the debugfs register dump by recording the offsets where valid registers
+    exist when we first read the registers file. This assumes the set of
+    valid registers never changes, if this is not the case invalidation of
+    the cache will be required.
+    
+    This could be further improved for large blocks of contiguous registers
+    by calculating the register we will read from within the block - currently
+    we do a linear scan of the block. An rbtree may also be worthwhile.
+    
+    Change-Id: Ib4b2217fd273a3ab3add258d2004770a837b2ea7
+    Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+    (cherry picked from commit 6e9912eed07cb60abea1ec675d6a4f99e03122db)
+    
+    Conflicts:
+    	drivers/base/regmap/internal.h
+
+commit 4cc20d105cac6a9620fff73dc506ef811a90325a
+Author: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date:   Sun Dec 9 17:20:10 2012 +0900
+
+    regmap: debugfs: Factor out initial seek
+    
+    In preparation for doing things a bit more quickly than a linear scan
+    factor out the initial seek from the debugfs register dump.
+    
+    Change-Id: I876027dbb31cb81c92eec66375f88e850be357b4
+    Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+    (cherry picked from commit e587fa63ed1ad9b07aae38ba860e5220b7da55c4)
+
+commit dfb3a5f971d15558fe41d66fe66c7b55202cc63f
+Author: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date:   Tue Dec 11 01:14:11 2012 +0900
+
+    regmap: debugfs: Avoid overflows for very small reads
+    
+    If count is less than the size of a register then we may hit integer
+    wraparound when trying to move backwards to check if we're still in
+    the buffer. Instead move the position forwards to check if it's still
+    in the buffer, we are unlikely to be able to allocate a buffer
+    sufficiently big to overflow here.
+    
+    Change-Id: I88b4b533a2a5ab6bc40d1eae137b277db395b2d5
+    Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+    (cherry picked from commit 25f8e7ffe2502cff3f4c8364f6e33792d2993aca)
+
+commit c978a589b5d5fd76838c7b4910640e46e614f4fd
+Author: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+Date:   Mon Mar 17 16:13:56 2014 -0500
+
+    regmap: Cache register and value sizes for debugfs
+    
+    No point in calculating them every time.
+    
+    Conflicts:
+    
+    	drivers/base/regmap/regmap-debugfs.c
+    
+    Change-Id: Ic3bf9bfb212f5b70453b2833b0386ce7eaa83f8d
+    Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+    (cherry picked from commit 2234664af716dabd8f1fb1450d594d71cadc80d5)
+    
+    Conflicts:
+    	drivers/base/regmap/internal.h
+    	drivers/base/regmap/regmap-debugfs.c
+
+commit 8d10eaab0b41af0ba4f6a8bc70a7a3fac560a1c7
+Author: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+Date:   Mon Mar 17 15:48:47 2014 -0500
+
+    block: partition: apanic_mmc hook
+    
+    apanic_mmc needs to identify its own partition and finish its
+    initialization as early as possible; so that, it can catch
+    the panic in early system init stage.
+    
+    It's ported from the following patch:
+    
+    * (CR) apanic_mmc: support writing panic data to
+      raw MMC partition
+      Reviewed-on: http://gerrit.pcs.mot.com/342283
+    
+    Although it's not an ideal solution, it's the best we have.
+    
+    Change-Id: I5425d0ae4ac8ac25bcfa9b27ba1b38b3c0e23f29
+    Signed-off-by: Yi-wei Zhao <gbjc64@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/503913
+    Tested-by: Jira Key <JIRAKEY@motorola.com>
+    Reviewed-by: Jason Hrycay <jason.hrycay@motorola.com>
+    (cherry picked from commit 7a4508c1c18497e57524931509133d61efce5fb1)
+    
+    Conflicts:
+    	block/partition-generic.c
+
+commit 8f5b78e18a2bca714cbc23765fc1b81dd4bb99d4
+Author: Heiko Carstens <heiko.carstens@de.ibm.com>
+Date:   Wed Jul 2 15:22:37 2014 -0700
+
+    fs/seq_file: fallback to vmalloc allocation
+    
+    There are a couple of seq_files which use the single_open() interface.
+    This interface requires that the whole output must fit into a single
+    buffer.
+    
+    E.g.  for /proc/stat allocation failures have been observed because an
+    order-4 memory allocation failed due to memory fragmentation.  In such
+    situations reading /proc/stat is not possible anymore.
+    
+    Therefore change the seq_file code to fallback to vmalloc allocations
+    which will usually result in a couple of order-0 allocations and hence
+    also work if memory is fragmented.
+    
+    For reference a call trace where reading from /proc/stat failed:
+    
+      sadc: page allocation failure: order:4, mode:0x1040d0
+      CPU: 1 PID: 192063 Comm: sadc Not tainted 3.10.0-123.el7.s390x #1
+      [...]
+      Call Trace:
+        show_stack+0x6c/0xe8
+        warn_alloc_failed+0xd6/0x138
+        __alloc_pages_nodemask+0x9da/0xb68
+        __get_free_pages+0x2e/0x58
+        kmalloc_order_trace+0x44/0xc0
+        stat_open+0x5a/0xd8
+        proc_reg_open+0x8a/0x140
+        do_dentry_open+0x1bc/0x2c8
+        finish_open+0x46/0x60
+        do_last+0x382/0x10d0
+        path_openat+0xc8/0x4f8
+        do_filp_open+0x46/0xa8
+        do_sys_open+0x114/0x1f0
+        sysc_tracego+0x14/0x1a
+    
+    Signed-off-by: Heiko Carstens <heiko.carstens@de.ibm.com>
+    Tested-by: David Rientjes <rientjes@google.com>
+    Cc: Ian Kent <raven@themaw.net>
+    Cc: Hendrik Brueckner <brueckner@linux.vnet.ibm.com>
+    Cc: Thorsten Diehl <thorsten.diehl@de.ibm.com>
+    Cc: Andrea Righi <andrea@betterlinux.com>
+    Cc: Christoph Hellwig <hch@infradead.org>
+    Cc: Al Viro <viro@zeniv.linux.org.uk>
+    Cc: Stefan Bader <stefan.bader@canonical.com>
+    Cc: <stable@vger.kernel.org>
+    Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+    Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+    Git-commit: 058504edd02667eef8fac9be27ab3ea74332e9b4
+    Git-repo: git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+    Change-Id: Iad795a92fee1983c300568429a6283c48625bd9a
+    Signed-off-by: Jeremy Gebben <jgebben@codeaurora.org>
+    (cherry picked from commit e53d4d1f71675c007e2cb25ed9beee3b37b18e0f)
+    
+    Conflicts:
+    
+    	fs/seq_file.c
+    
+    Change-Id: Ibbf2407f535e9a57015eaafe23d5522a0e51967c
+    Reviewed-on: http://gerrit.mot.com/677369
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+
+commit 3ccfe94f9ccc122e0e324c677a556f3e366c946e
+Author: Al Viro <viro@ZenIV.linux.org.uk>
+Date:   Tue Nov 19 01:20:43 2013 +0000
+
+    seq_file: always clear m->count when we free m->buf
+    
+    Once we'd freed m->buf, m->count should become zero - we have no valid
+    contents reachable via m->buf.
+    
+    Reported-by: Charley (Hao Chuan) Chu <charley.chu@broadcom.com>
+    Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
+    Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+    (cherry picked from commit 801a76050bcf8d4e500eb8d048ff6265f37a61c8)
+    Change-Id: I26731d8eb5e38b07dce9f6831480c57e97861891
+    Reviewed-on: http://gerrit.mot.com/677368
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+
+commit 286a7ac1834b94a699a9bf525a26aa81920cbfcf
+Author: Shengzhe Zhao <a18689@motorola.com>
+Date:   Mon Dec 1 15:42:57 2014 -0800
+
+    msm: kgsl: debug kgsl free pages issue.
+    
+    This change add some debug code to debug free page issue, it
+    suppose that the issue is caused by free already freed page.
+    so when issue happens, will dump sg content to check the
+    asumption.
+    
+    Change-Id: Ic0a08471e9ed613199814a09d4f1b4fa0a94c48e
+    Signed-off-by: Shengzhe Zhao <a18689@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/693801
+    Tested-by: Jira Key <jirakey@motorola.com>
+    SLTApproved: Connie Zhao <czhao1@motorola.com>
+    Reviewed-by: Patrick Auchter <auchter@motorola.com>
+    Reviewed-by: Stephen Rossbach <rossbach@motorola.com>
+    Reviewed-by: Fred Fettinger <fettinge@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+
+commit 98ec22acef007280a2aa5c166e1636e5b28ecefa
+Author: Yuan Jiangli <jlyuan@motorola.com>
+Date:   Tue Sep 17 11:19:38 2013 +0800
+
+    spmi:pmic-arb: Return IRQ_NONE for invalid spmi interrupt
+    
+    We have seen kernel panic during spmi_pmic_arb_probe said "unknown peripheral
+    id 0x0". So need to return IRQ_NONE for invalid spmi interrupt.
+    
+    Change-Id: I9947c71c40c6c83809806710acbd1641a856dec2
+    Signed-off-by: Yuan Jiangli <jlyuan@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/566944
+    Reviewed-by: Zhi-Ming Yuan <a14194@motorola.com>
+    Reviewed-by: Klocwork kwcheck <klocwork-kwcheck@sourceforge.mot.com>
+    Reviewed-by: Check Patch <CHEKPACH@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Reviewed-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	drivers/spmi/spmi-pmic-arb.c
+
+commit 2b001c0cfc85fdebd3070b0519abee77122beac7
+Author: Yuan Jiangli <jlyuan@motorola.com>
+Date:   Tue Sep 17 16:59:12 2013 +0800
+
+    spmi:pmic-arb: Requesting irq after controller is registered.
+    
+    Requesting irq will enable the irq and may cause problem if the controller is
+    not ready. For example, if there is a spmi irq comming right after request_irq
+    then there will be no one to ack the irq, since the mask/umask functions haven't
+    been registered.
+    So move the request_irq to the end of the probe() to avoid such issue.
+    
+    Change-Id: I5d89dd150bb3df33d93e0108da750c868000c554
+    Signed-off-by: Yuan Jiangli <jlyuan@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/566969
+    Reviewed-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+    Reviewed-by: Kenneth Kessler <w65789@motorola.com>
+    Reviewed-by: Klocwork kwcheck <klocwork-kwcheck@sourceforge.mot.com>
+    Reviewed-by: Check Patch <CHEKPACH@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Reviewed-by: Zhi-Ming Yuan <a14194@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+
+commit 4d160de58c8c2b362a84d93e1db4faeb2fc31f26
+Author: Prabhu Annabathula <prabhu.annabathula@motorola.com>
+Date:   Mon Jun 23 16:12:35 2014 -0500
+
+    ASoC: msm: add control to set the none topology port
+    
+    AOV needs LPASS to behave in pass through mode when audio capture is
+    started over the i2S port. Added control to set the port id which
+    has to be always forced to use none topology which disables all the
+    processing in LPASS, making it pass through.
+    
+    Change-Id: I3c4519690e1c0a665c9e7d022f2b0c3286486b1c
+    Signed-off-by: Prabhu Annabathula <prabhu.annabathula@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/648092
+    Tested-by: Jira Key <jirakey@motorola.com>
+    SLTApproved: Christopher Fries <cfries@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Reviewed-by: Joseph Dwyer <josephdwyer@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+
+commit 5aada7760a60d0ff784e97d7946905f87ae78022
+Author: Mark Reed <mreed1@motorola.com>
+Date:   Fri Aug 16 13:44:28 2013 -0500
+
+    qseecomm: fix issue with printing fail codes.
+    
+    Motorola is validating firmware images with HAB algo. If this
+    fails, we can print useful debug with a trustzone call. Also
+    this call is now exported in our sec_core driver.
+    
+    Change-Id: Ib34beda039e4ae0c180679b85d47afbf829ec305
+    Signed-off-by: Mark Reed <mreed1@motorola.com>
+
+commit d721d68d1f5fdd2b708732a473032f5311bce8b9
+Author: Jim Morikuni <e43490@motorola.com>
+Date:   Tue Dec 11 16:02:53 2012 -0600
+
+    misc: qseecom: add Motorola security logging
+    
+    Enables logging of Motorola HAB authentication failures which
+    otherwise cannot occur since PIL auth services are in TZ.
+    
+    Conflicts:
+    
+    	drivers/misc/qseecom.c
+    
+    Change-Id: Ib0ce89928ebbca828e6331269370e24d52987595
+    Change-Id: Id8c443a3e4be0a41a94a4199036f7ecab6d229af
+    Reviewed-on: http://gerrit.pcs.mot.com/504293
+    Tested-by: Jira Key <JIRAKEY@motorola.com>
+    Reviewed-by: Jason Hrycay <jason.hrycay@motorola.com>
+    Reviewed-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+    Reviewed-by: Mark Reed <mreed1@motorola.com>
+    (cherry picked from commit f0410f2b294a9c1bc9a6517a2e2dd2e624df00df)
+    Signed-off-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+
+commit 66d62db169b84dc932c062b532efa3dc3a8f00b1
+Author: Yuanyuan Zhong <zyy@motorola.com>
+Date:   Mon Jul 7 16:37:19 2014 -0500
+
+    msm_serial_hs: kill rx tasklet in set_termios
+    
+    In set_termios, the variable rx_bam_inprogress is not protected by
+    any lock so it can't guarantee the sps operation in rx tasklet is
+    finished. Kill rx tasklet before sps operation in set_termios.
+    
+    Change-Id: Ie086393d2bbb9dd4f18910253966537bdec1e8d8
+    Signed-off-by: Yuanyuan Zhong <zyy@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/651326
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    SLTApproved: Connie Zhao <czhao1@motorola.com>
+    
+    Conflicts:
+    	drivers/tty/serial/msm_serial_hs.c
+
+commit 806808d1c24d40770e62739671141e494d4fff2d
+Author: Lianwei Wang <a22439@motorola.com>
+Date:   Wed Jun 18 17:08:49 2014 -0700
+
+    msm_serial_hs: release wakelock after port shutdown
+    
+    Release the wakelock after port shutdown to avoid any wakelock stuck
+    issue.
+    
+    Change-Id: Id1238f9772be027f3dd6e34220d3da4fb99fce3e
+    Signed-off-by: Lianwei Wang <a22439@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/646812
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Ravi Chebolu <arc095@motorola.com>
+    Reviewed-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    SLTApproved: Christopher Fries <cfries@motorola.com>
+    
+    Conflicts:
+    	drivers/tty/serial/msm_serial_hs.c
+
+commit 87fd00e3f383d7562ec0bc6b497d43e81a6dfe59
+Author: Pratik Kamdar <djc637@motorola.com>
+Date:   Wed Mar 20 22:36:57 2013 -0500
+
+    msm_serial_hs: Add support for 2Mbps UART rate
+    
+    - Needed by ADSPD to communicate with DSP
+    
+    Change-Id: Idff5d73c918e979ba432c08b59b17fc55ca44aa5
+    Signed-off-by: Pratik Kamdar <djc637@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/526067
+    SLT-Approved: Gerrit Code Review <gerrit-blurdev@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Gregory Meiste <w30289@motorola.com>
+    Reviewed-by: Boris Veselov <abv004@motorola.com>
+    Reviewed-by: Klocwork kwcheck <klocwork-kwcheck@sourceforge.mot.com>
+    Reviewed-by: Patrick Gries <a11401@motorola.com>
+    Reviewed-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    (cherry picked from commit 3246a708dc6e33dc415c824131a91b2270ab502e)
+
+commit 4ea0250e1060f332c2d8ebd1fa7e71652ea02366
+Author: Patrick Auchter <wpa722@motorola.com>
+Date:   Wed Mar 12 09:27:00 2014 -0500
+
+    msm: kgsl: send snapshot dump file to dropbox
+    
+    The device->snapshot doesn't contain all the data which is collected as
+    part of the snapshot.  Send the path to the snapshot dump file which will
+    contain all the data to dropbox.
+    
+    Change-Id: I56cbe1e37cd8229d5a6fd2a419f620e667e3d386
+    Signed-off-by: Patrick Auchter <wpa722@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/617143
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Jared Suttles <jsuttles@motorola.com>
+    Reviewed-by: Fred Fettinger <fettinge@motorola.com>
+    Reviewed-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+    Reviewed-by: Stephen Rossbach <rossbach@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+
+commit 09846535a293b12d7eed4e2868caed284871beb5
+Author: Patrick Auchter <wpa722@motorola.com>
+Date:   Fri Aug 16 14:04:42 2013 -0500
+
+    msm: kgsl: Create GPU FT report dropbox entries
+    
+    These dropbox entries will contain the fault type as well as the process
+    name which triggered fault tolerance and details about the fault and
+    whether the recovery was successful or not.
+    
+    Change-Id: Ifc46115e6217d60ecd675c1417bec6ac1045ca1d
+    Signed-off-by: Patrick Auchter <wpa722@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/559443
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Fred Fettinger <fettinge@motorola.com>
+    Reviewed-by: Stephen Rossbach <ccpm12@motorola.com>
+    SLTApproved: Stephen Rossbach <ccpm12@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+
+commit ae62050f6de06cd27f67b2e99fa3a35ba08942a3
+Author: Yuanyuan Zhong <zyy@motorola.com>
+Date:   Mon Aug 11 09:33:48 2014 -0500
+
+    msm: kgsl: reduce memory for mem_entry debugfs
+    
+    A process may have many kgsl mem entries in use. Outputing all of them
+    as a single debugfs seq_file record may need to kmalloc 4-order or even
+    higher-order pages.
+    Change the kgsl mem_entry debugfs functions to output one entry at a
+    time. Then the seq_file only need to kmalloc one page.
+    
+    Change-Id: I72f196af0d774371a932186259762aa60a8009e4
+    Signed-off-by: Yuanyuan Zhong <zyy@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/662982
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Fred Fettinger <fettinge@motorola.com>
+    Reviewed-by: Patrick Auchter <auchter@motorola.com>
+    Reviewed-by: Stephen Rossbach <rossbach@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    SLTApproved: Connie Zhao <czhao1@motorola.com>
+
+commit b2617d03f680eaf359b8ea0c06be67c92b1e3587
+Author: Fred Fettinger <fred.fettinger@motorola.com>
+Date:   Wed Apr 16 18:13:18 2014 -0500
+
+    msm: kgsl: process_private: remove use of kref_get_unless_zero
+    
+    kref_get_unless_zero() is unsafe since if the refcount is zero, and
+    kgsl_driver.process_mutex is no longer locked by
+    kgsl_destroy_process_private(), the kgsl_process_private has been freed
+    and should not be used. Even checking if the refcount=0 is unsafe after
+    kfree() is called on the process_private. This can be demonstrated
+    easily with CONFIG_SLUG_DEBUG=y.
+    
+    Instead, change kgsl_process_private_get() to find the process_private
+    in the process_list and increment the refcount while the process_mutex
+    is held. Since kgsl_process_private_put also holds this mutex while
+    destroying process_private, this ensures that the process_private is
+    not used after it is freed.
+    
+    Change-Id: I73b1949d1162b4569accdc754cb5d6fac348a2d9
+    Signed-off-by: Fred Fettinger <fred.fettinger@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/627848
+    SLTApproved: Slta Waiver <sltawvr@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Patrick Auchter <auchter@motorola.com>
+    Reviewed-by: Stephen Rossbach <rossbach@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+
+commit c6ea37fb2133a85c6062fe76586c6a3884970400
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Sun Jun 28 13:18:00 2015 +0200
+
+    Import Moto CAM
+
+commit c7d22ffee4eddec48f46ffddeec8afea3c69ad0c
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Sun Jun 28 13:17:47 2015 +0200
+
+    Fix
+
+commit 069228f3d35705c1161bbad4332309cd2f565073
+Author: Jason Hrycay <jason.hrycay@motorola.com>
+Date:   Tue Dec 9 13:12:07 2014 -0800
+
+    qup_i2c: translate controller errors to real ones
+    
+     Set meaningful error values for the timeout failure case in
+     qup_i2c_xfer.  The status registers from the controller were being
+     returned to the caller which are meaningless to them. This can lead to
+     kernel crashes when those values are used with PTR_ERR macros which
+     can then fail the IS_ERR conditions checked against the
+    
+     propagated from  http://gerrit.mot.com/#/c/534676/
+    
+    Change-Id: Id170e994a0eccf1e3a081dd33b62b7ac0bd56d42
+    Signed-off-by: Jiangli Yuan <jlyuan@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/696400
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Yi-Wei Zhao <gbjc64@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    Reviewed-by: David Ding <dding@motorola.com>
+    SLTApproved: Connie Zhao <czhao1@motorola.com>
+
+commit 749359624c17b008c63a0e46c8561232917dfaca
+Author: Igor Kovalenko <cik009@motorola.com>
+Date:   Wed Jul 9 16:20:16 2014 -0500
+
+    i2c: more DT control for recovery
+    
+    Change definition of qcom,extended_recovery to a bitfield.
+    
+    Some devices do not have multimaster use cases, and when we get
+    i2c errors the master bit in the status is cleared, which prevents
+    recovery sometimes when it could help. This can't be avoided for
+    actual multimaster use cases, but we can have more "robust"
+    recovery for simpler devices, if qcom,extended_recovery flag has
+    bit 1 set. Old meaning (do extra 1-clock pulse) is enabled by
+    bit 0, so usable values now are 0 (default), 1, 2 and 3.
+    
+    Change-Id: Icc0d12520f43b6c481c1b7d12c789555782a9b2c
+    Signed-off-by: Igor Kovalenko <cik009@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/652183
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Lian-Wei Wang <lian-wei.wang@motorola.com>
+    Reviewed-by: Connie Zhao <czhao1@motorola.com>
+    SLTApproved: Connie Zhao <czhao1@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	Documentation/devicetree/bindings/i2c/i2c-qup.txt
+    	arch/arm/mach-msm/include/mach/board.h
+    	drivers/i2c/busses/i2c-qup.c
+
+commit 08dffb1aed4df86eba6d48e632b26db3dbed0dfc
+Author: Igor Kovalenko <cik009@motorola.com>
+Date:   Tue Jul 8 11:17:33 2014 -0500
+
+    i2c: adjust logic for bus recovery
+    
+    Original attempt to do I2C bus recovery selectively failed
+    to account for the fact that ISR (indicating i2c error)
+    may clear the I2C status. Also the error interrupt may not
+    even come when a slave is misbehaving. If the interrupt
+    does come, it will save the status into dev->err, and if
+    it does not, we read the status directly, so we can always
+    get the flags to tell us if we're the master of the bus.
+    Recovery is only performed when we're the master, or no
+    one else claims to be. Even if there is no indication of
+    I2C error, we still try because a slave may misbehave and
+    just hold the bus, and recovery may get it out of the funk.
+    
+    Also close the "gap" in the ISR between clearing the status
+    and saving the status into dev->err, which may lead to a
+    race between ISR and transfer, and skip bus recovery as
+    result.
+    
+    Change-Id: Ic5045730f9d7b893acae8be3153b0bc435120ab1
+    Signed-off-by: Igor Kovalenko <cik009@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/651493
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Lian-Wei Wang <lian-wei.wang@motorola.com>
+    Reviewed-by: Guo-Jian Chen <a21757@motorola.com>
+    SLTApproved: Connie Zhao <czhao1@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	drivers/i2c/busses/i2c-qup.c
+
+commit a82dee97b38850f6f5c08630077ac794fcdc3e7a
+Author: Igor Kovalenko <cik009@motorola.com>
+Date:   Tue Jun 17 15:48:15 2014 -0500
+
+    i2c: qup: selective bus recovery
+    
+    In multimaster configurations we should not attempt to recover
+    bus just because we got a timeout. First, timeout may happen
+    for reasons that have nothing to do with I2C, and there may be
+    another master talking.
+    
+    Check the bus status and only do recovery when we're the master,
+    no one else claims the mastership and there is some i2c error
+    actually indicated in the status.
+    
+    Also remove pointless check for driver status in the IRQ handler
+    since i2c interrupts are only enabled inside the xfer and we
+    always have clocks on at that time.
+    
+    Change-Id: I064cf83ec1e5d4bc0832e532403a06f168b671dd
+    Signed-off-by: Igor Kovalenko <cik009@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/648614
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    SLTApproved: Sanjay Dhar <sanjaydhar@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	drivers/i2c/busses/i2c-qup.c
+
+commit d7c1fe7772dc32355147319c90598d90ee5ca484
+Author: Lianwei Wang <a22439@motorola.com>
+Date:   Sun Jul 6 12:25:00 2014 -0700
+
+    qup-i2c: panic on extended recovery failed
+    
+    Trigger a kernel panic if continuous recovery failed on extended
+    recovery enabled I2C bus.
+    
+    Change-Id: I35f7b6e53ff716bdbcf5fea2e235d249326bc5bd
+    Signed-off-by: Lianwei Wang <a22439@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/651092
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Guo-Jian Chen <a21757@motorola.com>
+    Reviewed-by: Yi-Wei Zhao <gbjc64@motorola.com>
+    Reviewed-by: Connie Zhao <czhao1@motorola.com>
+    SLTApproved: Connie Zhao <czhao1@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+
+commit 175d053ad83f72dfa334756f0e53955a2ff3ec1a
+Author: Vladimir Karpovich <cvk011c@motorola.com>
+Date:   Fri Jun 20 17:06:30 2014 -0500
+
+    qup_i2c: Add 1-clk pulse recovery
+    
+    If the transaction is corrupted in such a way that the host
+    and device are out-of-sync, then the device can output
+    it's ACK signal indefinitely, and the 9-cycle recovery method
+    will clear the ACK on the first cycle, and then force a new
+    ACK on the 9th cycle, allowing the failure to continue with
+    DATA driven low.To fix this issue the 1-cycle recovery method
+    added to recover the bus, after the 9-cycle recovery method failed.
+    This is a workaround for specific LM3642 HW problem and may not
+    work with other slave devices. To enable the workaround set
+    qcom,extended-recovery device tree flag to 1.
+    
+    Change-Id: I936c16c925ed2bcabfbf49b2590665262235b8e0
+    Signed-off-by: Vladimir Karpovich <cvk011c@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/647691
+    Tested-by: Jira Key <jirakey@motorola.com>
+    SLTApproved: Christopher Fries <cfries@motorola.com>
+    Reviewed-by: Igor Kovalenko <igork@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    
+    Conflicts:
+    	Documentation/devicetree/bindings/i2c/i2c-qup.txt
+    	arch/arm/mach-msm/include/mach/board.h
+    	drivers/i2c/busses/i2c-qup.c
+
+commit 76c79a3481bc3556762fb59274b6a4dc507481db
+Author: Jason Hrycay <jason.hrycay@motorola.com>
+Date:   Thu Dec 13 15:01:22 2012 -0600
+
+    qup_i2c: report error when fail to reset
+    
+    If the I2C bus fails to reset, it currently is reported as success and
+    there is no indication in the logs of the failure. Fix this by using the
+    return code from the reset call.
+    
+    Change-Id: I79d65e6f9b60a21d0b7173ce3f29f55889e8f28a
+    Signed-off-by: Jason Hrycay <jason.hrycay@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/505391
+    Tested-by: Jira Key <JIRAKEY@motorola.com>
+    Reviewed-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+    Reviewed-by: James Wylder <jwylder1@motorola.com>
+    (cherry picked from commit ca2c7a3483ad78a4e3fa1f3366505b1da2220249)
+
+commit 1fbe46249e497f6bead6cd8975519ad0c42bde53
+Author: Ravi Vembu <a18394@motorola.com>
+Date:   Fri May 9 11:25:35 2014 -0500
+
+    usb: dwc3: Allow rapid charging when usb is secure
+    
+    If /sys/class/android_usb/android0/secure is set (when the device is
+    security locked), usb enumeration is disabled, hence limiting charging
+    to 100mA which does not effectively charge the device. Allow the device
+    to charge at bMaxPower as soon as SDP_CHARGER detection is complete, by
+    notifying the controller/otg driver when the secure attribute is set.
+    Remove unconditonal charging when the secure attribute is cleared.
+    
+    Change-Id: I3a446efbf88c61c2e2b44066b5f549f88afe2e41
+    Signed-off-by: Ravi Vembu <a18394@motorola.com>
+    Reviewed-on: http://gerrit.mot.com/634644
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Ravikumar Vembu <raviv@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Jason Hrycay <jason.hrycay@motorola.com>
+    Reviewed-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+    SLTApproved: Connie Zhao <czhao1@motorola.com>
+    
+    Conflicts:
+    	drivers/usb/dwc3/core.h
+    	drivers/usb/dwc3/dwc3_otg.h
+
+commit 05c25e8f6364edc5f017280ff69cb1da1da5c344
+Author: Oleg Klementiev <r46323@motorola.com>
+Date:   Fri Mar 29 11:00:04 2013 -0500
+
+    Bluetooth: handle TX power level read
+    
+    This kernel change is required to read the Tx Power Level for
+    a remote BT device. The code receives MGMT_OP_READ_TX_POWER_LEVEL
+    opcode from BlueZ and forwards it as HCI_OP_READ_TX_POWER to
+    the Bluetooth hardware. Once the cmd_complete event is received,
+    we read the Tx level and send it back to BlueZ.
+    
+    Change-Id: Ia2043e6d30f80f566f2864871388acb09a93bccd
+    Signed-off-by: Oleg Klementiev <r46323@motorola.com>
+    Change-Id: Iade5e19284151a951a89237af4c00fcadc690321
+    Reviewed-on: http://gerrit.pcs.mot.com/528408
+    SLT-Approved: Slta Waiver <sltawvr@motorola.com>
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Check Patch <CHEKPACH@motorola.com>
+    Reviewed-by: LieJun Tao <L.J.Tao@motorola.com>
+    Reviewed-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    (cherry picked from commit 52e3714aa6e4cfbd7b2b704eaefc053d3cf7ad25)
+
+commit 3997238cf7de0657e23c5f562c174d0289697bee
+Author: Vishwanath K M <a21174@motorola.com>
+Date:   Thu Feb 21 19:54:05 2013 +0530
+
+    Bluetooth: Pick the RSS value from advertising event
+    
+    As per the BT Core Spec v4.0 RSS value is part of advertising
+    event, pick the value from advertising event and pass the same
+    to user space. This is generally required to calculate signal
+    strength of sensor. This was already done for BREDR but was
+    missing for BLE devices, this commit fixes the same.
+    
+    Change-Id: I28cf5005699604c3495ead8c63cae91599adf013
+    Signed-off-by: Vishwanath K M <a21174@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/519927
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: LieJun Tao <L.J.Tao@motorola.com>
+    Reviewed-by: Klocwork kwcheck <klocwork-kwcheck@sourceforge.mot.com>
+    Reviewed-by: Check Patch <CHEKPACH@motorola.com>
+    Reviewed-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    (cherry picked from commit 3bcd32405e059bfd93a1fa2ebb302abe285ad5f1)
+
+commit 4ed4f45c5f17699f2289491d5990656133bf67b6
+Author: Ashish Kumar Sharma <rjmc87@motorola.com>
+Date:   Fri Jul 16 00:52:20 2010 +0530
+
+    Bluetooth: implement S3 Profile
+    
+    To avoid BT-WiFi coexistence issues, phone will reject
+    EV3 packet types.Code Logic added to reject EV3 packet
+    type when eSCO Connection request is from Carkit/Headset,
+    hence headset will connect SCO with HV3 packet.Phone will
+    connect devices with eSCO only if 2EV3 packet type is
+    supported and for other SCO will be connected. This commit
+    is propagated from (CR)
+    
+     - Original JIRA (CR) Packet optimization for BT
+     - Feature ID 33099
+    
+    Change-Id: Icf2ea0589b4364a0a3b1ae33fb724e4fcec36255
+    Reviewed-on: http://gerrit.pcs.mot.com/317610
+    Tested-by: Jira Key <JIRAKEY@motorola.com>
+    Reviewed-by: Check Patch <CHEKPACH@motorola.com>
+    Reviewed-by: Klocwork kwcheck <klocwork-kwcheck@sourceforge.mot.com>
+    Reviewed-by: LieJun Tao <L.J.Tao@motorola.com>
+    Reviewed-by: Ashish Kumar Sharma <rjmc87@motorola.com>
+    Reviewed-by: Tao Hu <taohu@motorola.com>
+    Reviewed-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+    Signed-off-by: Vishwanath K M <a21174@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/512986
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Viswanathan N <a21415@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    (cherry picked from commit ab0181f1846f873284bcfb430a49d253ebca9bb2)
+
+commit 7ef4d1adadf06c559d762e99d3f79988362e34d8
+Author: Vishwanath K M <a21174@motorola.com>
+Date:   Tue Mar 20 16:37:14 2012 +0530
+
+    Prop (CR): Bluetooth: Add address type for mgmt_ev_device_found
+    
+    This is necessary for bluez user space to identify the address type
+    in case of if remote device is LE device. These changes are based
+    on latest bluez open source patches title listed below, since latest
+    Bluez kernel has many other changes which has dependency with other
+    events. We need only the peer adress type to store at bluez user space
+    hence we backport only subset of original changes necessary for us to
+    support the white list functionality.
+    
+    Bluez open source patches title from Johan Hedberg are listed below
+    1) Bluetooth: Add address type fields to mgmt messages that need them
+    2) Bluetooth: Add public/random LE address information to mgmt messages
+    
+    Change-Id: If04944b9a9c03811471de9a7514b4a7d26b4ffe3
+    
+    Conflicts:
+    	include/net/bluetooth/hci_core.h
+    	net/bluetooth/mgmt.c
+    (cherry picked from commit 3a081afdef2589b5c71f7b45762d6b9690e08b33)
+    
+    Conflicts:
+    	include/net/bluetooth/hci_core.h
+    	net/bluetooth/mgmt.c
+
+commit d3e873c97ad48032386809b9d00e32e6fbd29404
+Author: Dong-Dong Yang <gdb746@motorola.com>
+Date:   Thu Mar 14 15:07:31 2013 -0400
+
+    binder: Lower binder debug mask.
+    
+    To avoid redundance with binder debugfs items output,
+    the binder debug mask BINDER_DEBUG_FAILED_TRANSACTION
+    is restricted to quiet in kernel log.
+    
+    Change-Id: Ie342311d154c6e8d0489d4734ec710ff0fbd6682
+    Signed-off-by: Dong-Dong Yang <gdb746@motorola.com>
+    Reviewed-on: http://gerrit.pcs.mot.com/524644
+    Tested-by: Jira Key <jirakey@motorola.com>
+    Reviewed-by: Check Patch <CHEKPACH@motorola.com>
+    Reviewed-by: Klocwork kwcheck <klocwork-kwcheck@sourceforge.mot.com>
+    SLT-Approved: Gerrit Code Review <gerrit-blurdev@motorola.com>
+    Reviewed-by: Jeffrey Carlyle <jeff.carlyle@motorola.com>
+    Submit-Approved: Jira Key <jirakey@motorola.com>
+    (cherry picked from commit 8c2a61c264d990dfb36d6628fdebb9a6fcc9403c)
+
+commit 1d1f3792ba204f8424375cd913728ced987cec12
+Author: h2o64 <theh2o64@gmail.com>
+Date:   Sat Jun 27 11:50:25 2015 +0200
+
+    mmi : Add Motorola MMI Board support Overlay from MMI-LXE22.92-30 on LA.BF.1.1.2_rb1.23
+    
+    Conflicts:
+    	Documentation/devicetree/bindings/i2c/i2c-qup.txt
+    	Documentation/devicetree/bindings/media/video/msm-camera-flash.txt
+    	Documentation/devicetree/bindings/power/qpnp-charger.txt
+    	Documentation/devicetree/bindings/spi/spi_qsd.txt
+    	Documentation/devicetree/bindings/usb/msm-hsusb.txt
+    	Documentation/devicetree/bindings/usb/msm-ssusb.txt
+    	arch/arm/Kconfig.debug
+    	arch/arm/boot/dts/msm-pm8226.dtsi
+    	arch/arm/boot/dts/msm8226-v1-pm.dtsi
+    	arch/arm/boot/dts/msm8226-v2-pm.dtsi
+    	arch/arm/boot/dts/msm8226.dtsi
+    	arch/arm/boot/dts/msm8610.dtsi
+    	arch/arm/boot/dts/msm8974-mdss.dtsi
+    	arch/arm/boot/dts/msm8974pro-ab-pm8941-cdp.dts
+    	arch/arm/configs/msm8226_defconfig
+    	arch/arm/configs/msm8610_defconfig
+    	arch/arm/configs/msm8974_defconfig
+    	arch/arm/mach-msm/board-8610-gpiomux.c
+    	arch/arm/mach-msm/clock-8226.c
+    	arch/arm/mach-msm/clock-8974.c
+    	arch/arm/mach-msm/cpufreq.c
+    	arch/arm/mach-msm/include/mach/board.h
+    	arch/arm/mach-msm/include/mach/msm_memory_dump.h
+    	arch/arm/mm/fault.c
+    	drivers/char/diag/diagchar.h
+    	drivers/char/diag/diagchar_core.c
+    	drivers/char/diag/diagfwd.c
+    	drivers/char/diag/diagfwd_cntl.c
+    	drivers/char/hw_random/msm_rng.c
+    	drivers/gpu/msm/adreno.c
+    	drivers/gpu/msm/adreno.h
+    	drivers/gpu/msm/kgsl_debugfs.c
+    	drivers/hwmon/qpnp-adc-voltage.c
+    	drivers/i2c/busses/i2c-qup.c
+    	drivers/input/misc/Kconfig
+    	drivers/input/touchscreen/Makefile
+    	drivers/input/touchscreen/atmel_mxt_ts.c
+    	drivers/leds/leds-qpnp.c
+    	drivers/media/platform/msm/camera_v2/Kconfig
+    	drivers/media/platform/msm/camera_v2/isp/msm_isp40.c
+    	drivers/media/platform/msm/camera_v2/msm.c
+    	drivers/media/platform/msm/camera_v2/pproc/cpp/msm_cpp.c
+    	drivers/media/platform/msm/camera_v2/sensor/Makefile
+    	drivers/media/platform/msm/camera_v2/sensor/actuator/msm_actuator.c
+    	drivers/media/platform/msm/camera_v2/sensor/flash/msm_led_i2c_trigger.c
+    	drivers/media/platform/msm/camera_v2/sensor/msm_sensor.c
+    	drivers/media/platform/msm/camera_v2/sensor/msm_sensor.h
+    	drivers/media/platform/msm/camera_v2/sensor/mt9m114.c
+    	drivers/media/platform/msm/vidc/venus_hfi.c
+    	drivers/misc/qseecom.c
+    	drivers/mmc/card/block.c
+    	drivers/mmc/core/core.c
+    	drivers/mmc/core/mmc.c
+    	drivers/mmc/host/sdhci-msm.c
+    	drivers/net/wireless/wcnss/wcnss_wlan.c
+    	drivers/platform/msm/qpnp-power-on.c
+    	drivers/spi/spi_qsd.c
+    	drivers/spmi/spmi-pmic-arb.c
+    	drivers/staging/android/binder.c
+    	drivers/thermal/msm_thermal.c
+    	drivers/tty/serial/msm_serial_hs.c
+    	drivers/usb/dwc3/core.h
+    	drivers/usb/dwc3/dwc3-msm.c
+    	drivers/usb/dwc3/dwc3_otg.c
+    	drivers/usb/gadget/android.c
+    	drivers/usb/otg/msm_otg.c
+    	drivers/video/msm/mdss/Makefile
+    	drivers/video/msm/mdss/dsi_host_v2.c
+    	drivers/video/msm/mdss/dsi_v2.c
+    	drivers/video/msm/mdss/dsi_v2.h
+    	drivers/video/msm/mdss/mdp3.c
+    	drivers/video/msm/mdss/mdp3_ctrl.c
+    	drivers/video/msm/mdss/mdp3_dma.c
+    	drivers/video/msm/mdss/mdss_dsi.c
+    	drivers/video/msm/mdss/mdss_dsi.h
+    	drivers/video/msm/mdss/mdss_dsi_host.c
+    	drivers/video/msm/mdss/mdss_dsi_panel.c
+    	drivers/video/msm/mdss/mdss_dsi_status.c
+    	drivers/video/msm/mdss/mdss_fb.c
+    	drivers/video/msm/mdss/mdss_fb.h
+    	drivers/video/msm/mdss/mdss_mdp.c
+    	drivers/video/msm/mdss/mdss_mdp.h
+    	drivers/video/msm/mdss/mdss_mdp_ctl.c
+    	drivers/video/msm/mdss/mdss_mdp_intf_cmd.c
+    	drivers/video/msm/mdss/mdss_mdp_intf_video.c
+    	drivers/video/msm/mdss/mdss_mdp_overlay.c
+    	drivers/video/msm/mdss/mdss_mdp_rotator.c
+    	drivers/video/msm/mdss/mdss_panel.h
+    	drivers/video/msm/mdss/msm_mdss_io_8974.c
+    	include/linux/mmc/card.h
+    	include/linux/mmc/host.h
+    	include/linux/mmc/mmc.h
+    	include/linux/msm_mdp.h
+    	include/linux/rcutiny.h
+    	include/media/msm_cam_sensor.h
+    	include/net/tcp.h
+    	kernel/cgroup.c
+    	kernel/rcutree_plugin.h
+    	net/ipv4/ping.c
+    	net/ipv6/route.c
+    	net/ipv6/tcp_ipv6.c
+    	net/wireless/db.txt
+    	net/wireless/nl80211.c
+    	scripts/gcc-wrapper.py
+    	sound/soc/codecs/msm8x10-wcd.c
+    	sound/soc/codecs/wcd9306.c
+    	sound/soc/codecs/wcd9320.c
+    	sound/soc/codecs/wcd9xxx-mbhc.c
+    	sound/soc/msm/Kconfig
+    	sound/soc/msm/msm8974.c
+    	sound/soc/msm/qdsp6v2/msm-pcm-afe-v2.c
+    	sound/usb/card.c
+
+commit 0b470f0fcf82d9e9c3babca99992942e4b7f7ab2
+Merge: 0262d63 772cf51
+Author: Louis Popi <theh2o64@gmail.com>
+Date:   Fri Jun 19 19:13:28 2015 +0200
+
+    Merge remote-tracking branch 'CAF/LA.BF.1.1.2_rb1.23' into kernel-3.4-CAF

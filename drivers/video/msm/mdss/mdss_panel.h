@@ -16,6 +16,7 @@
 
 #include <linux/platform_device.h>
 #include <linux/types.h>
+#include <linux/hrtimer.h>
 
 /* panel id type */
 struct panel_id {
@@ -25,6 +26,14 @@ struct panel_id {
 
 #define DEFAULT_FRAME_RATE	60
 #define MDSS_DSI_RST_SEQ_LEN	10
+
+enum cabc_mode {
+	CABC_UI_MODE = 0,
+	CABC_ST_MODE,
+	CABC_MV_MODE,
+	CABC_OFF_MODE,
+	CABC_MODE_MAX_NUM
+};
 
 /* panel type list */
 #define NO_PANEL		0xffff	/* No Panel */
@@ -69,6 +78,13 @@ enum {
 	MODE_GPIO_NOT_VALID = 0,
 	MODE_GPIO_HIGH,
 	MODE_GPIO_LOW,
+};
+
+enum {
+	BL_PWM,
+	BL_WLED,
+	BL_DCS_CMD,
+	UNKNOWN_CTRL,
 };
 
 #define MDSS_MAX_PANEL_LEN      256
@@ -118,6 +134,9 @@ struct mdss_panel_recovery {
  *				display state from boot loader to panel driver.
  *				The event handler will enable the panel and
  *				vote for the display clocks.
+ * MDSS_EVENT_PANEL_CONT_SPLASH_FINISH: Special event will be sent to panel to
+ *				indicate the transition of display state from
+ *				boot loader to panel driver is finished
  * @MDSS_EVENT_PANEL_UPDATE_FPS: Event to update the frame rate of the panel.
  * @MDSS_EVENT_FB_REGISTERED:	Called after fb dev driver has been registered,
  *				panel driver gets ptr to struct fb_info which
@@ -132,6 +151,8 @@ struct mdss_panel_recovery {
  *				event arguments can have one of these values:
  *				- 0: Disable ULPS mode
  *				- 1: Enable ULPS mode
+ * @MDSS_EVENT_ENABLE_TE: Change TE state, used for factory testing only
+ * @MDSS_EVENT_SET_CABC: Set CABC mode, for Motorola "Dynamic CABC" feature.
  * @MDSS_EVENT_DSI_DYNAMIC_SWITCH: Event to update the dsi driver structures
  *				based on the dsi mode passed as argument.
  *				- 0: update to video mode
@@ -149,6 +170,7 @@ enum mdss_intf_events {
 	MDSS_EVENT_CHECK_PARAMS,
 	MDSS_EVENT_CONT_SPLASH_BEGIN,
 	MDSS_EVENT_CONT_SPLASH_FINISH,
+	MDSS_EVENT_PANEL_CONT_SPLASH_FINISH,
 	MDSS_EVENT_PANEL_UPDATE_FPS,
 	MDSS_EVENT_FB_REGISTERED,
 	MDSS_EVENT_PANEL_CLK_CTRL,
@@ -157,6 +179,9 @@ enum mdss_intf_events {
 	MDSS_EVENT_DSI_ULPS_CTRL,
 	MDSS_EVENT_REGISTER_RECOVERY_HANDLER,
 	MDSS_EVENT_DSI_DYNAMIC_SWITCH,
+	MDSS_EVENT_ENABLE_TE,
+	MDSS_EVENT_ENABLE_HBM,
+	MDSS_EVENT_SET_CABC,
 };
 
 struct lcd_panel_info {
@@ -343,9 +368,21 @@ struct mdss_panel_info {
 	u32 max_fps;
 
 	u32 cont_splash_enabled;
+	u32 cont_splash_feature_on;
+	bool cont_splash_esd_rdy;
+	u32 no_solid_fill;
 	u32 partial_update_enabled;
 	struct ion_handle *splash_ihdl;
 	u32 panel_power_on;
+	bool hs_cmds_post_init;
+	bool hbm_feature_enabled;
+	bool hbm_state;
+	bool dynamic_cabc_enabled;
+	enum cabc_mode cabc_mode;
+	char supplier[8];
+	u32 bl_shutdown_delay;
+	u32 bl_on_defer_delay;
+	struct hrtimer bl_on_defer_hrtimer;
 
 	uint32_t panel_dead;
 	bool dynamic_switch_pending;
@@ -354,10 +391,14 @@ struct mdss_panel_info {
 	struct mdss_mdp_pp_tear_check te;
 
 	struct lcd_panel_info lcdc;
+	struct lcd_panel_info lcdc_tune;
 	struct fbc_panel_info fbc;
 	struct mipi_panel_info mipi;
 	struct lvds_panel_info lvds;
 	struct edp_panel_info edp;
+
+	u32 quickdraw_enabled;
+	u32 col_align;
 };
 
 struct mdss_panel_data {
@@ -380,6 +421,7 @@ struct mdss_panel_data {
 	int (*event_handler) (struct mdss_panel_data *pdata, int e, void *arg);
 
 	struct mdss_panel_data *next;
+	struct msm_fb_data_type *mfd;
 };
 
 /**
@@ -424,6 +466,23 @@ static inline u32 mdss_panel_get_framerate(struct mdss_panel_info *panel_info)
 }
 
 /*
+ * mdss_panel_get_vtotal_lcd() - return panel vertical height
+ * @pinfo:	Pointer to panel info containing all panel information
+ * @lcd:	Pointer to lcdc panel info with timings
+ *
+ * Returns the total height of the panel including any blanking regions
+ * which are not visible to user but used to calculate panel pixel clock.
+ * The caller may specify an alternate set of lcd timings.
+ */
+static inline int mdss_panel_get_vtotal_lcd(struct mdss_panel_info *pinfo,
+	struct lcd_panel_info *lcd)
+{
+	return pinfo->yres + lcd->v_back_porch +
+			lcd->v_front_porch +
+			lcd->v_pulse_width;
+}
+
+/*
  * mdss_panel_get_vtotal() - return panel vertical height
  * @pinfo:	Pointer to panel info containing all panel information
  *
@@ -432,9 +491,7 @@ static inline u32 mdss_panel_get_framerate(struct mdss_panel_info *panel_info)
  */
 static inline int mdss_panel_get_vtotal(struct mdss_panel_info *pinfo)
 {
-	return pinfo->yres + pinfo->lcdc.v_back_porch +
-			pinfo->lcdc.v_front_porch +
-			pinfo->lcdc.v_pulse_width;
+	return mdss_panel_get_vtotal_lcd(pinfo, &pinfo->lcdc);
 }
 
 /*
@@ -453,6 +510,9 @@ static inline int mdss_panel_get_htotal(struct mdss_panel_info *pinfo)
 
 int mdss_register_panel(struct platform_device *pdev,
 	struct mdss_panel_data *pdata);
+void mdss_dsi_lock_panel_mutex(void);
+void mdss_dsi_unlock_panel_mutex(void);
+
 
 /**
  * mdss_panel_intf_type: - checks if a given intf type is primary
@@ -486,4 +546,19 @@ int mdss_panel_get_boot_cfg(void);
  * returns true if mdss is ready, else returns false.
  */
 bool mdss_is_ready(void);
+
+/**
+ * mdss_panel_map_cabc_name() - get panel CABC mode name
+ *
+ * returns name if mapping succeeds, else returns NULL.
+ */
+static const char *cabc_mode_names[CABC_MODE_MAX_NUM] = {
+	"UI", "ST", "MV", "OFF"
+};
+static inline const char *mdss_panel_map_cabc_name(int mode)
+{
+	if (mode >= CABC_UI_MODE && mode < CABC_MODE_MAX_NUM)
+		return cabc_mode_names[mode];
+	return NULL;
+}
 #endif /* MDSS_PANEL_H */

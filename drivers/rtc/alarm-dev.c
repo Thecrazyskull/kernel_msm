@@ -124,6 +124,12 @@ static long alarm_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			rv = -EFAULT;
 			goto err1;
 		}
+		/* if (!timespec_valid_strict(&new_alarm_time)) {
+			pr_alarm(INFO, "Invalid new alarm: %ld.%09ld\n",
+				new_alarm_time.tv_sec, new_alarm_time.tv_nsec);
+			rv = -EINVAL;
+			goto err1;
+		} */
 from_old_alarm_set:
 		mutex_lock(&alarm_mutex);
 		spin_lock_irqsave(&alarm_slock, flags);
@@ -166,6 +172,12 @@ from_old_alarm_set:
 			rv = -EFAULT;
 			goto err1;
 		}
+		/* if (!timespec_valid_strict(&new_rtc_time)) {
+			pr_alarm(INFO, "Invalid new rtc time: %ld.%09ld\n",
+				new_rtc_time.tv_sec, new_rtc_time.tv_nsec);
+			rv = -EINVAL;
+			goto err1;
+		} */
 		rv = alarm_set_rtc(new_rtc_time);
 		spin_lock_irqsave(&alarm_slock, flags);
 		alarm_pending |= ANDROID_ALARM_TIME_CHANGE_MASK;

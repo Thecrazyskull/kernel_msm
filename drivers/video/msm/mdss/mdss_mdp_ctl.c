@@ -24,7 +24,7 @@
 #include "mdss_mdp.h"
 #include "mdss_debug.h"
 #include "mdss_mdp_trace.h"
-#include "mdss_debug.h"
+#include <trace/mdss_mdp_trace.h>
 
 static void mdss_mdp_xlog_mixer_reg(struct mdss_mdp_ctl *ctl);
 static inline u64 fudge_factor(u64 val, u32 numer, u32 denom)
@@ -318,7 +318,7 @@ static u32 mdss_mdp_perf_calc_pipe_prefill_cmd(struct mdss_mdp_prefill_params
  */
 int mdss_mdp_perf_calc_pipe(struct mdss_mdp_pipe *pipe,
 	struct mdss_mdp_perf_params *perf, struct mdss_mdp_img_rect *roi,
-	bool apply_fudge)
+	bool apply_fudge, int tune)
 {
 	struct mdss_mdp_mixer *mixer;
 	int fps = DEFAULT_FRAME_RATE;
@@ -345,7 +345,8 @@ int mdss_mdp_perf_calc_pipe(struct mdss_mdp_pipe *pipe,
 			v_total = pinfo->panel_max_vtotal;
 		} else {
 			fps = mdss_panel_get_framerate(pinfo);
-			v_total = mdss_panel_get_vtotal(pinfo);
+			v_total = mdss_panel_get_vtotal_lcd(pinfo,
+				tune ? &pinfo->lcdc_tune : &pinfo->lcdc);
 		}
 		xres = pinfo->xres;
 		is_fbc = pinfo->fbc.enabled;
@@ -521,7 +522,7 @@ static void mdss_mdp_perf_calc_mixer(struct mdss_mdp_mixer *mixer,
 			continue;
 
 		if (mdss_mdp_perf_calc_pipe(pipe, &tmp, &mixer->roi,
-			apply_fudge))
+			apply_fudge, 0))
 			continue;
 		prefill_bytes += tmp.prefill_bytes;
 		bw_overlap[i] = tmp.bw_overlap;
@@ -1052,6 +1053,7 @@ static struct mdss_mdp_ctl *mdss_mdp_ctl_alloc(struct mdss_data_type *mdata,
 			ctl->mdata = mdata;
 			mutex_init(&ctl->lock);
 			spin_lock_init(&ctl->spin_lock);
+			mutex_init(&ctl->offlock);
 			BLOCKING_INIT_NOTIFIER_HEAD(&ctl->notifier_head);
 			pr_debug("alloc ctl_num=%d\n", ctl->num);
 			break;
@@ -1099,6 +1101,7 @@ static int mdss_mdp_ctl_free(struct mdss_mdp_ctl *ctl)
 	ctl->remove_vsync_handler = NULL;
 	ctl->panel_data = NULL;
 	ctl->config_fps_fnc = NULL;
+	ctl->panel_on_locked = NULL;
 	mutex_unlock(&mdss_mdp_ctl_lock);
 
 	return 0;
@@ -1507,6 +1510,8 @@ struct mdss_mdp_ctl *mdss_mdp_ctl_init(struct mdss_panel_data *pdata,
 	ctl->mfd = mfd;
 	ctl->panel_data = pdata;
 	ctl->is_video_mode = false;
+	ctl->no_solid_fill = false;
+	ctl->panel_on_locked = NULL;
 
 	switch (pdata->panel_info.type) {
 	case EDP_PANEL:
@@ -1522,6 +1527,8 @@ struct mdss_mdp_ctl *mdss_mdp_ctl_init(struct mdss_panel_data *pdata,
 			ctl->intf_num = MDSS_MDP_INTF1;
 		else
 			ctl->intf_num = MDSS_MDP_INTF2;
+		if (pdata->panel_info.no_solid_fill)
+			ctl->no_solid_fill = true;
 		ctl->intf_type = MDSS_INTF_DSI;
 		ctl->opmode = MDSS_MDP_CTL_OP_VIDEO_MODE;
 		ctl->start_fnc = mdss_mdp_video_start;

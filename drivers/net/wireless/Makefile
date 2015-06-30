@@ -66,3 +66,11 @@ obj-$(CONFIG_BRCMSMAC)	+= brcm80211/
 
 obj-$(CONFIG_LIBRA_SDIOIF)	+= libra/
 obj-$(CONFIG_WCNSS_CORE)	+= wcnss/
+
+ifeq ($(CONFIG_MOTO_PRIMA),y)
+obj-$(CONFIG_PRIMA_WLAN)	+= moto_prima/
+obj-$(CONFIG_PRONTO_WLAN)	+= moto_prima/
+else
+ obj-$(CONFIG_PRIMA_WLAN)	+= prima/
+ obj-$(CONFIG_PRONTO_WLAN)	+= prima/
+endif

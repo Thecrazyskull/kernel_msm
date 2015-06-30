@@ -1,0 +1,11 @@
+From 6178f46672c4c7110c85a568cd232d386dd45431 Mon Sep 17 00:00:00 2001
+From: h2o64 <theh2o64@gmail.com>
+Date: Sat, 27 Jun 2015 11:50:25 +0200
+Subject: mmi : Add Motorola MMI Board support 
+
+Overlay from MMI-LXE22.92-30 on LA.BF.1.1.2_rb1.23
+
+Prima from CAF LA.BF.1.1.2_rb1.23
+Motorola F2FS MMI-LXE22.92-30 Driver
+Motorola Prima MMI-LXE22.92-30 Driver
+Motorola Camera MMI-LXE22.92-30 Driver Frozen
