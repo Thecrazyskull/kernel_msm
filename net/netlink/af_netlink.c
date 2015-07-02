@@ -1765,6 +1765,8 @@ int netlink_dump_start(struct sock *ssk, struct sk_buff *skb,
 		goto error_free;
 	}
 	nlk = nlk_sk(sk);
+
+	mutex_lock(nlk->cb_mutex);
 	/* A dump is in progress... */
 	if (nlk->cb_running) {
 		ret = -EBUSY;
