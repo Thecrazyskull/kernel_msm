@@ -273,7 +273,6 @@ struct mdss_dsi_ctrl_pdata {
 	int (*off) (struct mdss_panel_data *pdata);
 	int (*partial_update_fnc) (struct mdss_panel_data *pdata);
 	int (*check_status) (struct mdss_dsi_ctrl_pdata *pdata);
-	void (*switch_mode) (struct mdss_panel_data *pdata, int mode);
 	int (*cmdlist_commit)(struct mdss_dsi_ctrl_pdata *ctrl, int from_mdp,
 						struct dcs_cmd_req *cmdreq);
 	int (*cont_splash_on) (struct mdss_panel_data *pdata);
@@ -335,8 +334,6 @@ struct mdss_dsi_ctrl_pdata {
 	struct dsi_panel_cmds status_cmds;
 	u32 status_value;
 
-	struct dsi_panel_cmds video2cmd;
-	struct dsi_panel_cmds cmd2video;
 	struct dsi_panel_cmds cabc_ui_cmds;
 	struct dsi_panel_cmds cabc_mv_cmds;
 
@@ -436,8 +433,6 @@ bool __mdss_dsi_clk_enabled(struct mdss_dsi_ctrl_pdata *ctrl, u8 clk_type);
 int mdss_dsi_panel_init(struct device_node *node,
 		struct mdss_dsi_ctrl_pdata *ctrl_pdata,
 		bool cmd_cfg_cont_splash);
-int mdss_panel_get_dst_fmt(u32 bpp, char mipi_mode, u32 pixel_packing,
-				char *dst_format);
 
 int mdss_dsi_register_recovery_handler(struct mdss_dsi_ctrl_pdata *ctrl,
 		struct mdss_panel_recovery *recovery);

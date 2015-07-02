@@ -153,10 +153,6 @@ struct mdss_panel_recovery {
  *				- 1: Enable ULPS mode
  * @MDSS_EVENT_ENABLE_TE: Change TE state, used for factory testing only
  * @MDSS_EVENT_SET_CABC: Set CABC mode, for Motorola "Dynamic CABC" feature.
- * @MDSS_EVENT_DSI_DYNAMIC_SWITCH: Event to update the dsi driver structures
- *				based on the dsi mode passed as argument.
- *				- 0: update to video mode
- *				- 1: update to command mode
  */
 enum mdss_intf_events {
 	MDSS_EVENT_RESET = 1,
@@ -178,7 +174,6 @@ enum mdss_intf_events {
 	MDSS_EVENT_ENABLE_PARTIAL_UPDATE,
 	MDSS_EVENT_DSI_ULPS_CTRL,
 	MDSS_EVENT_REGISTER_RECOVERY_HANDLER,
-	MDSS_EVENT_DSI_DYNAMIC_SWITCH,
 	MDSS_EVENT_ENABLE_TE,
 	MDSS_EVENT_ENABLE_HBM,
 	MDSS_EVENT_SET_CABC,
@@ -252,9 +247,6 @@ struct mipi_panel_info {
 	char stream;	/* 0 or 1 */
 	char mdp_trigger;
 	char dma_trigger;
-	/*Dynamic Switch Support*/
-	bool dynamic_switch_enabled;
-	u32 pixel_packing;
 	u32 dsi_pclk_rate;
 	/* The packet-size should not bet changed */
 	char no_max_pkt_size;
@@ -385,9 +377,6 @@ struct mdss_panel_info {
 	struct hrtimer bl_on_defer_hrtimer;
 
 	uint32_t panel_dead;
-	bool dynamic_switch_pending;
-	bool is_lpm_mode;
-
 	struct mdss_mdp_pp_tear_check te;
 
 	struct lcd_panel_info lcdc;
