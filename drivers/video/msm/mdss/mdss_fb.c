@@ -724,7 +724,7 @@ static int mdss_fb_probe(struct platform_device *pdev)
 	mfd->quickdraw_in_progress = false;
 	mfd->quickdraw_reset_panel = false;
 	if (mfd->panel_info->cont_splash_feature_on) {
-		mfd->bl_level_old = mfd->panel_info->bl_max;
+		mfd->bl_level_scaled = mfd->panel_info->bl_max;
 		mfd->bl_updated = true;
 	}
 

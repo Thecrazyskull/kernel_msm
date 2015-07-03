@@ -16,6 +16,7 @@
 
 #include <stdarg.h>
 #include "mdss.h"
+#include "mdss_mdp_trace.h"
 #include <trace/mdss_mdp_trace.h>
 
 #define MISR_POLL_SLEEP		2000
