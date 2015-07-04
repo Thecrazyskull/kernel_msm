@@ -84,3 +84,6 @@ GTAGS
 *.orig
 *~
 \#*#
+
+# Scripts
+fix.sh
