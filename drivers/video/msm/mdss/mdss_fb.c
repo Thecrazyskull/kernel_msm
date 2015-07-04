@@ -1853,7 +1853,7 @@ static int mdss_fb_release_all(struct fb_info *info, struct file *file)
 	struct mdss_fb_proc_info *pinfo = NULL, *temp_pinfo = NULL;
 	struct mdss_fb_proc_info *release_pinfo = NULL;
 	int pid_ref_cnt = 0;
-	int ret = 0;
+	int ret = 0, ad_ret = 0;
 	int pid = current->tgid;
 	struct task_struct *task = current->group_leader;
 	struct mdss_panel_data *pdata;
@@ -1967,6 +1967,14 @@ static int mdss_fb_release_all(struct fb_info *info, struct file *file)
 
 		if (mfd->fb_ion_handle)
 			mdss_fb_free_fb_ion_memory(mfd);
+
+		if (mfd->mdp.ad_shutdown_cleanup) {
+			ad_ret = (*mfd->mdp.ad_shutdown_cleanup)(mfd);
+			if (ad_ret)
+				pr_err("AD shutdown cleanup failed ret = %d\n",
+						ad_ret);
+		}
+
 		atomic_set(&mfd->ioctl_ref_cnt, 0);
 	}
 
