@@ -1056,7 +1056,7 @@ static int mdss_mdp_overlay_start(struct msm_fb_data_type *mfd)
 			if (rc) {
 				pr_err("footswtich control power on failed rc=%d\n",
 									rc);
-				goto error;
+				goto end;
 			}
 
 			mdss_mdp_ctl_restore(ctl);
@@ -1086,7 +1086,7 @@ static int mdss_mdp_overlay_start(struct msm_fb_data_type *mfd)
 			rc = mdss_iommu_ctrl(1);
 			if (IS_ERR_VALUE(rc)) {
 				pr_err("iommu attach failed rc=%d\n", rc);
-				goto error;
+				goto pm_error;
 			}
 			mdss_hw_init(mdss_res);
 			mdss_iommu_ctrl(0);
@@ -1101,7 +1101,7 @@ static int mdss_mdp_overlay_start(struct msm_fb_data_type *mfd)
 				&mfd->mdp_sync_pt_data.notifier);
 	} else {
 		pr_err("mdp ctl start failed.\n");
-		goto error;
+		goto ctl_error;
 	}
 
 	if (mfd->panel_info->cont_splash_enabled) {
@@ -1149,19 +1149,18 @@ static int mdss_mdp_overlay_start(struct msm_fb_data_type *mfd)
 		 */
 		mdss_mdp_footswitch_ctrl_splash(0);
 		if (rc)
-			goto error;
+			goto ctl_error;
 
 		if (!is_mdss_iommu_attached())
 			mdss_iommu_attach(mdss_res);
 	}
 
-error:
-	if (rc) {
-		mdss_mdp_ctl_destroy(ctl);
-		mdp5_data->ctl = NULL;
-		mdss_mdp_footswitch_ctrl(mdata, false);
-	}
-
+ctl_error:
+	mdss_mdp_ctl_destroy(ctl);
+	mdp5_data->ctl = NULL;
+pm_error:
+	mdss_mdp_footswitch_ctrl(mdata, false);
+end:
 	return rc;
 }
 
