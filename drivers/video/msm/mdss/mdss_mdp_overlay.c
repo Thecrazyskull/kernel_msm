@@ -18,6 +18,7 @@
 #include <linux/kernel.h>
 #include <linux/major.h>
 #include <linux/module.h>
+#include <linux/pm_runtime.h>
 #include <linux/uaccess.h>
 #include <linux/delay.h>
 #include <linux/msm_mdp.h>
@@ -33,10 +34,6 @@
 #include "mdss_fb.h"
 #include "mdss_mdp.h"
 #include "mdss_mdp_rotator.h"
-#include "mdss_quickdraw.h"
-#include "mdss_timeout.h"
-
-#include "splash.h"
 
 #define VSYNC_PERIOD 16
 #define BORDERFILL_NDX	0x0BF000BF
@@ -51,21 +48,10 @@
 
 #define OVERLAY_MAX 10
 
-#define MEM_PROTECT_SD_CTRL 0xF
-
-#define INVALID_PIPE_INDEX 0xFFFF
-#define OVERLAY_MAX 10
-
-struct sd_ctrl_req {
-	unsigned int enable;
-} __attribute__ ((__packed__));
-
 static atomic_t ov_active_panels = ATOMIC_INIT(0);
 static int mdss_mdp_overlay_free_fb_pipe(struct msm_fb_data_type *mfd);
 static int mdss_mdp_overlay_fb_parse_dt(struct msm_fb_data_type *mfd);
 static int mdss_mdp_overlay_off(struct msm_fb_data_type *mfd);
-static void __vsync_retire_signal(struct msm_fb_data_type *mfd, int val);
-static void mdss_mdp5_dump_ctl(void *data);
 static void __overlay_kickoff_requeue(struct msm_fb_data_type *mfd);
 static void __vsync_retire_signal(struct msm_fb_data_type *mfd, int val);
 
@@ -318,8 +304,7 @@ static int __mdp_pipe_tune_perf(struct mdss_mdp_pipe *pipe)
 	int rc;
 
 	for (;;) {
-		rc = mdss_mdp_perf_calc_pipe(pipe, &perf, NULL, true,
-			pipe->flags & MDP_SECURE_OVERLAY_SESSION);
+		rc = mdss_mdp_perf_calc_pipe(pipe, &perf, NULL, true);
 
 		if (!rc && (perf.mdp_clk_rate <= mdata->max_mdp_clk_rate))
 			break;
@@ -483,7 +468,7 @@ static inline void __mdss_mdp_overlay_set_chroma_sample(
 		pipe->chroma_sample_v = 0;
 }
 
-static int mdss_mdp_overlay_pipe_setup(struct msm_fb_data_type *mfd,
+int mdss_mdp_overlay_pipe_setup(struct msm_fb_data_type *mfd,
 				       struct mdp_overlay *req,
 				       struct mdss_mdp_pipe **ppipe)
 {
@@ -801,7 +786,7 @@ exit_fail:
 	return ret;
 }
 
-int mdss_mdp_overlay_set(struct msm_fb_data_type *mfd,
+static int mdss_mdp_overlay_set(struct msm_fb_data_type *mfd,
 				struct mdp_overlay *req)
 {
 	struct mdss_overlay_private *mdp5_data = mfd_to_mdp5_data(mfd);
@@ -938,7 +923,7 @@ static void __mdss_mdp_overlay_free_list_add(struct msm_fb_data_type *mfd,
  * Goes through destroy_pipes list and ensures they are ready to be destroyed
  * and cleaned up. Also cleanup of any pipe buffers after flip.
  */
-void mdss_mdp_overlay_cleanup(struct msm_fb_data_type *mfd,
+static void mdss_mdp_overlay_cleanup(struct msm_fb_data_type *mfd,
 		struct list_head *destroy_pipes)
 {
 	struct mdss_mdp_pipe *pipe, *tmp;
@@ -997,7 +982,7 @@ void mdss_mdp_overlay_cleanup(struct msm_fb_data_type *mfd,
 	mutex_unlock(&mdp5_data->list_lock);
 }
 
-static void __mdss_mdp_handoff_cleanup_pipes(struct msm_fb_data_type *mfd,
+void mdss_mdp_handoff_cleanup_pipes(struct msm_fb_data_type *mfd,
 	u32 type)
 {
 	u32 i, npipes;
@@ -1043,11 +1028,10 @@ static void __mdss_mdp_handoff_cleanup_pipes(struct msm_fb_data_type *mfd,
  * from the the splash screen to the android boot animation when the
  * continuous splash screen feature is enabled.
  */
-static int mdss_mdp_overlay_start(struct msm_fb_data_type *mfd)
+int mdss_mdp_overlay_start(struct msm_fb_data_type *mfd)
 {
 	int rc;
 	struct mdss_overlay_private *mdp5_data = mfd_to_mdp5_data(mfd);
-	struct mdss_data_type *mdata = mfd_to_mdata(mfd);
 	struct mdss_mdp_ctl *ctl = mdp5_data->ctl;
 
 	if (ctl->power_on) {
@@ -1064,14 +1048,17 @@ static int mdss_mdp_overlay_start(struct msm_fb_data_type *mfd)
 
 		if (!mdp5_data->mdata->batfet)
 			mdss_mdp_batfet_ctrl(mdp5_data->mdata, true);
-		if (!mfd->panel_info->cont_splash_enabled)
-			mdss_iommu_attach(mdp5_data->mdata);
+		mdss_mdp_release_splash_pipe(mfd);
 		return 0;
 	}
 
 	pr_debug("starting fb%d overlay\n", mfd->index);
 
-	mdss_mdp_footswitch_ctrl(mdata, true);
+	rc = pm_runtime_get_sync(&mfd->pdev->dev);
+	if (IS_ERR_VALUE(rc)) {
+		pr_err("unable to resume with pm_runtime_get_sync rc=%d\n", rc);
+		goto end;
+	}
 
 	/*
 	 * We need to do hw init before any hw programming.
@@ -1104,62 +1091,15 @@ static int mdss_mdp_overlay_start(struct msm_fb_data_type *mfd)
 		goto ctl_error;
 	}
 
-	if (mfd->panel_info->cont_splash_enabled) {
-		if (mdp5_data->handoff) {
-			/*
-			 * Set up border-fill on the handed off pipes.
-			 * This is needed to ensure that there are no memory
-			 * accesses prior to attaching iommu during continuous
-			 * splash screen case. However, for command mode
-			 * displays, this is not necessary since the panels can
-			 * refresh from their internal memory if no data is sent
-			 * out on the dsi lanes.
-			 */
-			if (ctl && ctl->is_video_mode && !ctl->no_solid_fill) {
-				rc = mdss_mdp_display_commit(ctl, NULL);
-				if (!IS_ERR_VALUE(rc)) {
-					mdss_mdp_display_wait4comp(ctl);
-				} else {
-					/*
-					 * Since border-fill setup failed, we
-					 * need to ensure that we turn off the
-					 * MDP timing generator before attaching
-					 * iommu
-					 */
-					pr_err("failed to set BF at handoff\n");
-					mdp5_data->handoff = false;
-					rc = 0;
-				}
-			}
-		}
-		rc = mdss_mdp_ctl_splash_finish(ctl, mdp5_data->handoff);
-
-		/* Add all the handed off pipes to the cleanup list after
-		   TG OFF*/
-		__mdss_mdp_handoff_cleanup_pipes(mfd,
-						MDSS_MDP_PIPE_TYPE_RGB);
-		__mdss_mdp_handoff_cleanup_pipes(mfd,
-						MDSS_MDP_PIPE_TYPE_VIG);
-		__mdss_mdp_handoff_cleanup_pipes(mfd,
-						MDSS_MDP_PIPE_TYPE_DMA);
-
-		/*
-		 * Remove the vote for footswitch even if above function
-		 * returned error
-		 */
-		mdss_mdp_footswitch_ctrl_splash(0);
-		if (rc)
-			goto ctl_error;
-
-		if (!is_mdss_iommu_attached())
-			mdss_iommu_attach(mdss_res);
-	}
+	rc = mdss_mdp_splash_cleanup(mfd, true);
+	if (!rc)
+		goto end;
 
 ctl_error:
 	mdss_mdp_ctl_destroy(ctl);
 	mdp5_data->ctl = NULL;
 pm_error:
-	mdss_mdp_footswitch_ctrl(mdata, false);
+	pm_runtime_put(&mfd->pdev->dev);
 end:
 	return rc;
 }
@@ -1400,7 +1340,7 @@ commit_fail:
 	return ret;
 }
 
-static int mdss_mdp_overlay_release(struct msm_fb_data_type *mfd, int ndx)
+int mdss_mdp_overlay_release(struct msm_fb_data_type *mfd, int ndx)
 {
 	struct mdss_mdp_pipe *pipe, *tmp;
 	struct mdss_overlay_private *mdp5_data = mfd_to_mdp5_data(mfd);
@@ -1446,7 +1386,7 @@ static int mdss_mdp_overlay_release(struct msm_fb_data_type *mfd, int ndx)
 	return 0;
 }
 
-int mdss_mdp_overlay_unset(struct msm_fb_data_type *mfd, int ndx)
+static int mdss_mdp_overlay_unset(struct msm_fb_data_type *mfd, int ndx)
 {
 	int ret = 0;
 	struct mdss_overlay_private *mdp5_data;
@@ -1492,24 +1432,27 @@ done:
 /**
  * mdss_mdp_overlay_release_all() - release any overlays associated with fb dev
  * @mfd:	Msm frame buffer structure associated with fb device
+ * @release_all: ignore pid and release all the pipes
  *
  * Release any resources allocated by calling process, this can be called
  * on fb_release to release any overlays/rotator sessions left open.
  */
-static int __mdss_mdp_overlay_release_all(struct msm_fb_data_type *mfd, int pid)
+static int __mdss_mdp_overlay_release_all(struct msm_fb_data_type *mfd,
+	bool release_all)
 {
 	struct mdss_mdp_pipe *pipe;
 	struct mdss_mdp_rotator_session *rot, *tmp;
 	struct mdss_overlay_private *mdp5_data = mfd_to_mdp5_data(mfd);
 	u32 unset_ndx = 0;
 	int cnt = 0;
+	int pid = current->tgid;
 
 	pr_debug("releasing all resources for fb%d pid=%d\n", mfd->index, pid);
 
 	mutex_lock(&mdp5_data->ov_lock);
 	mutex_lock(&mdp5_data->list_lock);
 	list_for_each_entry(pipe, &mdp5_data->pipes_used, list) {
-		if (!mfd->ref_cnt || (pipe->pid == pid)) {
+		if (release_all || (pipe->pid == pid)) {
 			unset_ndx |= pipe->ndx;
 			cnt++;
 		}
@@ -1520,6 +1463,9 @@ static int __mdss_mdp_overlay_release_all(struct msm_fb_data_type *mfd, int pid)
 			mfd->index);
 		cnt++;
 	}
+
+	pr_debug("release_all=%d mfd->ref_cnt=%d unset_ndx=0x%x cnt=%d\n",
+		release_all, mfd->ref_cnt, unset_ndx, cnt);
 
 	mutex_unlock(&mdp5_data->list_lock);
 
@@ -1643,7 +1589,7 @@ static void mdss_mdp_overlay_force_dma_cleanup(struct mdss_data_type *mdata)
 	}
 }
 
-int mdss_mdp_overlay_play(struct msm_fb_data_type *mfd,
+static int mdss_mdp_overlay_play(struct msm_fb_data_type *mfd,
 				 struct msmfb_overlay_data *req)
 {
 	struct mdss_overlay_private *mdp5_data = mfd_to_mdp5_data(mfd);
@@ -1711,8 +1657,7 @@ static int mdss_mdp_overlay_free_fb_pipe(struct msm_fb_data_type *mfd)
 
 static int mdss_mdp_overlay_get_fb_pipe(struct msm_fb_data_type *mfd,
 					struct mdss_mdp_pipe **ppipe,
-					int mixer_mux,
-					struct mdp_overlay *req_ov)
+					int mixer_mux)
 {
 	struct mdss_overlay_private *mdp5_data = mfd_to_mdp5_data(mfd);
 	struct mdss_mdp_pipe *pipe;
@@ -1722,7 +1667,10 @@ static int mdss_mdp_overlay_get_fb_pipe(struct msm_fb_data_type *mfd,
 					 MDSS_MDP_STAGE_BASE);
 
 	if (pipe == NULL) {
+		struct mdp_overlay req;
+		struct fb_info *fbi = mfd->fbi;
 		struct mdss_mdp_mixer *mixer;
+		int bpp;
 
 		mixer = mdss_mdp_mixer_get(mdp5_data->ctl,
 					MDSS_MDP_MIXER_MUX_LEFT);
@@ -1731,33 +1679,18 @@ static int mdss_mdp_overlay_get_fb_pipe(struct msm_fb_data_type *mfd,
 			return -ENODEV;
 		}
 
-		if (req_ov == NULL) {
-			struct mdp_overlay req;
-			struct fb_info *fbi = mfd->fbi;
-			int bpp;
+		memset(&req, 0, sizeof(req));
 
-			memset(&req, 0, sizeof(req));
-
-			bpp = fbi->var.bits_per_pixel / 8;
-			req.id = MSMFB_NEW_REQUEST;
-			req.src.format = mfd->fb_imgType;
-			req.src.height = fbi->var.yres;
-			req.src.width = fbi->fix.line_length / bpp;
-			if (mixer_mux == MDSS_MDP_MIXER_MUX_RIGHT) {
-				if (req.src.width <= mixer->width) {
-					pr_warn("right fb pipe not needed\n");
-					return -EINVAL;
-				}
-
-				req.flags |= MDSS_MDP_RIGHT_MIXER;
-				req.src_rect.x = mixer->width;
-				req.src_rect.w = fbi->var.xres - mixer->width;
-			} else {
-				req.src_rect.x = 0;
-				req.src_rect.w = MIN(fbi->var.xres,
-								mixer->width);
+		bpp = fbi->var.bits_per_pixel / 8;
+		req.id = MSMFB_NEW_REQUEST;
+		req.src.format = mfd->fb_imgType;
+		req.src.height = fbi->var.yres;
+		req.src.width = fbi->fix.line_length / bpp;
+		if (mixer_mux == MDSS_MDP_MIXER_MUX_RIGHT) {
+			if (req.src.width <= mixer->width) {
+				pr_warn("right fb pipe not needed\n");
+				return -EINVAL;
 			}
-/*
 			req.flags = req.flags | MDSS_MDP_RIGHT_MIXER;
 			req.src_rect.x = mixer->width;
 			req.src_rect.w = fbi->var.xres - mixer->width;
@@ -1766,48 +1699,26 @@ static int mdss_mdp_overlay_get_fb_pipe(struct msm_fb_data_type *mfd,
 			req.src_rect.w = MIN(fbi->var.xres,
 							mixer->width);
 		}
-*/
 
-			req.src_rect.y = 0;
-			req.src_rect.h = req.src.height;
-			req.dst_rect.x = 0;
-			req.dst_rect.y = 0;
-			req.dst_rect.w = req.src_rect.w;
-			req.dst_rect.h = req.src_rect.h;
-			req.z_order = MDSS_MDP_STAGE_BASE;
+		req.src_rect.y = 0;
+		req.src_rect.h = req.src.height;
+		req.dst_rect.w = req.src_rect.w;
+		req.dst_rect.h = req.src_rect.h;
+		req.z_order = MDSS_MDP_STAGE_BASE;
 
-			pr_debug("allocating base pipe mux=%d\n", mixer_mux);
+		pr_debug("allocating base pipe mux=%d\n", mixer_mux);
 
-			ret = mdss_mdp_overlay_pipe_setup(mfd, &req, &pipe);
-			if (ret)
-				return ret;
-		} else {
-			if (mixer_mux == MDSS_MDP_MIXER_MUX_RIGHT) {
-				req_ov->id = MSMFB_NEW_REQUEST;
-				req_ov->flags |= MDSS_MDP_RIGHT_MIXER;
-				req_ov->src_rect.w = MIN(mixer->width,
-						req_ov->src_rect.w >> 1);
-				req_ov->dst_rect.w = req_ov->src_rect.w;
-				req_ov->src_rect.x = req_ov->src_rect.w;
-				req_ov->dst_rect.x = 0;
-			}
-
-			ret = mdss_mdp_overlay_pipe_setup(mfd, req_ov, &pipe);
-			if (ret)
-				return ret;
-		}
+		ret = mdss_mdp_overlay_pipe_setup(mfd, &req, &pipe);
+		if (ret)
+			return ret;
 	}
-
 	pr_debug("ctl=%d pnum=%d\n", mdp5_data->ctl->num, pipe->num);
 
 	*ppipe = pipe;
 	return 0;
 }
 
-static void mdss_mdp_overlay_pan_display(struct msm_fb_data_type *mfd,
-					struct mdp_overlay *req,
-					int image_size,
-					int *pipe_ndx)
+static void mdss_mdp_overlay_pan_display(struct msm_fb_data_type *mfd)
 {
 	struct mdss_mdp_data *buf;
 	struct mdss_mdp_pipe *pipe;
@@ -1866,7 +1777,7 @@ static void mdss_mdp_overlay_pan_display(struct msm_fb_data_type *mfd,
 	}
 
 	ret = mdss_mdp_overlay_get_fb_pipe(mfd, &pipe,
-					MDSS_MDP_MIXER_MUX_LEFT, req);
+					MDSS_MDP_MIXER_MUX_LEFT);
 	if (ret) {
 		pr_err("unable to allocate base pipe\n");
 		goto pan_display_error;
@@ -1876,14 +1787,13 @@ static void mdss_mdp_overlay_pan_display(struct msm_fb_data_type *mfd,
 		pr_err("unable to map base pipe\n");
 		goto pan_display_error;
 	}
-	if (pipe_ndx)
-		pipe_ndx[0] = pipe->ndx;
 
 	buf = &pipe->back_buf;
 	if (is_mdss_iommu_attached()) {
 		if (!mfd->iova) {
 			pr_err("mfd iova is zero\n");
-			goto attach_err;
+			mdss_mdp_pipe_unmap(pipe);
+			goto pan_display_error;
 		}
 		buf->p[0].addr = mfd->iova;
 	} else {
@@ -1891,26 +1801,21 @@ static void mdss_mdp_overlay_pan_display(struct msm_fb_data_type *mfd,
 	}
 
 	buf->p[0].addr += offset;
-	if (image_size)
-		buf->p[0].len = image_size;
-	else
-		buf->p[0].len = fbi->fix.smem_len - offset;
+	buf->p[0].len = fbi->fix.smem_len - offset;
 	buf->num_planes = 1;
 	mdss_mdp_pipe_unmap(pipe);
 
 	if (fbi->var.xres > MAX_MIXER_WIDTH || mfd->split_display) {
 		ret = mdss_mdp_overlay_get_fb_pipe(mfd, &pipe,
-					   MDSS_MDP_MIXER_MUX_RIGHT, req);
+					   MDSS_MDP_MIXER_MUX_RIGHT);
 		if (ret) {
 			pr_err("unable to allocate right base pipe\n");
-			goto attach_err;
+			goto pan_display_error;
 		}
 		if (mdss_mdp_pipe_map(pipe)) {
 			pr_err("unable to map right base pipe\n");
-			goto attach_err;
+			goto pan_display_error;
 		}
-		if (pipe_ndx)
-			pipe_ndx[1] = pipe->ndx;
 
 		pipe->back_buf = *buf;
 		mdss_mdp_pipe_unmap(pipe);
@@ -1925,13 +1830,6 @@ static void mdss_mdp_overlay_pan_display(struct msm_fb_data_type *mfd,
 	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_OFF, false);
 	return;
 
-attach_err:
-	mutex_unlock(&mdp5_data->ov_lock);
-	mdss_mdp_overlay_unset(mfd, pipe->ndx);
-	if (pipe_ndx)
-		pipe_ndx[0] = INVALID_PIPE_INDEX;
-	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_OFF, false);
-	return;
 pan_display_error:
 	mdss_iommu_ctrl(0);
 	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_OFF, false);
@@ -2110,90 +2008,6 @@ static ssize_t dynamic_fps_sysfs_wta_dfps(struct device *dev,
 	return count;
 } /* dynamic_fps_sysfs_wta_dfps */
 
-static ssize_t cabc_mode_show(struct device *dev,
-			struct device_attribute *attr, char *buf)
-{
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)fbi->par;
-	struct mdss_mdp_ctl *ctl = mfd_to_ctl(mfd);
-	struct mdss_panel_info *pinfo = &ctl->panel_data->panel_info;
-	const char *name;
-
-	if (!ctl) {
-		pr_warn("no ctl attached to fb\n");
-		return -ENODEV;
-	}
-
-	name = mdss_panel_map_cabc_name(pinfo->cabc_mode);
-	if (!name) {
-		pr_err("failure to map cabc name\n");
-		return -EINVAL;
-	}
-
-	return snprintf(buf, PAGE_SIZE, "%s\n", name);
-}
-
-static ssize_t cabc_mode_store(struct device *dev,
-			struct device_attribute *attr,
-			const char *buf, size_t count)
-{
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)fbi->par;
-	struct mdss_mdp_ctl *ctl = mfd_to_ctl(mfd);
-	int ret = -EINVAL;
-	int i, mode = -1;
-	const char *name;
-
-	if (!ctl) {
-		pr_warn("no ctl attached to fb\n");
-		goto end;
-	}
-
-	for (i = CABC_UI_MODE; i < CABC_MODE_MAX_NUM; i++) {
-		name = mdss_panel_map_cabc_name(i);
-		if (!name || strncmp(name, buf, strlen(name)))
-			continue;
-		mode = i;
-		break;
-	}
-	if (mode == -1) {
-		pr_err("invalid mode value = %s\n", buf);
-		goto end;
-	}
-
-	mutex_lock(&ctl->offlock);
-	if (!mfd->panel_power_on) {
-		pr_warn("panel is powered off\n");
-		ret = -EPERM;
-		goto unlock;
-	}
-
-	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_ON, false);
-	ret = mdss_mdp_ctl_intf_event(ctl, MDSS_EVENT_SET_CABC, (void *)mode);
-	if (ret) {
-		pr_err("Failed to set CABC mode, ret = %d\n", ret);
-		ret = -EFAULT;
-	}
-	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_OFF, false);
-
-unlock:
-	mutex_unlock(&ctl->offlock);
-
-end:
-	return ret ? ret : count;
-}
-
-static DEVICE_ATTR(cabc_mode, S_IWUSR | S_IWGRP | S_IRUSR | S_IRGRP,
-	cabc_mode_show, cabc_mode_store);
-
-static struct attribute *cabc_mode_attrs[] = {
-	&dev_attr_cabc_mode.attr,
-	NULL,
-};
-
-static struct attribute_group cabc_mode_attrs_group = {
-	.attrs = cabc_mode_attrs,
-};
 
 static DEVICE_ATTR(dynamic_fps, S_IRUGO | S_IWUSR, dynamic_fps_sysfs_rda_dfps,
 	dynamic_fps_sysfs_wta_dfps);
@@ -2204,200 +2018,6 @@ static struct attribute *dynamic_fps_fs_attrs[] = {
 };
 static struct attribute_group dynamic_fps_fs_attrs_group = {
 	.attrs = dynamic_fps_fs_attrs,
-};
-
-static ssize_t frame_counter_show(struct device *dev,
-				struct device_attribute *attr, char *buf)
-{
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)fbi->par;
-	struct mdss_mdp_ctl *ctl = mfd_to_ctl(mfd);
-	struct mdss_mdp_mixer *mixer;
-	u32 reg;
-
-	if (!ctl) {
-		pr_warning("there is no ctl attached to fb\n");
-		return -ENODEV;
-	}
-
-	mixer = mdss_mdp_mixer_get(ctl, MDSS_MDP_MIXER_MUX_DEFAULT);
-	if (!mixer) {
-		pr_warning("there is no mixer\n");
-		return -ENODEV;
-	}
-
-	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_ON, false);
-	reg = mdss_mdp_pingpong_read(mixer,
-				MDSS_MDP_REG_PP_INT_COUNT_VAL) >> 16;
-	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_OFF, false);
-	return snprintf(buf, PAGE_SIZE, "%d\n", reg);
-}
-
-static DEVICE_ATTR(frame_counter, S_IRUSR | S_IRGRP, frame_counter_show, NULL);
-
-static ssize_t te_enable_store(struct device *dev,
-			struct device_attribute *attr,
-			const char *buf, size_t count)
-{
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)fbi->par;
-	struct mdss_mdp_ctl *ctl = mfd_to_ctl(mfd);
-	struct mdss_overlay_private *mdp5_data = mfd_to_mdp5_data(mfd);
-	struct mdss_mdp_mixer *mixer;
-	static int prev_height;
-
-	int enable;
-	int r = 0;
-
-	if (!ctl || !mdp5_data) {
-		pr_warning("there is no ctl or mdp5_data attached to fb\n");
-		r = -ENODEV;
-		goto end;
-	}
-
-	mixer = mdss_mdp_mixer_get(ctl, MDSS_MDP_MIXER_MUX_DEFAULT);
-	if (!mixer) {
-		pr_err("there is no mixer\n");
-		r = -ENODEV;
-		goto end;
-	}
-
-	if (!mfd->panel_power_on) {
-		pr_warning("panel is not powered\n");
-		r = -EPERM;
-		goto end;
-	}
-
-	r = kstrtoint(buf, 0, &enable);
-	if ((r) || ((enable != 0) && (enable != 1))) {
-		pr_err("invalid TE enable value = %d\n",
-			enable);
-		r = -EINVAL;
-		goto end;
-	}
-
-	mutex_lock(&mdp5_data->ov_lock);
-	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_ON, false);
-
-	r = mdss_mdp_ctl_intf_event(ctl, MDSS_EVENT_ENABLE_TE, (void *) enable);
-	if (r) {
-		pr_err("Failed sending TE command, r = %d\n", r);
-		r = -EFAULT;
-		goto locked_end;
-	}
-
-	/* The TE max height in MDP is being set to a max value of 0xFFF0. Since
-	   this is such a large number, when TE is disabled from the panel,
-	   we'll start to get constant timeout errors and get 1 FPS.  To prevent
-	   this from happening, set the height to display height * 2.  This
-	   will just cause our FPS to drop to 30 FPS, and prevent timeout
-	   errors. */
-	if (!enable) {
-		prev_height = mdss_mdp_pingpong_read(mixer,
-				MDSS_MDP_REG_PP_SYNC_CONFIG_HEIGHT) & 0xFFFF;
-		mdss_mdp_pingpong_write(mixer,
-					MDSS_MDP_REG_PP_SYNC_CONFIG_HEIGHT,
-					mfd->fbi->var.yres * 2);
-	} else if (enable && prev_height) {
-		mdss_mdp_pingpong_write(mixer,
-					MDSS_MDP_REG_PP_SYNC_CONFIG_HEIGHT,
-					prev_height);
-	}
-
-locked_end:
-	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_OFF, false);
-	mutex_unlock(&mdp5_data->ov_lock);
-
-end:
-	return r ? r : count;
-}
-
-static DEVICE_ATTR(te_enable, S_IWUSR | S_IWGRP, NULL, te_enable_store);
-
-static struct attribute *factory_te_attrs[] = {
-	&dev_attr_frame_counter.attr,
-	&dev_attr_te_enable.attr,
-	NULL,
-};
-static struct attribute_group factory_te_attrs_group = {
-	.attrs = factory_te_attrs,
-};
-
-static ssize_t hbm_show(struct device *dev,
-			struct device_attribute *attr, char *buf)
-{
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)fbi->par;
-	struct mdss_mdp_ctl *ctl = mfd_to_ctl(mfd);
-
-	if (!ctl) {
-		pr_warning("there is no ctl attached to fb\n");
-		return -ENODEV;
-	}
-
-	return snprintf(buf, PAGE_SIZE, "%d\n",
-			ctl->panel_data->panel_info.hbm_state);
-}
-
-static ssize_t hbm_store(struct device *dev,
-			struct device_attribute *attr,
-			const char *buf, size_t count)
-{
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)fbi->par;
-	struct mdss_mdp_ctl *ctl = mfd_to_ctl(mfd);
-	int enable;
-	int r;
-
-	if (!ctl) {
-		pr_warning("there is no ctl attached to fb\n");
-		r = -ENODEV;
-		goto end;
-	}
-
-	r = kstrtoint(buf, 0, &enable);
-	if ((r) || ((enable != 0) && (enable != 1))) {
-		pr_err("invalid HBM value = %d\n",
-			enable);
-		r = -EINVAL;
-		goto end;
-	}
-
-	mutex_lock(&ctl->offlock);
-	if (!mfd->panel_power_on) {
-		pr_warning("panel is not powered\n");
-		r = -EPERM;
-		goto unlock;
-	}
-
-	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_ON, false);
-	r = mdss_mdp_ctl_intf_event(ctl, MDSS_EVENT_ENABLE_HBM,
-				(void *) enable);
-	if (r) {
-		pr_err("Failed sending HBM command, r = %d\n", r);
-		r = -EFAULT;
-	} else
-		pr_info("HBM state changed by sysfs, state = %d\n", enable);
-
-	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_OFF, false);
-
-unlock:
-	mutex_unlock(&ctl->offlock);
-
-end:
-	return r ? r : count;
-}
-
-static DEVICE_ATTR(hbm, S_IWUSR | S_IWGRP | S_IRUSR | S_IRGRP,
-		hbm_show, hbm_store);
-
-static struct attribute *hbm_attrs[] = {
-	&dev_attr_hbm.attr,
-	NULL,
-};
-
-static struct attribute_group hbm_attrs_group = {
-	.attrs = hbm_attrs,
 };
 
 static ssize_t mdss_mdp_vsync_show_event(struct device *dev,
@@ -3061,7 +2681,6 @@ static int mdss_mdp_overlay_ioctl_handler(struct msm_fb_data_type *mfd,
 {
 	struct mdss_overlay_private *mdp5_data = mfd_to_mdp5_data(mfd);
 	struct mdp_overlay *req = NULL;
-	struct mdss_panel_data *pdata;
 	int val, ret = -ENOSYS;
 	struct msmfb_metadata metadata;
 
@@ -3186,15 +2805,6 @@ static int mdss_mdp_overlay_ioctl_handler(struct msm_fb_data_type *mfd,
 	default:
 		if (mfd->panel.type == WRITEBACK_PANEL)
 			ret = mdss_mdp_wb_ioctl_handler(mfd, cmd, argp);
-		else if (mfd->panel.type == MIPI_VIDEO_PANEL ||
-			mfd->panel.type == MIPI_CMD_PANEL) {
-			pdata = dev_get_platdata(&mfd->pdev->dev);
-			if (!pdata)
-				return -EFAULT;
-			mutex_lock(&mdp5_data->ov_lock);
-			ret = mdss_dsi_ioctl_handler(pdata, cmd, argp);
-			mutex_unlock(&mdp5_data->ov_lock);
-		}
 		break;
 	}
 
@@ -3256,7 +2866,6 @@ static struct mdss_mdp_ctl *__mdss_mdp_overlay_ctl_init(
 		}
 	}
 
-	mdss_timeout_init(mdss_mdp5_dump_ctl, ctl);
 error:
 	if (rc)
 		return ERR_PTR(rc);
@@ -3293,18 +2902,7 @@ static int mdss_mdp_overlay_on(struct msm_fb_data_type *mfd)
 		if (!IS_ERR_VALUE(rc) &&
 			(mfd->panel_info->type != WRITEBACK_PANEL)) {
 			atomic_inc(&mfd->mdp_sync_pt_data.commit_cnt);
-			if (mfd->quickdraw_in_progress) {
-				/* In quickdraw, only turn the panel on, don't
-				   kickoff so that we preserve the panel's
-				   contents */
-				ctl = mfd_to_ctl(mfd);
-				if (ctl->panel_on_locked) {
-					mutex_lock(&ctl->lock);
-					ctl->panel_on_locked(ctl);
-					mutex_unlock(&ctl->lock);
-				}
-			} else
-				rc = mdss_mdp_overlay_kickoff(mfd, NULL);
+			rc = mdss_mdp_overlay_kickoff(mfd, NULL);
 		}
 	} else {
 		rc = mdss_mdp_ctl_setup(mdp5_data->ctl);
@@ -3316,7 +2914,6 @@ static int mdss_mdp_overlay_on(struct msm_fb_data_type *mfd)
 		pr_err("Failed to turn on fb%d\n", mfd->index);
 		mdss_mdp_overlay_off(mfd);
 	}
-
 	return rc;
 }
 
@@ -3325,7 +2922,6 @@ static int mdss_mdp_overlay_off(struct msm_fb_data_type *mfd)
 	int rc;
 	struct mdss_overlay_private *mdp5_data;
 	struct mdss_mdp_mixer *mixer;
-	struct mdss_data_type *mdata;
 	int need_cleanup;
 
 	if (!mfd)
@@ -3335,7 +2931,6 @@ static int mdss_mdp_overlay_off(struct msm_fb_data_type *mfd)
 		return -EINVAL;
 
 	mdp5_data = mfd_to_mdp5_data(mfd);
-	mdata = mfd_to_mdata(mfd);
 
 	if (!mdp5_data || !mdp5_data->ctl) {
 		pr_err("ctl not initialized\n");
@@ -3393,7 +2988,9 @@ static int mdss_mdp_overlay_off(struct msm_fb_data_type *mfd)
 		if (atomic_dec_return(&ov_active_panels) == 0)
 			mdss_mdp_rotator_release_all();
 
-		mdss_mdp_footswitch_ctrl(mdata, false);
+		rc = pm_runtime_put(&mfd->pdev->dev);
+		if (rc)
+			pr_err("unable to suspend w/pm_runtime_put (%d)\n", rc);
 	}
 
 	return rc;
@@ -3455,38 +3052,6 @@ static int __mdss_mdp_ctl_handoff(struct mdss_mdp_ctl *ctl,
 	}
 exit:
 	return rc;
-}
-
-static void mdss_mdp5_dump_ctl(void *data)
-{
-	struct mdss_mdp_ctl *ctl = (struct mdss_mdp_ctl *)data;
-	u32 isr, mask;
-
-	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_ON, false);
-
-	isr = MDSS_MDP_REG_READ(MDSS_MDP_REG_INTR_STATUS);
-	mask = MDSS_MDP_REG_READ(MDSS_MDP_REG_INTR_EN);
-	MDSS_TIMEOUT_LOG("-------- MDP5 INTERRUPT DATA ---------\n");
-	MDSS_TIMEOUT_LOG("MDSS_MDP_REG_INTR_STATUS: 0x%08X\n", isr);
-	MDSS_TIMEOUT_LOG("MDSS_MDP_REG_INTR_EN: 0x%08X\n", mask);
-	MDSS_TIMEOUT_LOG("global irqs disabled: %d\n", irqs_disabled());
-	MDSS_TIMEOUT_LOG("------ MDP5 INTERRUPT DATA DONE ------\n");
-
-	if (ctl) {
-		MDSS_TIMEOUT_LOG("-------- MDP5 CTL DATA ---------\n");
-		MDSS_TIMEOUT_LOG("play_cnt=%u\n", ctl->play_cnt);
-		MDSS_TIMEOUT_LOG("vsync_cnt=%u\n", ctl->vsync_cnt);
-		MDSS_TIMEOUT_LOG("underrun_cnt=%u\n", ctl->underrun_cnt);
-		MDSS_TIMEOUT_LOG("------ MDP5 CTL DATA DONE ------\n");
-
-		if (ctl->ctx_dump_fnc) {
-			MDSS_TIMEOUT_LOG("-------- MDP5 CTX DATA ---------\n");
-			ctl->ctx_dump_fnc(ctl);
-			MDSS_TIMEOUT_LOG("------ MDP5 CTX DATA DONE ------\n");
-		}
-	}
-
-	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_OFF, false);
 }
 
 /**
@@ -3557,79 +3122,12 @@ static int mdss_mdp_overlay_handoff(struct msm_fb_data_type *mfd)
 
 error:
 	if (rc && ctl) {
-		__mdss_mdp_handoff_cleanup_pipes(mfd, MDSS_MDP_PIPE_TYPE_RGB);
-		__mdss_mdp_handoff_cleanup_pipes(mfd, MDSS_MDP_PIPE_TYPE_VIG);
-		__mdss_mdp_handoff_cleanup_pipes(mfd, MDSS_MDP_PIPE_TYPE_DMA);
+		mdss_mdp_handoff_cleanup_pipes(mfd, MDSS_MDP_PIPE_TYPE_RGB);
+		mdss_mdp_handoff_cleanup_pipes(mfd, MDSS_MDP_PIPE_TYPE_VIG);
+		mdss_mdp_handoff_cleanup_pipes(mfd, MDSS_MDP_PIPE_TYPE_DMA);
 		mdss_mdp_ctl_destroy(ctl);
 		mdp5_data->ctl = NULL;
 		mdp5_data->handoff = false;
-	}
-
-	return rc;
-}
-
-static int mdss_mdp_overlay_splash_image(struct msm_fb_data_type *mfd,
-						int *pipe_ndx, int splash_event)
-{
-	struct mdp_overlay req;
-	int rc = 0;
-	struct fb_info *fbi = NULL;
-	int image_len = SPLASH_IMAGE_WIDTH * SPLASH_IMAGE_HEIGHT * SPLASH_IMAGE_BPP;
-
-	if (!mfd || !mfd->fbi || !pipe_ndx) {
-		pr_err("Invalid input parameter\n");
-		return -EINVAL;
-	}
-	/*
-	 * Allocate fb memory here for splash screen to display.
-	 * It gets removed once the splash screen thread stops.
-	 */
-	if (!mfd->fbi->screen_base) {
-		rc = mdss_fb_alloc_fb_ion_memory(mfd, image_len);
-		if (rc < 0) {
-			pr_err("Invalid input parameter\n");
-			return -EINVAL;
-		}
-	}
-
-	fbi = mfd->fbi;
-
-	if (SPLASH_IMAGE_WIDTH > fbi->var.xres ||
-			SPLASH_IMAGE_HEIGHT > fbi->var.yres ||
-			SPLASH_IMAGE_BPP > fbi->var.bits_per_pixel / 8 ||
-			image_len > fbi->fix.smem_len) {
-		pr_err("Invalid splash parameter configuration\n");
-		return -EINVAL;
-	}
-
-	if (splash_event == MDP_CREATE_SPLASH_OV) {
-		pipe_ndx[0] = INVALID_PIPE_INDEX;
-		pipe_ndx[1] = INVALID_PIPE_INDEX;
-
-		memset(&req, 0, sizeof(struct mdp_overlay));
-		req.src.width = req.dst_rect.w = req.src_rect.w =
-				SPLASH_IMAGE_WIDTH;
-		req.src.height = req.dst_rect.h = req.src_rect.h =
-				SPLASH_IMAGE_HEIGHT;
-		req.src.format = SPLASH_IMAGE_FORMAT;
-		req.id = MSMFB_NEW_REQUEST;
-		req.z_order = MDSS_MDP_STAGE_0;
-		req.is_fg = 1;
-		req.alpha = 0xff;
-		req.transp_mask = MDP_TRANSP_NOP;
-		req.dst_rect.x =
-			(fbi->var.xres >> 1) - (SPLASH_IMAGE_WIDTH >> 1);
-		req.dst_rect.y =
-			(fbi->var.yres >> 1) - (SPLASH_IMAGE_HEIGHT >> 1);
-
-		memcpy(fbi->screen_base, splash_bgr888_image, image_len);
-		mdss_mdp_overlay_pan_display(mfd, &req, image_len, pipe_ndx);
-
-	} else if (splash_event == MDP_REMOVE_SPLASH_OV) {
-		if (pipe_ndx[0] != INVALID_PIPE_INDEX)
-			mdss_mdp_overlay_unset(mfd, pipe_ndx[0]);
-		if (pipe_ndx[1] != INVALID_PIPE_INDEX)
-			mdss_mdp_overlay_unset(mfd, pipe_ndx[1]);
 	}
 
 	return rc;
@@ -3741,6 +3239,27 @@ static int __vsync_retire_setup(struct msm_fb_data_type *mfd)
 	return 0;
 }
 
+static int mdss_mdp_update_panel_info(struct msm_fb_data_type *mfd, int mode)
+{
+	int ret = 0;
+	struct mdss_overlay_private *mdp5_data = mfd_to_mdp5_data(mfd);
+	struct mdss_mdp_ctl *ctl = mdp5_data->ctl;
+
+	ret = mdss_mdp_ctl_intf_event(ctl, MDSS_EVENT_DSI_DYNAMIC_SWITCH,
+						(void *)(unsigned long)mode);
+	if (ret)
+		pr_err("Dynamic switch to %s mode failed!\n",
+					mode ? "command" : "video");
+	/*
+	 * Destroy current ctrl sturcture as this is
+	 * going to be re-initialized with the requested mode.
+	 */
+	mdss_mdp_ctl_destroy(mdp5_data->ctl);
+	mdp5_data->ctl = NULL;
+
+	return 0;
+}
+
 int mdss_mdp_overlay_init(struct msm_fb_data_type *mfd)
 {
 	struct device *dev = mfd->fbi->dev;
@@ -3758,7 +3277,8 @@ int mdss_mdp_overlay_init(struct msm_fb_data_type *mfd)
 	mdp5_interface->panel_register_done = mdss_panel_register_done;
 	mdp5_interface->kickoff_fnc = mdss_mdp_overlay_kickoff;
 	mdp5_interface->get_sync_fnc = mdss_mdp_rotator_sync_pt_get;
-	mdp5_interface->splash_fnc = mdss_mdp_overlay_splash_image;
+	mdp5_interface->splash_init_fnc = mdss_mdp_splash_init;
+	mdp5_interface->configure_panel = mdss_mdp_update_panel_info;
 
 	mdp5_data = kmalloc(sizeof(struct mdss_overlay_private), GFP_KERNEL);
 	if (!mdp5_data) {
@@ -3810,43 +3330,24 @@ int mdss_mdp_overlay_init(struct msm_fb_data_type *mfd)
 			pr_err("Error dfps sysfs creation ret=%d\n", rc);
 			goto init_fail;
 		}
-	} else if (mfd->panel_info->type == MIPI_CMD_PANEL) {
+	}
+
+	if (mfd->panel_info->mipi.dynamic_switch_enabled ||
+			mfd->panel_info->type == MIPI_CMD_PANEL) {
 		rc = __vsync_retire_setup(mfd);
 		if (IS_ERR_VALUE(rc)) {
 			pr_err("unable to create vsync timeline\n");
 			goto init_fail;
 		}
 	}
-
-	if (mfd->panel_info->type == MIPI_CMD_PANEL) {
-		rc = sysfs_create_group(&dev->kobj,
-					&factory_te_attrs_group);
-		if (rc) {
-			pr_err("Error factory te sysfs creation ret=%d\n", rc);
-			goto init_fail;
-		}
-	}
-
-	if (mfd->panel_info->hbm_feature_enabled) {
-		rc = sysfs_create_group(&dev->kobj,
-					&hbm_attrs_group);
-		if (rc) {
-			pr_err("Error for HBM sysfs creation ret = %d\n", rc);
-			goto init_fail;
-		}
-	}
-
-	if (mfd->panel_info->dynamic_cabc_enabled) {
-		rc = sysfs_create_group(&dev->kobj, &cabc_mode_attrs_group);
-		if (rc)
-			pr_warn("Fail to create CABC sysfs.\n");
-	}
-
 	mfd->mdp_sync_pt_data.async_wait_fences = true;
 	rc = sysfs_create_link_nowarn(&dev->kobj,
 			&mdp5_data->mdata->pdev->dev.kobj, "mdp");
 	if (rc)
 		pr_warn("problem creating link to mdp sysfs\n");
+
+	pm_runtime_set_suspended(&mfd->pdev->dev);
+	pm_runtime_enable(&mfd->pdev->dev);
 
 	kobject_uevent(&dev->kobj, KOBJ_ADD);
 	pr_debug("vsync kobject_uevent(KOBJ_ADD)\n");
@@ -3872,52 +3373,9 @@ int mdss_mdp_overlay_init(struct msm_fb_data_type *mfd)
 
 	if (mdss_mdp_pp_overlay_init(mfd))
 		pr_warn("Failed to initialize pp overlay data.\n");
-
-	if (mfd->index == 0 && mfd->panel_info->quickdraw_enabled)
-		mdss_quickdraw_register(mfd);
-
 	return rc;
 init_fail:
 	kfree(mdp5_data);
-	return rc;
-}
-
-static __ref int mdss_mdp_overlay_splash_parse_dt(struct msm_fb_data_type *mfd)
-{
-	struct platform_device *pdev = mfd->pdev;
-	struct mdss_overlay_private *mdp5_mdata = mfd_to_mdp5_data(mfd);
-	int len = 0, rc = 0;
-	u32 offsets[2];
-
-	of_find_property(pdev->dev.of_node, "qcom,memblock-reserve", &len);
-
-	if (len < 1) {
-		pr_debug("mem reservation for splash screen fb not present\n");
-		rc = -EINVAL;
-		goto error;
-	}
-
-	len = len/sizeof(u32);
-
-	rc = of_property_read_u32_array(pdev->dev.of_node,
-			"qcom,memblock-reserve", offsets, len);
-	if (rc) {
-		pr_debug("Error reading mem reserve settings for fb\n");
-		goto error;
-	}
-
-	if (!memblock_is_reserved(offsets[0])) {
-		pr_debug("failed to reserve memory for fb splash\n");
-		rc = -EINVAL;
-		goto error;
-	}
-
-	mdp5_mdata->splash_mem_addr = offsets[0];
-	mdp5_mdata->splash_mem_size = offsets[1];
-	pr_debug("memaddr=%x size=%x\n", mdp5_mdata->splash_mem_addr,
-		mdp5_mdata->splash_mem_size);
-
-error:
 	return rc;
 }
 
@@ -3932,14 +3390,6 @@ static int mdss_mdp_overlay_fb_parse_dt(struct msm_fb_data_type *mfd)
 	if (mdp5_mdata->mixer_swap) {
 		pr_info("mixer swap is enabled for fb device=%s\n",
 			pdev->name);
-	}
-
-	rc = mdss_mdp_overlay_splash_parse_dt(mfd);
-	if (rc && mfd->panel_info->cont_splash_enabled) {
-		pr_err("No rsvd mem found in DT for splash screen\n");
-	} else {
-		pr_debug("Mem reservation not reqd if cont splash diasbled\n");
-		rc = 0;
 	}
 
 	return rc;

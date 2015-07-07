@@ -35,7 +35,6 @@ struct mdp3_buffer_queue {
 
 struct mdp3_session_data {
 	struct mutex lock;
-	struct mutex offlock;
 	int status;
 	struct mdp3_dma *dma;
 	struct mdss_panel_data *panel;
