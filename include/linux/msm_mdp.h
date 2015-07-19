@@ -1110,13 +1110,6 @@ struct msmfb_mixer_info_req {
 	struct mdp_mixer_info info[MAX_PIPE_PER_MIXER];
 };
 
-struct msmfb_reg_access {
-	uint8_t address;
-	uint8_t use_hs_mode;
-	size_t buffer_size;
-	void __user *buffer;
-};
-
 enum {
 	DISPLAY_SUBSYSTEM_ID,
 	ROTATOR_SUBSYSTEM_ID,
