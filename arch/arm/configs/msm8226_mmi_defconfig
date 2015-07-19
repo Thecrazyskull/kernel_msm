@@ -3153,7 +3153,7 @@ CONFIG_ANDROID_BG_SCAN_MEM=y
 #
 # Qualcomm Atheros Prima WLAN module
 #
-CONFIG_PRIMA_WLAN=y
+# CONFIG_PRIMA_WLAN is not set
 CONFIG_PRONTO_WLAN=y
 # CONFIG_MOTO_PRIMA is not set
 # CONFIG_PRIMA_WLAN_BTAMP is not set
