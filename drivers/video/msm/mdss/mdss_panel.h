@@ -79,6 +79,13 @@ enum {
 	MODE_GPIO_LOW,
 };
 
+enum {
+	BL_PWM,
+	BL_WLED,
+	BL_DCS_CMD,
+	UNKNOWN_CTRL,
+};
+
 #define MDSS_MAX_PANEL_LEN      256
 #define MDSS_INTF_MAX_NAME_LEN 5
 struct mdss_panel_intf {
@@ -353,11 +360,13 @@ struct mdss_panel_info {
 	u32 max_fps;
 
 	u32 cont_splash_enabled;
+	bool cont_splash_esd_rdy;
 	u32 partial_update_enabled;
 	struct ion_handle *splash_ihdl;
 	u32 panel_power_on;
 	bool dynamic_cabc_enabled;
 	enum cabc_mode cabc_mode;
+	char supplier[8];
 	u32 bl_shutdown_delay;
 
 	uint32_t panel_dead;

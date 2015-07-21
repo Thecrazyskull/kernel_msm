@@ -1112,6 +1112,31 @@ static struct device_node *mdss_dsi_pref_prim_panel(
 	return dsi_pan_node;
 }
 
+static struct device_node *mdss_dsi_panel_search_dt_nodes(
+	struct platform_device *pdev,
+	struct mdss_dsi_ctrl_pdata *ctrl_pdata)
+{
+	struct device_node *mdss_node;
+	struct device_node *node;
+
+	mdss_node = of_parse_phandle(pdev->dev.of_node,
+				"qcom,mdss-mdp", 0);
+
+	if (!mdss_node) {
+		pr_err("%s: %d: mdss_node null\n",
+			__func__, __LINE__);
+		return NULL;
+	}
+
+	for_each_child_of_node(mdss_node, node) {
+		if (mdss_dsi_match_chosen_panel(node,
+			&ctrl_pdata->panel_config))
+			return node;
+	}
+
+	return NULL;
+}
+
 /**
  * mdss_dsi_find_panel_of_node(): find device node of dsi panel
  * @pdev: platform_device of the dsi ctrl node
@@ -1127,7 +1152,8 @@ static struct device_node *mdss_dsi_pref_prim_panel(
  * returns pointer to panel node on success, NULL on error.
  */
 static struct device_node *mdss_dsi_find_panel_of_node(
-		struct platform_device *pdev, char *panel_cfg)
+	struct platform_device *pdev, char *panel_cfg,
+	struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 {
 	int len, i;
 	int ctrl_id = pdev->id - 1;
@@ -1138,6 +1164,11 @@ static struct device_node *mdss_dsi_find_panel_of_node(
 
 	len = strlen(panel_cfg);
 	if (!len) {
+		dsi_pan_node = mdss_dsi_panel_search_dt_nodes(pdev,
+								ctrl_pdata);
+		if (dsi_pan_node)
+			return dsi_pan_node;
+
 		/* no panel cfg chg, parse dt */
 		pr_debug("%s:%d: no cmd line cfg present\n",
 			 __func__, __LINE__);
@@ -1254,8 +1285,8 @@ static int __devinit mdss_dsi_ctrl_probe(struct platform_device *pdev)
 	}
 
 	/* Parse the regulator information */
-	rc = mdss_dsi_get_dt_vreg_data(&pdev->dev,
-			        &ctrl_pdata->power_data, NULL);
+	rc = mdss_panel_parse_panel_config_dt(ctrl_pdata);
+
 	if (rc) {
 		pr_err("%s: failed to get vreg data from dt. rc=%d\n",
 		       __func__, rc);
@@ -1270,7 +1301,7 @@ static int __devinit mdss_dsi_ctrl_probe(struct platform_device *pdev)
 			__func__, __LINE__);
 
 	/* find panel device node */
-	dsi_pan_node = mdss_dsi_find_panel_of_node(pdev, panel_cfg);
+	dsi_pan_node = mdss_dsi_find_panel_of_node(pdev, panel_cfg, ctrl_pdata);
 	if (!dsi_pan_node) {
 		pr_err("%s: can't find panel node %s\n", __func__, panel_cfg);
 		goto error_pan_node;
@@ -1487,25 +1518,27 @@ int dsi_panel_device_register(struct device_node *pan_node,
 		pr_err("%s:%d, Disp_en gpio not specified\n",
 						__func__, __LINE__);
 
-	if (pinfo->type == MIPI_CMD_PANEL) {
-		ctrl_pdata->disp_te_gpio = of_get_named_gpio(ctrl_pdev->dev.of_node,
+	ctrl_pdata->disp_te_gpio = of_get_named_gpio(ctrl_pdev->dev.of_node,
 						"qcom,platform-te-gpio", 0);
-		if (!gpio_is_valid(ctrl_pdata->disp_te_gpio)) {
-			pr_err("%s:%d, Disp_te gpio not specified\n",
-						__func__, __LINE__);
-		}
-	}
-
-	if (gpio_is_valid(ctrl_pdata->disp_te_gpio) &&
-					pinfo->type == MIPI_CMD_PANEL) {
+	if (!gpio_is_valid(ctrl_pdata->disp_te_gpio)) {
+		pr_err("%s:%d, Disp_te gpio not specified\n",
+			__func__, __LINE__);
+	} else {
+		int func;
 		rc = gpio_request(ctrl_pdata->disp_te_gpio, "disp_te");
 		if (rc) {
 			pr_err("request TE gpio failed, rc=%d\n",
 			       rc);
 			return -ENODEV;
 		}
+
+		if (pinfo->type == MIPI_CMD_PANEL)
+			func = 1;
+		else
+			func = 0;
+
 		rc = gpio_tlmm_config(GPIO_CFG(
-				ctrl_pdata->disp_te_gpio, 1,
+				ctrl_pdata->disp_te_gpio, func,
 				GPIO_CFG_INPUT,
 				GPIO_CFG_PULL_DOWN,
 				GPIO_CFG_2MA),
@@ -1564,6 +1597,8 @@ int dsi_panel_device_register(struct device_node *pan_node,
 		ctrl_pdata->check_status = mdss_dsi_reg_status_check;
 	else if (ctrl_pdata->status_mode == ESD_BTA)
 		ctrl_pdata->check_status = mdss_dsi_bta_status_check;
+	else if (ctrl_pdata->status_mode == ESD_MOTO)
+		ctrl_pdata->check_status = mdss_dsi_moto_status_check;
 
 	if (ctrl_pdata->status_mode == ESD_MAX) {
 		pr_err("%s: Using default BTA for ESD check\n", __func__);

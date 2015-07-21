@@ -76,7 +76,7 @@
 
 		qcom,mdss-dsi-on-command-state = "dsi_lp_mode";
 		qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
-		qcom,mdss-dsi-panel-status-check-mode = "bta_check";
+		qcom,mdss-dsi-panel-status-check-mode = "moto_check";
 		qcom,dynamic-mode-switch-enabled;
 		qcom,video-to-cmd-mode-switch-commands = [15 01 00 00 14 00 02 C2 0B
 					15 01 00 00 00 00 02 C2 08];
@@ -97,6 +97,7 @@
 		qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
 
 		qcom,mdss-dsi-esd-det-mode = <1>;
+		qcom,esd-check-enabled;
 
 		qcom,panel-en-reset-sequence = <1 11>;
 		qcom,panel-dis-reset-sequence = <0 3>;
