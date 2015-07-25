@@ -623,6 +623,9 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 	mipi  = &pdata->panel_info.mipi;
 	mmi_panel_notify(MMI_PANEL_EVENT_PRE_DISPLAY_OFF, NULL);
 
+	if (ctrl->set_hbm)
+		ctrl->set_hbm(ctrl, 0);
+
 	if (ctrl->off_cmds.cmd_cnt)
 		mdss_dsi_panel_cmds_send(ctrl, &ctrl->off_cmds);
 
@@ -756,8 +759,8 @@ static int mdss_dsi_parse_dcs_cmds(struct device_node *np,
 		len -= dchdr->dlen;
 	}
 
-	/*Set default link state to LP Mode*/
-	pcmds->link_state = DSI_LP_MODE;
+	/*Set default link state to HS Mode*/
+	pcmds->link_state = DSI_HS_MODE;
 
 	if (link_key) {
 		data = of_get_property(np, link_key, NULL);
@@ -1332,6 +1335,24 @@ static int mdss_panel_parse_optional_prop(struct device_node *np,
 				struct mdss_dsi_ctrl_pdata *ctrl)
 {
 	int rc = 0;
+	u32 tmp;
+
+	/* HBM properties */
+	pinfo->hbm_state = 0;
+	pinfo->hbm_feature_enabled = false;
+	rc = mdss_dsi_parse_optional_dcs_cmds(np, &ctrl->hbm_on_cmds,
+				"qcom,mdss-dsi-hbm-on-command", NULL);
+	rc |= mdss_dsi_parse_optional_dcs_cmds(np, &ctrl->hbm_off_cmds,
+				"qcom,mdss-dsi-hbm-off-command", NULL);
+	if (!of_property_read_u32(np, "qcom,mdss-dsi-hbm-on-brightness", &tmp))
+		ctrl->hbm_on_brts = tmp;
+	if (!of_property_read_u32(np, "qcom,mdss-dsi-hbm-off-brightness", &tmp))
+		ctrl->hbm_off_brts = tmp;
+	if ((ctrl->hbm_on_cmds.cmd_cnt && ctrl->hbm_off_cmds.cmd_cnt) ||
+		(ctrl->hbm_on_brts && ctrl->hbm_off_brts)) {
+		pinfo->hbm_feature_enabled = true;
+		pr_info("%s: High Brightness Mode enabled.\n", __func__);
+	}
 
 	/* Dynamic CABC properties */
 	pinfo->dynamic_cabc_enabled = false;
@@ -1344,6 +1365,45 @@ static int mdss_panel_parse_optional_prop(struct device_node *np,
 		pinfo->cabc_mode = CABC_UI_MODE;
 		pr_info("%s: Dynamic CABC enabled.\n", __func__);
 	}
+
+	return rc;
+}
+
+int mdss_dsi_panel_set_hbm(struct mdss_dsi_ctrl_pdata *ctrl, int state)
+{
+	int rc = 0;
+	if (!ctrl->panel_data.panel_info.hbm_feature_enabled) {
+		pr_debug("HBM is disabled, ignore request\n");
+		return 0;
+	}
+
+	if (ctrl->panel_data.panel_info.hbm_state == state) {
+		pr_debug("HBM already in request state %d\n",
+			state);
+		return 0;
+	}
+
+	if (state) {
+		if (ctrl->hbm_on_cmds.cmd_cnt)
+			rc = mdss_dsi_panel_cmds_send(ctrl,
+						&ctrl->hbm_on_cmds);
+		if (ctrl->hbm_on_brts)
+			mdss_dsi_panel_bl_ctrl(&ctrl->panel_data,
+						ctrl->hbm_on_brts);
+	} else {
+		if (ctrl->hbm_off_cmds.cmd_cnt)
+			rc = mdss_dsi_panel_cmds_send(ctrl,
+						&ctrl->hbm_off_cmds);
+		if (ctrl->hbm_off_brts)
+			mdss_dsi_panel_bl_ctrl(&ctrl->panel_data,
+						ctrl->hbm_off_brts);
+	}
+
+	if (!rc)
+		ctrl->panel_data.panel_info.hbm_state = state;
+	else
+		pr_err("%s : Failed to set HBM state to %d\n",
+			__func__, state);
 
 	return rc;
 }
@@ -1952,6 +2012,7 @@ int mdss_dsi_panel_init(struct device_node *node,
 	ctrl_pdata->off = mdss_dsi_panel_off;
 	ctrl_pdata->panel_data.set_backlight = mdss_dsi_panel_bl_ctrl;
 	ctrl_pdata->switch_mode = mdss_dsi_panel_switch_mode;
+	ctrl_pdata->set_hbm = mdss_dsi_panel_set_hbm;
 	ctrl_pdata->set_cabc = mdss_dsi_panel_set_cabc;
 	ctrl_pdata->cont_splash_on = mdss_dsi_panel_cont_splash_on;
 

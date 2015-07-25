@@ -172,6 +172,7 @@ enum mdss_intf_events {
 	MDSS_EVENT_ENABLE_PARTIAL_UPDATE,
 	MDSS_EVENT_DSI_ULPS_CTRL,
 	MDSS_EVENT_REGISTER_RECOVERY_HANDLER,
+	MDSS_EVENT_ENABLE_HBM,
 	MDSS_EVENT_DSI_DYNAMIC_SWITCH,
 	MDSS_EVENT_SET_CABC,
 };
@@ -364,6 +365,8 @@ struct mdss_panel_info {
 	u32 partial_update_enabled;
 	struct ion_handle *splash_ihdl;
 	u32 panel_power_on;
+	bool hbm_feature_enabled;
+	bool hbm_state;
 	bool dynamic_cabc_enabled;
 	enum cabc_mode cabc_mode;
 	char supplier[8];
