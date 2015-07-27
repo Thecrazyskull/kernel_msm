@@ -365,7 +365,8 @@ static ssize_t mdss_set_rgb(struct device *dev,
 	if (b < 0 || b > 32768)
 		return -EINVAL;
 
-	pr_info("%s: r=%d g=%d b=%d", __func__, r, g, b);
+	/* Disable log spamming on kmsg */
+	//pr_info("%s: r=%d g=%d b=%d", __func__, r, g, b);
 
 	memset(&pcc_cfg, 0, sizeof(struct mdp_pcc_cfg_data));
 
