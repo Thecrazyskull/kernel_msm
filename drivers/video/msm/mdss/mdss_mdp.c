@@ -2608,7 +2608,11 @@ int mdss_mdp_footswitch_ctrl_ulps(int on, struct device *dev)
 		}
 		mdss_hw_init(mdata);
 		mdata->ulps = false;
-		mdss_iommu_ctrl(0);
+		rc = mdss_iommu_ctrl(0);
+		if (IS_ERR_VALUE(rc)) {
+			pr_err("iommu dettach failed ret=%d\n", rc);
+			return rc;
+		}
 	} else {
 		mdata->ulps = true;
 		pm_runtime_put_sync(dev);

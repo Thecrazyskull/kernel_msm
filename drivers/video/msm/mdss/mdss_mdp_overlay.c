@@ -828,15 +828,15 @@ int mdss_mdp_overlay_get_buf(struct msm_fb_data_type *mfd,
 					   int num_planes,
 					   u32 flags)
 {
-	int i, rc;
+	int i, rc, ret;
 
 	if ((num_planes <= 0) || (num_planes > MAX_PLANES))
 		return -EINVAL;
 
-	rc = mdss_iommu_ctrl(1);
-	if (IS_ERR_VALUE(rc)) {
+	ret = mdss_iommu_ctrl(1);
+	if (IS_ERR_VALUE(ret)) {
 		pr_err("Iommu attach failed");
-		goto end;
+		return ret;
 	}
 
 	memset(data, 0, sizeof(*data));
@@ -853,9 +853,13 @@ int mdss_mdp_overlay_get_buf(struct msm_fb_data_type *mfd,
 		}
 	}
 
-	mdss_iommu_ctrl(0);
+	ret = mdss_iommu_ctrl(0);
+	if (IS_ERR_VALUE(ret)) {
+		pr_err("Iommu dettach failed");
+		return ret;
+	}
+
 	data->num_planes = i;
-end:
 	return rc;
 }
 
@@ -872,7 +876,12 @@ int mdss_mdp_overlay_free_buf(struct mdss_mdp_data *data)
 	for (i = 0; i < data->num_planes && data->p[i].len; i++)
 		mdss_mdp_put_img(&data->p[i]);
 
-	mdss_iommu_ctrl(0);
+	rc = mdss_iommu_ctrl(0);
+	if (IS_ERR_VALUE(rc)) {
+		pr_err("Iommu dettach failed");
+		return rc;
+	}
+
 	data->num_planes = 0;
 	return 0;
 }
@@ -1077,7 +1086,11 @@ int mdss_mdp_overlay_start(struct msm_fb_data_type *mfd)
 				goto pm_error;
 			}
 			mdss_hw_init(mdss_res);
-			mdss_iommu_ctrl(0);
+			rc = mdss_iommu_ctrl(0);
+			if (IS_ERR_VALUE(rc)) {
+				pr_err("iommu dettach failed rc=%d\n", rc);
+				goto pm_error;
+			}
 		}
 	}
 
@@ -1829,12 +1842,10 @@ static void mdss_mdp_overlay_pan_display(struct msm_fb_data_type *mfd)
 	    (fbi->var.activate & FB_ACTIVATE_FORCE))
 		mfd->mdp.kickoff_fnc(mfd, NULL);
 
-	mdss_iommu_ctrl(0);
 	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_OFF, false);
 	return;
 
 pan_display_error:
-	mdss_iommu_ctrl(0);
 	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_OFF, false);
 	mutex_unlock(&mdp5_data->ov_lock);
 }
