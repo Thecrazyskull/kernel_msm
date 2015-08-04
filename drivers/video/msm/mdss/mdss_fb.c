@@ -1132,15 +1132,6 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 			int panel_dead = mfd->panel_info->panel_dead;
 			ret = mfd->mdp.on_fnc(mfd);
 			if (ret == 0) {
-				mfd->panel_power_on = true;
-				if (panel_dead &&
-				mfd->panel_info->bklt_ctrl == BL_DCS_CMD &&
-				pdata) {
-					mutex_lock(&mfd->bl_lock);
-					pdata->set_backlight(pdata,
-							mfd->bl_level);
-					mutex_unlock(&mfd->bl_lock);
-				}
 				if (panel_dead)
 					mfd->panel_info->panel_dead = false;
 			}
@@ -1154,6 +1145,13 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 				schedule_delayed_work(&mfd->idle_notify_work,
 					msecs_to_jiffies(mfd->idle_time));
 		}
+
+		mutex_lock(&mfd->bl_lock);
+		if (!mfd->bl_updated) {
+			mfd->bl_updated = 1;
+			mdss_fb_set_backlight(mfd, mfd->unset_bl_level);
+		}
+		mutex_unlock(&mfd->bl_lock);
 		break;
 
 	case FB_BLANK_VSYNC_SUSPEND:
@@ -1186,13 +1184,6 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 			mfd->bl_updated = 0;
 			mutex_unlock(&mfd->bl_lock);
 
-			if (mfd->shutdown_pending &&
-			    mfd->panel_info->bl_shutdown_delay)
-				usleep_range(mfd->panel_info->bl_shutdown_delay
-				       * 1000,
-				       mfd->panel_info->bl_shutdown_delay
-				       * 1000);
-
 			ret = mfd->mdp.off_fnc(mfd);
 			if (ret)
 				mfd->panel_power_on = curr_pwr_state;
@@ -1208,6 +1199,7 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 
 	return ret;
 }
+
 
 static int mdss_fb_blank(int blank_mode, struct fb_info *info)
 {
