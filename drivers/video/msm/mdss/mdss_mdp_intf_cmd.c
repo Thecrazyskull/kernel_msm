@@ -680,9 +680,6 @@ int mdss_mdp_cmd_kickoff(struct mdss_mdp_ctl *ctl, void *arg)
 		return -ENODEV;
 	}
 
-	mdss_mdp_ctl_perf_set_transaction_status(ctl,
-		PERF_HW_MDP_STATE, PERF_STATUS_BUSY);
-
 	if (ctl->panel_data->panel_info.partial_update_enabled &&
 		ctl->panel_data->panel_info.partial_update_dcs_cmd_by_left &&
 		ctl->main_ctl) {
@@ -692,10 +689,8 @@ int mdss_mdp_cmd_kickoff(struct mdss_mdp_ctl *ctl, void *arg)
 	} else
 		rc = mdss_mdp_cmd_panel_on(ctl, sctl);
 
-	mdss_mdp_ctl_intf_event(ctl,
-			MDSS_EVENT_REGISTER_RECOVERY_HANDLER,
-			(void *)&ctx->recovery);
-
+	mdss_mdp_ctl_perf_set_transaction_status(ctl,
+		PERF_HW_MDP_STATE, PERF_STATUS_BUSY);
 
 	MDSS_XLOG(ctl->num, ctl->roi.x, ctl->roi.y, ctl->roi.w,
 						ctl->roi.h);

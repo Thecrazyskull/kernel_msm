@@ -692,7 +692,7 @@ void mdss_mdp_clk_ctrl(int enable, int isr)
 {
 	struct mdss_data_type *mdata = mdss_mdp_get_mdata();
 	static int mdp_clk_cnt;
-	int changed = 0, rc;
+	int changed = 0;
 
 	mutex_lock(&mdp_clk_lock);
 	if (enable) {

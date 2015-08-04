@@ -338,6 +338,7 @@ struct mdss_dsi_ctrl_pdata {
 	struct dsi_buf rx_buf;
 	struct dsi_buf status_buf;
 	struct platform_device *pdev;
+	bool check_status_disabled;
 	int status_mode;
 
 	struct dsi_panel_cmds hbm_on_cmds;

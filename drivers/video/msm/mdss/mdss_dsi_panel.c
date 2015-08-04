@@ -683,7 +683,6 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 
 	pr_info("%s-. Pwr_mode(0x0A) = 0x%x\n", __func__, pwr_mode);
 end:
-	pinfo->blank_state = MDSS_PANEL_BLANK_UNBLANK;
 	return 0;
 }
 
@@ -704,9 +703,6 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 
 	mipi  = &pdata->panel_info.mipi;
 	mmi_panel_notify(MMI_PANEL_EVENT_PRE_DISPLAY_OFF, NULL);
-
-	if (ctrl->panel_config.bare_board == true)
-		goto end;
 
 	if (ctrl->set_hbm)
 		ctrl->set_hbm(ctrl, 0);
