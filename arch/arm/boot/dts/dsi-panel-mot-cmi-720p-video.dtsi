@@ -31,7 +31,8 @@
                 qcom,mdss-dsi-panel-height = <1280>;
                 qcom,mdss-pan-physical-width-dimension = <56>;
                 qcom,mdss-pan-physical-height-dimension = <99>;
-		qcom,panel-roi-alignment = <2 2 2 2 0 0>;
+		//Removed for now (for debug)
+		//qcom,panel-roi-alignment = <2 2 2 2 0 0>;
                 qcom,mdss-dsi-panel-clockrate = <797600000>;
                 qcom,mdss-dsi-h-front-porch = <64>;
                 qcom,mdss-dsi-h-back-porch = <64>;
@@ -83,10 +84,12 @@
 		qcom,mdss-dsi-on-command-state = "dsi_lp_mode";
 		qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
 		qcom,mdss-dsi-panel-status-check-mode = "reg_read";
-		qcom,dynamic-mode-switch-enabled;
-		qcom,video-to-cmd-mode-switch-commands = [15 01 00 00 14 00 02 C2 0B
-					15 01 00 00 00 00 02 C2 08];
-		qcom,cmd-to-video-mode-switch-commands = [15 01 00 00 00 00 02 C2 03];
+		qcom,mdss-dsi-panel-status-value = "0x94" /* Power is in good state at 0x94 or 0x9c */
+		// Removed for now (for debug)
+		//qcom,dynamic-mode-switch-enabled;
+		//qcom,video-to-cmd-mode-switch-commands = [15 01 00 00 14 00 02 C2 0B
+		//			15 01 00 00 00 00 02 C2 08];
+		//qcom,cmd-to-video-mode-switch-commands = [15 01 00 00 00 00 02 C2 03];
 		qcom,mdss-dsi-h-sync-pulse = <1>;
 		qcom,mdss-dsi-traffic-mode = "non_burst_sync_event";
 		qcom,mdss-dsi-bllp-eof-power-mode;
