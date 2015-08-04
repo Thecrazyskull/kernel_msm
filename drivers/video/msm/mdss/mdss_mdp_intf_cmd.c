@@ -639,36 +639,6 @@ static int mdss_mdp_cmd_set_partial_roi(struct mdss_mdp_ctl *ctl)
 	return rc;
 }
 
-static int mdss_mdp_cmd_panel_on(struct mdss_mdp_ctl *ctl,
-	struct mdss_mdp_ctl *sctl)
-{
-	struct mdss_mdp_cmd_ctx *ctx, *sctx = NULL;
-	int rc = 0;
-
-	ctx = (struct mdss_mdp_cmd_ctx *) ctl->priv_data;
-	if (!ctx) {
-		pr_err("invalid ctx\n");
-		return -ENODEV;
-	}
-
-	if (sctl)
-		sctx = (struct mdss_mdp_cmd_ctx *) sctl->priv_data;
-
-	if (ctx->panel_on == 0) {
-		rc = mdss_mdp_ctl_intf_event(ctl, MDSS_EVENT_UNBLANK, NULL);
-		WARN(rc, "intf %d unblank error (%d)\n", ctl->intf_num, rc);
-
-		ctx->panel_on++;
-		if (sctx)
-			sctx->panel_on++;
-
-		rc = mdss_mdp_ctl_intf_event(ctl, MDSS_EVENT_PANEL_ON, NULL);
-		WARN(rc, "intf %d panel on error (%d)\n", ctl->intf_num, rc);
-	}
-
-	return rc;
-}
-
 int mdss_mdp_cmd_kickoff(struct mdss_mdp_ctl *ctl, void *arg)
 {
 	struct mdss_mdp_cmd_ctx *ctx, *sctx = NULL;
@@ -680,17 +650,22 @@ int mdss_mdp_cmd_kickoff(struct mdss_mdp_ctl *ctl, void *arg)
 		return -ENODEV;
 	}
 
-	if (ctl->panel_data->panel_info.partial_update_enabled &&
-		ctl->panel_data->panel_info.partial_update_dcs_cmd_by_left &&
-		ctl->main_ctl) {
-		pr_debug("%s: call panel_on on primary ctl instead of split\n",
-			__func__);
-		rc = mdss_mdp_cmd_panel_on(ctl->main_ctl, ctl);
-	} else
-		rc = mdss_mdp_cmd_panel_on(ctl, sctl);
-
 	mdss_mdp_ctl_perf_set_transaction_status(ctl,
 		PERF_HW_MDP_STATE, PERF_STATUS_BUSY);
+
+	if (ctx->panel_on == 0) {
+		rc = mdss_mdp_ctl_intf_event(ctl, MDSS_EVENT_UNBLANK, NULL);
+		WARN(rc, "intf %d unblank error (%d)\n", ctl->intf_num, rc);
+
+		ctx->panel_on++;
+
+		rc = mdss_mdp_ctl_intf_event(ctl, MDSS_EVENT_PANEL_ON, NULL);
+		WARN(rc, "intf %d panel on error (%d)\n", ctl->intf_num, rc);
+
+		mdss_mdp_ctl_intf_event(ctl,
+				MDSS_EVENT_REGISTER_RECOVERY_HANDLER,
+				(void *)&ctx->recovery);
+	}
 
 	MDSS_XLOG(ctl->num, ctl->roi.x, ctl->roi.y, ctl->roi.w,
 						ctl->roi.h);
