@@ -84,7 +84,7 @@
 		qcom,mdss-dsi-on-command-state = "dsi_lp_mode";
 		qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
 		qcom,mdss-dsi-panel-status-check-mode = "reg_read";
-		qcom,mdss-dsi-panel-status-value = "0x94" /* Power is in good state at 0x94 or 0x9c */
+		qcom,mdss-dsi-panel-status-value = "0x94"; /* Power is in good state at 0x94 or 0x9c */
 		// Removed for now (for debug)
 		//qcom,dynamic-mode-switch-enabled;
 		//qcom,video-to-cmd-mode-switch-commands = [15 01 00 00 14 00 02 C2 0B
