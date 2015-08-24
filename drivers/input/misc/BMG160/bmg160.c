@@ -1,1440 +1,1654 @@
-/*
-****************************************************************************
-* Copyright (C) 2010 - 2015 Bosch Sensortec GmbH
-*
-* bmg160.c
-* Date: 2015/04/29
-* Revision: 2.0.4 $
-*
-* Usage: Sensor Driver for BMG160 sensor
-*
-****************************************************************************
-* License:
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*
-*   Redistributions of source code must retain the above copyright
-*   notice, this list of conditions and the following disclaimer.
-*
-*   Redistributions in binary form must reproduce the above copyright
-*   notice, this list of conditions and the following disclaimer in the
-*   documentation and/or other materials provided with the distribution.
-*
-*   Neither the name of the copyright holder nor the names of the
-*   contributors may be used to endorse or promote products derived from
-*   this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
-* CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
-* IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL COPYRIGHT HOLDER
-* OR CONTRIBUTORS BE LIABLE FOR ANY
-* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
-* OR CONSEQUENTIAL DAMAGES(INCLUDING, BUT NOT LIMITED TO,
-* PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-* HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-* WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-* ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
-*
-* The information provided is believed to be accurate and reliable.
-* The copyright holder assumes no responsibility
-* for the consequences of use
-* of such information nor for any infringement of patents or
-* other rights of third parties which may result from its use.
-* No license is granted by implication or otherwise under any patent or
-* patent rights of the copyright holder.
-**************************************************************************/
-/*! file bmg160.c
-    brief Driver for BMG160 */
+/*!
+ * @section LICENSE
+ * (C) Copyright 2013 Bosch Sensortec GmbH All Rights Reserved
+ *
+ * This software program is licensed subject to the GNU General
+ * Public License (GPL).Version 2,June 1991,
+ * available at http://www.fsf.org/copyleft/gpl.html
+ *
+ * @filename bmg160.c
+ * @date    2013/11/25
+ * @id       "079d340"
+ * @version  1.5
+ *
+ * @brief    BMG160API
+*/
+
 #include "bmg160.h"
 static struct bmg160_t *p_bmg160;
 
 
-/*!
- *	@brief This function is used for initialize
- *	the bus read and bus write functions
- *  and assign the chip id and I2C address of the gyro
- *	chip id is read in the register 0x00 bit from 0 to 7
- *
- *	@param bmg160 structure pointer.
- *
- *	@note While changing the parameter of the bmg160_t
- *	consider the following point:
- *	@note Changing the reference value of the parameter
- *	will changes the local copy or local reference
- *	make sure your changes will not
- *	affect the reference value of the parameter
- *	(Better case don't change the reference value of the parameter)
+/*****************************************************************************
+ * Description: *//**brief API Initialization routine
  *
  *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
  *
  *
-*/
+* \param bmg160_t *bmg160
+ *      Pointer to a structure.
+ *
+ *       structure members are
+ *
+ *       unsigned char chip_id;
+ *       unsigned char dev_addr;
+ *       BMG160_BRD_FUNC_PTR;
+ *       BMG160_WR_FUNC_PTR;
+ *       BMG160_RD_FUNC_PTR;
+ *       void(*delay_msec)( BMG160_MDELAY_DATA_TYPE );
+ *
+ *
+ *
+ *
+ *
+ *  \return result of communication routines
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
 BMG160_RETURN_FUNCTION_TYPE bmg160_init(struct bmg160_t *bmg160)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* Assign the initial function pointers*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char a_data_u8r  = C_BMG160_Zero_U8X;
 	p_bmg160 = bmg160;
+
+	p_bmg160->dev_addr = BMG160_I2C_ADDR;
+
 	/*Read CHIP_ID */
 	comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-	 BMG160_CHIP_ID_ADDR, &v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-	p_bmg160->chip_id = v_data_u8;
+	 BMG160_CHIP_ID_ADDR, &a_data_u8r, 1);
+	p_bmg160->chip_id = a_data_u8r;
 	return comres;
 }
-/*!
- * @brief Reads Rate data X in the registers 0x02 to 0x03
- *
- *
- *
- *
- *  @param v_data_x_s16: The value of gyro x axis data
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
-*	@retval -1 -> Error
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_data_X(s16 *v_data_x_s16)
+/*****************************************************************************
+ * Description: *//**brief Reads Rate dataX from location 02h and 03h
+ * registers
+ *
+ *
+ *
+ *
+ *  \param
+ *      BMG160_S16  *data_x   :  Address of data_x
+ *
+ *
+ *  \return
+ *      result of communication routines
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_dataX(BMG160_S16 *data_x)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres  = BMG160_INIT_VALUE;
-	/*Array holding the gyro data x LSB and MSB data
-	v_data_u8[0] - X LSB
-	v_data_u8[1] - X MSB
-	*/
-	u8 v_data_u8[BMG160_X_DATA_SIZE] = {
-	BMG160_INIT_VALUE, BMG160_INIT_VALUE};
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char a_data_u8r[2] = {0, 0};
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read the gyro x data */
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_RATE_X_LSB_BIT__REG,
-		v_data_u8, BMG160_X_DATA_LENGTH);
-		v_data_u8[BMG160_X_LSB_DATA] = BMG160_GET_BITSLICE(
-		v_data_u8[BMG160_X_LSB_DATA],
-		BMG160_RATE_X_LSB_BIT);
-		*v_data_x_s16 = (s16)
-		((((s32)((s8)v_data_u8[BMG160_X_MSB_DATA])) <<
-		BMG160_SHIFT_BIT_POSITION_BY_08_BITS)
-		| (v_data_u8[BMG160_X_LSB_DATA]));
+		 BMG160_RATE_X_LSB_VALUEX__REG, a_data_u8r, 2);
+		a_data_u8r[0] = BMG160_GET_BITSLICE(a_data_u8r[0],
+		BMG160_RATE_X_LSB_VALUEX);
+		*data_x = (BMG160_S16)
+		((((BMG160_S16)((signed char)a_data_u8r[1])) <<
+		BMG160_SHIFT_8_POSITION) | (a_data_u8r[0]));
 	}
 	return comres;
 }
-/*!
- * @brief Reads Rate data Y in the registers 0x04 to 0x05
- *
- *
- *
- *
- *  @param v_data_y_s16: The value of gyro y axis data
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_data_Y(s16 *v_data_y_s16)
+/*****************************************************************************
+ * Description: *//**brief Reads rate dataY from location 04h and 05h
+ * registers
+ *
+ *
+ *
+ *
+ *  \param
+ *      BMG160_S16  *data_y   :  Address of data_y
+ *
+ *
+ *  \return
+ *      result of communication routines
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_dataY(BMG160_S16 *data_y)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	/*Array holding the gyro data y LSB and MSB data
-	v_data_u8[0] - Y LSB
-	v_data_u8[1] - Y MSB
-	*/
-	u8 v_data_u8[BMG160_Y_DATA_SIZE] = {
-	BMG160_INIT_VALUE, BMG160_INIT_VALUE};
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char a_data_u8r[2] = {0, 0};
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read the gyro  y data*/
-		comres = p_bmg160->BMG160_BUS_READ_FUNC(
-		p_bmg160->dev_addr,
-		BMG160_RATE_Y_LSB_BIT__REG, v_data_u8,
-		BMG160_Y_DATA_LENGTH);
-		v_data_u8[BMG160_Y_LSB_DATA] =
-		BMG160_GET_BITSLICE(v_data_u8[BMG160_Y_LSB_DATA],
-		BMG160_RATE_Y_LSB_BIT);
-		*v_data_y_s16 = (s16)
-		((((s32)((s8)v_data_u8[BMG160_Y_MSB_DATA]))
-		<< BMG160_SHIFT_BIT_POSITION_BY_08_BITS) |
-		(v_data_u8[BMG160_Y_LSB_DATA]));
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
+		 BMG160_RATE_Y_LSB_VALUEY__REG, a_data_u8r, 2);
+		a_data_u8r[0] = BMG160_GET_BITSLICE(a_data_u8r[0],
+		BMG160_RATE_Y_LSB_VALUEY);
+		*data_y = (BMG160_S16)
+		((((BMG160_S16)((signed char)a_data_u8r[1]))
+		<< BMG160_SHIFT_8_POSITION) | (a_data_u8r[0]));
 	}
 	return comres;
 }
-/*!
- *	@brief Reads Rate data Z in the registers 0x06 to 0x07
- *
- *
- *  @param v_data_z_s16: The value of gyro z axis data
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_data_Z(s16 *v_data_z_s16)
+/*****************************************************************************
+ * Description: *//**brief Reads rate dataZ from location 06h and 07h
+ * registers
+ *
+ *
+ *
+ *
+ *  \param
+ *      BMG160_S16  *data_z   :  Address of data_z
+ *
+ *
+ *  \return
+ *      result of communication routines
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_dataZ(BMG160_S16 *data_z)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	/*Array holding the gyro data z LSB and MSB data
-	v_data_u8[0] - Z LSB
-	v_data_u8[1] - Z MSB
-	*/
-	u8 v_data_u8[BMG160_Z_DATA_SIZE] = {
-	BMG160_INIT_VALUE, BMG160_INIT_VALUE};
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char a_data_u8r[2] = {0, 0};
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		 BMG160_RATE_Z_LSB_BIT__REG,
-		 v_data_u8, BMG160_Z_DATA_LENGTH);
-		v_data_u8[BMG160_Z_LSB_DATA] =
-		BMG160_GET_BITSLICE(v_data_u8[BMG160_Z_LSB_DATA],
-		BMG160_RATE_Z_LSB_BIT);
-		*v_data_z_s16 = (s16)
-		((((s32)((s8)v_data_u8[BMG160_Z_MSB_DATA]))
-		<< BMG160_SHIFT_BIT_POSITION_BY_08_BITS)
-		| (v_data_u8[BMG160_Z_LSB_DATA]));
+		 BMG160_RATE_Z_LSB_VALUEZ__REG, a_data_u8r, 2);
+		a_data_u8r[0] = BMG160_GET_BITSLICE(a_data_u8r[0],
+		BMG160_RATE_Z_LSB_VALUEZ);
+		*data_z = (BMG160_S16)
+		((((BMG160_S16)((signed char)a_data_u8r[1]))
+		<< BMG160_SHIFT_8_POSITION) | (a_data_u8r[0]));
 	}
 	return comres;
 }
-/*!
- * @brief Reads data X,Y and Z from register location 0x02 to 0x07
- *
- *
- *
- *
- *  @param data: The value of gyro xyz axis data
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_data_XYZ(struct bmg160_data_t *data)
+/*****************************************************************************
+ * Description: *//**brief Reads data X,Y and Z from location 02h to 07h
+ *
+ *
+ *
+ *
+ *  \param
+ *      bmg160_data_t *data   :  Address of bmg160_data_t
+ *
+ *
+ *  \return
+ *      result of communication routines
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_dataXYZ(struct bmg160_data_t *data)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	/*Array holding the gyro data xyz LSB and MSB data
-	v_data_u8[0] - X LSB
-	v_data_u8[1] - X MSB
-	v_data_u8[2] - Y MSB
-	v_data_u8[3] - Y MSB
-	v_data_u8[4] - Z MSB
-	v_data_u8[5] - Z MSB
-	*/
-	u8 v_data_u8[BMG160_XYZ_DATA_SIZE] = {
-	BMG160_INIT_VALUE, BMG160_INIT_VALUE,
-	BMG160_INIT_VALUE, BMG160_INIT_VALUE,
-	BMG160_INIT_VALUE, BMG160_INIT_VALUE};
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char a_data_u8r[6] = {0, 0, 0, 0, 0, 0};
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		 BMG160_RATE_X_LSB_BIT__REG, v_data_u8,
-		 BMG160_ALL_DATA_FRAME_LENGTH);
+		 BMG160_RATE_X_LSB_VALUEX__REG, a_data_u8r, 6);
 		/* Data X */
-		v_data_u8[BMG160_DATA_FRAME_X_LSB_BYTE] =
-		BMG160_GET_BITSLICE(v_data_u8[BMG160_DATA_FRAME_X_LSB_BYTE],
-		BMG160_RATE_X_LSB_BIT);
-		data->datax = (s16)
-		((((s32)((s8)v_data_u8[BMG160_DATA_FRAME_X_MSB_BYTE]))
-		<< BMG160_SHIFT_BIT_POSITION_BY_08_BITS) |
-		(v_data_u8[BMG160_DATA_FRAME_X_LSB_BYTE]));
+		a_data_u8r[0] =
+		BMG160_GET_BITSLICE(a_data_u8r[0], BMG160_RATE_X_LSB_VALUEX);
+		data->datax = (BMG160_S16)
+		((((BMG160_S16)((signed char)a_data_u8r[1]))
+		<< BMG160_SHIFT_8_POSITION) | (a_data_u8r[0]));
 		/* Data Y */
-		v_data_u8[BMG160_DATA_FRAME_Y_LSB_BYTE] =
-		BMG160_GET_BITSLICE(v_data_u8[BMG160_DATA_FRAME_Y_LSB_BYTE],
-		BMG160_RATE_Y_LSB_BIT);
-		data->datay = (s16)
-		((((s32)((s8)v_data_u8[BMG160_DATA_FRAME_Y_MSB_BYTE]))
-		<< BMG160_SHIFT_BIT_POSITION_BY_08_BITS) |
-		(v_data_u8[BMG160_DATA_FRAME_Y_LSB_BYTE]));
+		a_data_u8r[2] = BMG160_GET_BITSLICE(a_data_u8r[2],
+		BMG160_RATE_Y_LSB_VALUEY);
+		data->datay = (BMG160_S16)
+		((((BMG160_S16)((signed char)a_data_u8r[3]))
+		<< BMG160_SHIFT_8_POSITION) | (a_data_u8r[2]));
 		/* Data Z */
-		v_data_u8[BMG160_DATA_FRAME_Z_LSB_BYTE] =
-		BMG160_GET_BITSLICE(v_data_u8[BMG160_DATA_FRAME_Z_LSB_BYTE],
-		BMG160_RATE_Z_LSB_BIT);
-		data->dataz = (s16)
-		((((s32)((s8)v_data_u8[BMG160_DATA_FRAME_Z_MSB_BYTE]))
-		<< BMG160_SHIFT_BIT_POSITION_BY_08_BITS) |
-		(v_data_u8[BMG160_DATA_FRAME_Z_LSB_BYTE]));
+		a_data_u8r[4] = BMG160_GET_BITSLICE(a_data_u8r[4],
+		BMG160_RATE_Z_LSB_VALUEZ);
+		data->dataz = (BMG160_S16)
+		((((BMG160_S16)((signed char)a_data_u8r[5]))
+		<< BMG160_SHIFT_8_POSITION) | (a_data_u8r[4]));
 	}
 	return comres;
 }
-/*!
- *	@brief Reads data X,Y,Z and Interrupts
- *	from register location 0x02 to 0x07
- *
- *
- *  @param data: The value of gyro xyz axis data and interrupt status
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_data_XYZI(struct bmg160_data_t *data)
+/*****************************************************************************
+ * Description: *//**brief Reads data X,Y,Z and Interrupts
+ *							from location 02h to 07h
+ *
+ *
+ *
+ *
+ *  \param
+ *      bmg160_data_t *data   :  Address of bmg160_data_t
+ *
+ *
+ *  \return
+ *      result of communication routines
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_dataXYZI(struct bmg160_data_t *data)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	/*Array holding the gyro data xyz LSB and MSB data
-	v_data_u8[0] - X LSB
-	v_data_u8[1] - X MSB
-	v_data_u8[2] - Y MSB
-	v_data_u8[3] - Y MSB
-	v_data_u8[4] - Z MSB
-	v_data_u8[5] - Z MSB
-	v_data_u8[6] - INVALID
-	v_data_u8[7] - INTR STATUS1
-	v_data_u8[8] - INTR STATUS2
-	v_data_u8[9] - INTR STATUS3
-	v_data_u8[10] - INTR STATUS4
-	v_data_u8[11] - INTR STATUS5
-	*/
-	u8 v_data_u8[BMG160_XYZ_INTR_DATA_SIZE] = {
-	BMG160_INIT_VALUE, BMG160_INIT_VALUE,
-	BMG160_INIT_VALUE, BMG160_INIT_VALUE,
-	BMG160_INIT_VALUE, BMG160_INIT_VALUE,
-	BMG160_INIT_VALUE, BMG160_INIT_VALUE,
-	BMG160_INIT_VALUE, BMG160_INIT_VALUE,
-	BMG160_INIT_VALUE, BMG160_INIT_VALUE};
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char a_data_u8r[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		 BMG160_RATE_X_LSB_BIT__REG, v_data_u8,
-		 BMG160_XYZ_AND_INTR_DATA_LENGTH);
+		 BMG160_RATE_X_LSB_VALUEX__REG, a_data_u8r, 12);
 		/* Data X */
-		v_data_u8[BMG160_DATA_FRAME_X_LSB_BYTE] =
-		BMG160_GET_BITSLICE(v_data_u8[BMG160_DATA_FRAME_X_LSB_BYTE],
-		BMG160_RATE_X_LSB_BIT);
-		data->datax = (s16)
-		((((s32)((s8)v_data_u8[BMG160_DATA_FRAME_X_MSB_BYTE]))
-		<< BMG160_SHIFT_BIT_POSITION_BY_08_BITS) |
-		(v_data_u8[BMG160_DATA_FRAME_X_LSB_BYTE]));
+		a_data_u8r[0] = BMG160_GET_BITSLICE(a_data_u8r[0],
+		BMG160_RATE_X_LSB_VALUEX);
+		data->datax = (BMG160_S16)
+		((((BMG160_S16)((signed char)a_data_u8r[1]))
+		<< BMG160_SHIFT_8_POSITION) | (a_data_u8r[0]));
 		/* Data Y */
-		v_data_u8[BMG160_DATA_FRAME_Y_LSB_BYTE] =
-		BMG160_GET_BITSLICE(v_data_u8[BMG160_DATA_FRAME_Y_LSB_BYTE],
-		BMG160_RATE_Y_LSB_BIT);
-		data->datay = (s16)
-		((((s32)((s8)v_data_u8[BMG160_DATA_FRAME_Y_MSB_BYTE]))
-		<< BMG160_SHIFT_BIT_POSITION_BY_08_BITS) |
-		(v_data_u8[BMG160_DATA_FRAME_Y_LSB_BYTE]));
+		a_data_u8r[2] = BMG160_GET_BITSLICE(a_data_u8r[2],
+		BMG160_RATE_Y_LSB_VALUEY);
+		data->datay = (BMG160_S16)
+		((((BMG160_S16)((signed char)a_data_u8r[3]))
+		<< BMG160_SHIFT_8_POSITION) | (a_data_u8r[2]));
 		/* Data Z */
-		v_data_u8[BMG160_DATA_FRAME_Z_LSB_BYTE] =
-		BMG160_GET_BITSLICE(v_data_u8[BMG160_DATA_FRAME_Z_LSB_BYTE],
-		BMG160_RATE_Z_LSB_BIT);
-		data->dataz = (s16)
-		((((s32)((s8)v_data_u8[BMG160_DATA_FRAME_Z_MSB_BYTE]))
-		<< BMG160_SHIFT_BIT_POSITION_BY_08_BITS) |
-		(v_data_u8[BMG160_DATA_FRAME_Z_LSB_BYTE]));
-		/* interrupt*/
-		data->intstatus[BMG160_INTR0_STAT] =
-		v_data_u8[BMG160_DATA_FRAME_INTR0_BYTE];
-		data->intstatus[BMG160_INTR1_STAT] =
-		v_data_u8[BMG160_DATA_FRAME_INTR1_BYTE];
-		data->intstatus[BMG160_INTR2_STAT] =
-		v_data_u8[BMG160_DATA_FRAME_INTR2_BYTE];
-		data->intstatus[BMG160_INTR3_STAT] =
-		v_data_u8[BMG160_DATA_FRAME_INTR3_BYTE];
-		data->intstatus[BMG160_INTR4_STAT] =
-		v_data_u8[BMG160_DATA_FRAME_INTR4_BYTE];
+		a_data_u8r[4] = BMG160_GET_BITSLICE(a_data_u8r[4],
+		BMG160_RATE_Z_LSB_VALUEZ);
+		data->dataz = (BMG160_S16)
+		((((BMG160_S16)((signed char)a_data_u8r[5]))
+		<< BMG160_SHIFT_8_POSITION) | (a_data_u8r[4]));
+		data->intstatus[0] = a_data_u8r[7];
+		data->intstatus[1] = a_data_u8r[8];
+		data->intstatus[2] = a_data_u8r[9];
+		data->intstatus[3] = a_data_u8r[10];
+		data->intstatus[4] = a_data_u8r[11];
 	}
 	return comres;
 }
-/*!
- * @brief Reads Temperature from register location 0x08
- *
- *
- *
- *
- *  @param v_temp_s8: The value of temperature
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_temp(s8 *v_temp_s8)
+/*****************************************************************************
+ * Description: *//**brief Reads Temperature from location 08h
+ *
+ *
+ *
+ *
+ *  \param
+ *      unsigned char *temp   :  Address of temperature
+ *
+ *
+ *  \return
+ *      result of communication routines
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_Temperature(unsigned char *temperature)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read temperature data*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_TEMP_ADDR, &v_data_u8,
-		BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_temp_s8 = v_data_u8;
+		 BMG160_TEMP_ADDR, &v_data_u8r, 1);
+		*temperature = v_data_u8r;
 	}
 	return comres;
 }
-/*!
- * @brief
- *	This API reads the data from
- *	the given register
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API reads the data from the given register
  *
  *
- *	@param v_addr_u8 -> Address of the register
- *	@param v_data_u8 -> The data from the register
- *	@param v_len_u8 -> no of bytes to read
  *
  *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
+ *\param unsigned char addr, unsigned char *data unsigned char len
+ *                       addr -> Address of the register
+ *                       data -> address of the variable, read value will be
+ *								kept
+ *						len -> No of byte to be read.
+ *  \return  results of bus communication function
  *
  *
- */
-BMG160_RETURN_FUNCTION_TYPE bmg160_read_register(u8 v_addr_u8,
-u8 *v_data_u8, u8 v_len_u8)
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_read_register(unsigned char addr,
+unsigned char *data, unsigned char len)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC
-		(p_bmg160->dev_addr, v_addr_u8, v_data_u8, v_len_u8);
+		(p_bmg160->dev_addr, addr, data, len);
 	}
 	return comres;
 }
-/*!
- * @brief
- *	This API reads the data from
- *	the given register
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API reads the data from the given register
  *
  *
- *	@param v_addr_u8 -> Address of the register
- *	@param v_data_u8 -> The data from the register
- *	@param v_len_u32 -> no of bytes to read
  *
  *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
+ *\param unsigned char addr, unsigned char *data BMG160_S32 len
+ *                       addr -> Address of the register
+ *                       data -> address of the variable, read value will be
+ *								kept
+ *						len -> No of byte to be read.
+ *  \return  results of bus communication function
  *
  *
- */
-BMG160_RETURN_FUNCTION_TYPE bmg160_burst_read(u8 v_addr_u8,
-u8 *v_data_u8, u32 v_len_u32)
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_burst_read(unsigned char addr,
+unsigned char *data, BMG160_S32 len)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
+	} else {
 		comres = p_bmg160->BMG160_BURST_READ_FUNC(p_bmg160->dev_addr,
-		v_addr_u8, v_data_u8, v_len_u32);
+		addr, data, len);
 	}
 	return comres;
 }
-/*!
- * @brief
- *	This API write the data to
- *	the given register
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API given data to the given register
  *
  *
- *	@param v_addr_u8 -> Address of the register
- *	@param v_data_u8 -> The data from the register
- *	@param v_len_u8 -> no of bytes to read
  *
  *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
+ *\param unsigned char addr, unsigned char data,unsigned char len
+ *                   addr -> Address of the register
+ *                   data -> Data to be written to the register
+ *					len -> No of byte to be read.
+ *
+ *  \return Results of bus communication function
  *
  *
- */
-BMG160_RETURN_FUNCTION_TYPE bmg160_write_register(u8 v_addr_u8,
-u8 *v_data_u8, u8 v_len_u8)
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_write_register(unsigned char addr,
+unsigned char *data, unsigned char len)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
+	} else {
 		comres = p_bmg160->BMG160_BUS_WRITE_FUNC
-		(p_bmg160->dev_addr, v_addr_u8, v_data_u8, v_len_u8);
+		(p_bmg160->dev_addr, addr, data, len);
 	}
 	return comres;
 }
-/*!
- *	@brief This api used to reads interrupt status of
- *	any motion and high rate in the register 0x09
- *	@note  any motion bit	->	2
- *	@note high rate bit	->	1
- *
- *
- *
- *	@param v_stat0_data_u8 : The interrupt status of
- *	any motion and high rate
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_intr_stat_reg_zero(
-u8 *v_stat0_data_u8)
+/*****************************************************************************
+ * Description: *//**brief Reads interrupt status 0 register byte from 09h
+ *
+ *
+ *
+ *
+ *  \param
+ *      unsigned char *status0_data : Address of status 0 register
+ *
+ *
+ *  \return
+ *      Result of bus communication function
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_interrupt_status_reg_0(
+unsigned char *status0_data)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read the interrupt status any motion and high rate*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC
 		(p_bmg160->dev_addr,
-		BMG160_INTR_STAT_ZERO__REG, &v_data_u8,
-		BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_stat0_data_u8 =
-		BMG160_GET_BITSLICE(v_data_u8, BMG160_INTR_STAT_ZERO);
+		BMG160_INT_STATUSZERO__REG, &v_data_u8r, 1);
+		*status0_data =
+		BMG160_GET_BITSLICE(v_data_u8r, BMG160_INT_STATUSZERO);
 	}
 	return comres;
 }
-/*!
- *	@brief This api used to reads the interrupt status of
- *	data, auto_offset, fast_offset and fifo_int in the register 0x0A
- *	@note data bit			->	7
- *	@note auto_offset bit	->	6
- *	@note fast_offset bit	->	5
- *	@note fifo_int bit		->	4
- *
- *
- *
- *	@param
- *	v_stat1_data_u8 : The interrupt status of
- *	data, auto_offset, fast_offset and fifo_int
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_intr_stat_reg_one(
-u8 *v_stat1_data_u8)
+/*****************************************************************************
+ * Description: *//**brief Reads interrupt status 1 register byte from 0Ah
+ *
+ *
+ *
+ *
+ *  \param
+ *      unsigned char *status1_data : Address of status register
+ *
+ *
+ *  \return
+ *      Result of bus communication function
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_interrupt_status_reg_1(
+unsigned char *status1_data)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read the interrupt status*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC
-		(p_bmg160->dev_addr, BMG160_INTR_STAT_ONE__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_stat1_data_u8 =
-		BMG160_GET_BITSLICE(v_data_u8, BMG160_INTR_STAT_ONE);
+		(p_bmg160->dev_addr, BMG160_INT_STATUSONE__REG,
+		&v_data_u8r, 1);
+		*status1_data =
+		BMG160_GET_BITSLICE(v_data_u8r, BMG160_INT_STATUSONE);
 	}
 	return comres;
 }
-/*!
- *	@brief This api used to reads the interrupt status of
- *	@note any motion sign, any motion first_z, any motion
- *	first_x and any motion first_y in the register 0x0B
- *	@note any motion sign bit		->	3
- *	@note any motion first_z bit	->	2
- *	@note any motion first_x bit	->	1
- *	@note any motion first_y bit	->	0
- *
- *
- *
- *	@param
- *	v_stat2_data_u8 : Pointer holding the the interrupt status of
- *	any motion sign, any motion first_z,
- *	any motion first_x and any motion first_y
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_intr_stat_reg_two(
-u8 *v_stat2_data_u8)
+/*****************************************************************************
+ * Description: *//**brief Reads interrupt status register byte from 0Bh
+ *
+ *
+ *
+ *
+ *  \param
+ *      unsigned char *status2_data : Address of status 2 register
+ *
+ *
+ *  \return
+ *      Result of bus communication function
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_interrupt_status_reg_2(
+unsigned char *status2_data)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read the interrupt status */
-		comres = p_bmg160->BMG160_BUS_READ_FUNC
-		(p_bmg160->dev_addr,
-		BMG160_INTR_STAT_TWO__REG, &v_data_u8,
-		BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_stat2_data_u8 =
-		BMG160_GET_BITSLICE(v_data_u8, BMG160_INTR_STAT_TWO);
-	}
-	return comres;
-}
- /*!
- *	@brief This api used to reads the interrupt status of
- *	high_rate sign, high_rate first_z, high_rate first_x
- *	and high_rate first_y in the register 0x0C
- *	@note high_rate sign bit		->	3
- *	@note high_rate first_z bit	->	2
- *	@note high_rate first_x bit	->	1
- *	@note high_rate first_y bit	->	0
- *	@note high_rate first_y bit	->	0
- *
- *
- *
- *	@param
- *	v_stat3_data_u8 : The interrupt status of
- *	high_rate sign, high_rate first_z,
- *	high_rate first_x and high_rate first_y
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_intr_stat_reg_three(
-u8 *v_stat3_data_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read the interrupt status */
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC
 		(p_bmg160->dev_addr,
-		BMG160_INTR_STAT_THREE__REG, &v_data_u8,
-		BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_stat3_data_u8 =
-		BMG160_GET_BITSLICE(v_data_u8, BMG160_INTR_STAT_THREE);
+		BMG160_INT_STATUSTWO__REG, &v_data_u8r, 1);
+		*status2_data =
+		BMG160_GET_BITSLICE(v_data_u8r, BMG160_INT_STATUSTWO);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get
- *	the range in the register 0x0F bits from 0 to 2
- *
- *	@param v_range_u8 : The value of gyro range
- *	value    |   range
- * ----------|-----------
- *    0x00   | BMG160_RANGE_2000
- *    0x01   | BMG160_RANGE_1000
- *    0x02   | BMG160_RANGE_500
- *    0x03   | BMG160_RANGE_250
- *    0x04   | BMG160_RANGE_125
- *
- *
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_range_reg(u8 *v_range_u8)
+/*****************************************************************************
+ * Description: *//**brief Reads interrupt status 3 register byte from 0Ch
+ *
+ *
+ *
+ *
+ *  \param
+ *      unsigned char *status3_data : Address of status 3 register
+ *
+ *
+ *  \return
+ *      Result of bus communication function
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_interrupt_status_reg_3(
+unsigned char *status3_data)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read the gyro range */
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC
 		(p_bmg160->dev_addr,
-		BMG160_RANGE_ADDR_RANGE__REG, &v_data_u8,
-		BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_range_u8 =
-		BMG160_GET_BITSLICE(v_data_u8, BMG160_RANGE_ADDR_RANGE);
+		BMG160_INT_STATUSTHREE__REG, &v_data_u8r, 1);
+		*status3_data =
+		BMG160_GET_BITSLICE(v_data_u8r, BMG160_INT_STATUSTHREE);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set
- *	the range in the register 0x0F bits from 0 to 2
- *
- *	@param v_range_u8 : The value of gyro range
- *	value    |   range
- * ----------|-----------
- *    0x00   | BMG160_RANGE_2000
- *    0x01   | BMG160_RANGE_1000
- *    0x02   | BMG160_RANGE_500
- *    0x03   | BMG160_RANGE_250
- *    0x04   | BMG160_RANGE_125
- *
- *
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_range_reg(u8 v_range_u8)
+/*****************************************************************************
+ * Description: *//**brief This API reads the range from register 0x0Fh of
+ * (0 to 2) bits
+ *
+ *
+ *
+ *
+ *\param unsigned char *range
+ *      Range[0....7]
+ *      0 2000/s
+ *      1 1000/s
+ *      2 500/s
+ *      3 250/s
+ *      4 125/s
+ *
+ *
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_range_reg(unsigned char *range)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		if (v_range_u8 < BMG160_BIT_LENGTH_RANGE) {
-			/* write the range*/
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC
+		(p_bmg160->dev_addr,
+		BMG160_RANGE_ADDR_RANGE__REG, &v_data_u8r, 1);
+		*range =
+		BMG160_GET_BITSLICE(v_data_u8r, BMG160_RANGE_ADDR_RANGE);
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API sets the range register 0x0Fh
+ * (0 to 2 bits)
+ *
+ *
+ *
+ *
+ *\param unsigned char range
+ *
+ *      Range[0....7]
+ *      0 2000/s
+ *      1 1000/s
+ *      2 500/s
+ *      3 250/s
+ *      4 125/s
+ *
+ *
+ *
+ *
+ *  \return Communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_range_reg(unsigned char range)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		if (range < C_BMG160_Five_U8X) {
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
 			(p_bmg160->dev_addr,
-			BMG160_RANGE_ADDR_RANGE__REG, &v_data_u8,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
+			BMG160_RANGE_ADDR_RANGE__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
 			BMG160_RANGE_ADDR_RANGE,
-			v_range_u8);
+			range);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
 			(p_bmg160->dev_addr,
-			BMG160_RANGE_ADDR_RANGE__REG, &v_data_u8,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
+			BMG160_RANGE_ADDR_RANGE__REG, &v_data_u8r, 1);
 		} else {
 			comres = E_BMG160_OUT_OF_RANGE;
 		}
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get the gyro bandwidth
- *	in the register 0x10 bits from 0 to 3
- *
- *
- *
- *
- *
- *	@param  v_bw_u8: The value of gyro bandwidth
- *  value   |  bandwidth
- * ---------|---------------
- *   0x00   |  BMG160_BW_500_HZ
- *   0x01   |  BMG160_BW_230_HZ
- *   0x02   |  BMG160_BW_116_HZ
- *   0x03   |  BMG160_BW_47_HZ
- *   0x04   |  BMG160_BW_23_HZ
- *   0x05   |  BMG160_BW_12_HZ
- *   0x06   |  BMG160_BW_64_HZ
- *   0x07   |  BMG160_BW_32_HZ
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_bw(u8 *v_bw_u8)
+/*****************************************************************************
+ * Description: *//**brief This API reads the high resolution bit of 0x10h
+ * Register 7th bit
+ *
+ *
+ *
+ *
+ *\param unsigned char *high_res
+ *                      Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_high_res(unsigned char *high_res)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read gyro bandwidth*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC
-		(p_bmg160->dev_addr, BMG160_BW_ADDR__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_bw_u8 = BMG160_GET_BITSLICE(v_data_u8,
+		(p_bmg160->dev_addr,
+		BMG160_BW_ADDR_HIGH_RES__REG, &v_data_u8r, 1);
+		*high_res =
+		BMG160_GET_BITSLICE(v_data_u8r, BMG160_BW_ADDR_HIGH_RES);
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API reads the bandwidth register of 0x10h 0 to
+ *  3 bits
+ *
+ *
+ *
+ *
+* \param unsigned char *bandwidth
+ *              pointer to a variable passed as a parameter
+ *
+ *              0 no filter(523 Hz)
+ *              1 230Hz
+ *              2 116Hz
+ *              3 47Hz
+ *              4 23Hz
+ *              5 12Hz
+ *              6 64Hz
+ *              7 32Hz
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_bw(unsigned char *bandwidth)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC
+		(p_bmg160->dev_addr, BMG160_BW_ADDR__REG, &v_data_u8r, 1);
+		*bandwidth = BMG160_GET_BITSLICE(v_data_u8r,
 			BMG160_BW_ADDR);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set the gyro bandwidth
- *	in the register 0x10 bits from 0 to 3
- *
- *
- *
- *
- *
- *	@param  v_bw_u8: The value of gyro bandwidth
- *  value   |  bandwidth
- * ---------|---------------
- *   0x00   |  BMG160_BW_500_HZ
- *   0x01   |  BMG160_BW_230_HZ
- *   0x02   |  BMG160_BW_116_HZ
- *   0x03   |  BMG160_BW_47_HZ
- *   0x04   |  BMG160_BW_23_HZ
- *   0x05   |  BMG160_BW_12_HZ
- *   0x06   |  BMG160_BW_64_HZ
- *   0x07   |  BMG160_BW_32_HZ
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_bw(u8 v_bw_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	u8 v_mode_u8r  = BMG160_INIT_VALUE;
-	u8 v_auto_sleep_dur = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		if (v_bw_u8 < BMG160_BIT_LENGTH_BW) {
-			comres = bmg160_get_power_mode(&v_mode_u8r);
-			if (v_mode_u8r == BMG160_MODE_ADVANCEDPOWERSAVING) {
-				/* check the advance power save mode */
-				comres = bmg160_get_auto_sleep_durn(
-				&v_auto_sleep_dur);
-				comres = bmg160_set_auto_sleep_durn(
-				v_auto_sleep_dur,
-				v_bw_u8);
-				}
-				/* read gyro bandwidth*/
-				comres = p_bmg160->BMG160_BUS_READ_FUNC
-				(p_bmg160->dev_addr,
-				BMG160_BW_ADDR__REG,
-				&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-				v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-				BMG160_BW_ADDR, v_bw_u8);
-				comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-				(p_bmg160->dev_addr,
-				BMG160_BW_ADDR__REG,
-				&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		} else {
-			comres = E_BMG160_OUT_OF_RANGE;
-		}
-	}
-	return comres;
-}
-/*!
- *	@brief This API used to get the status of
- *	External Trigger selection in the register 0x12h bits from 4 to 5
- *
- *
- *
- *
- *	@param v_pwu_ext_tri_select_u8 : The value of External Trigger selection
- *	v_pwu_ext_tri_select_u8	 |	Trigger source
- * --------------------------|-------------------------
- *      0x00                 |      No
- *		0x01                 |   INT1 pin
- *		0x02                 |   INT2 pin
- *		0x03                 |  SDO pin(SPI3 mode)
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_pmu_ext_tri_select(
-u8 *v_pwu_ext_tri_select_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		/* READ PMU TRIGGER*/
-		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_MODE_LPM2_ADDR_EXT_TRI_SELECT__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_pwu_ext_tri_select_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_MODE_LPM2_ADDR_EXT_TRI_SELECT);
-	}
-	return comres;
-}
-/*!
- *	@brief This API used to set the status of
- *	External Trigger selection in the register 0x12h bits from 4 to 5
- *
- *
- *
- *
- *	@param v_pwu_ext_tri_select_u8 : The value of External Trigger selection
- *	v_pwu_ext_tri_select_u8	 |	Trigger source
- * --------------------------|-------------------------
- *      0x00                 |      No
- *		0x01                 |   INT1 pin
- *		0x02                 |   INT2 pin
- *		0x03                 |  SDO pin(SPI3 mode)
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_pmu_ext_tri_select(
-u8 v_pwu_ext_tri_select_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		/* WRITE PMU TRIGGER*/
-		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_MODE_LPM2_ADDR_EXT_TRI_SELECT__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_MODE_LPM2_ADDR_EXT_TRI_SELECT, v_pwu_ext_tri_select_u8);
-		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_MODE_LPM2_ADDR_EXT_TRI_SELECT__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-	}
-	return comres;
-}
-/*!
- *	@brief  This API is used to get data high bandwidth
- *	in the register 0x13 bit 7
- *
- *
- *
- *	@param v_high_bw_u8 : The value of high bandwidth
- *  value   |  Description
- * ---------|--------------
- *    1     | unfiltered
- *    0     | filtered
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_high_bw(u8 *v_high_bw_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read high bandwidth*/
-		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_HIGH_BW__REG, &v_data_u8,
-		BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_high_bw_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_HIGH_BW);
-	}
-	return comres;
-}
-/*!
- *	@brief  This API is used to set data high bandwidth
- *	in the register 0x13 bit 7
- *
- *
- *
- *	@param v_high_bw_u8 : The value of high bandwidth
- *  value   |  Description
- * ---------|--------------
- *    1     | unfiltered
- *    0     | filtered
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_high_bw(u8 v_high_bw_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		if (v_high_bw_u8 < BMG160_BIT_LENGTH_HIGH_BW) {
-			/* write high bandwidth*/
-			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGH_BW__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_HIGH_BW, v_high_bw_u8);
-			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGH_BW__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		} else {
-			comres = E_BMG160_OUT_OF_RANGE;
-		}
-	}
-	return comres;
-}
-/*!
- *	@brief  This API is used to get the shadow dis
- *	in the register 0x13 bit 6
- *
- *
- *
- *	@param v_shadow_dis_u8 : The value of shadow dis
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_shadow_dis(u8 *v_shadow_dis_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read shadow dis*/
-		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_SHADOW_DIS__REG, &v_data_u8,
-		BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_shadow_dis_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_SHADOW_DIS);
-	}
-	return comres;
-}
-/*!
- *	@brief  This API is used to set the shadow dis
- *	in the register 0x13 bit 6
- *
- *
- *
- *	@param v_shadow_dis_u8 : The value of shadow dis
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_shadow_dis(u8 v_shadow_dis_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		if (v_shadow_dis_u8 < BMG160_BIT_LENGTH_SHADOW_DIS) {
-			/* write shadow dis*/
-			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_SHADOW_DIS__REG, &v_data_u8,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_SHADOW_DIS, v_shadow_dis_u8);
-			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_SHADOW_DIS__REG, &v_data_u8,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		} else {
-			comres = E_BMG160_OUT_OF_RANGE;
-		}
-	}
-	return comres;
-}
-/*!
- *	This function is used for the soft reset
- *	The soft reset register will be written with 0xB6 in the register 0x14.
- *
- *
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_soft_rst(void)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_soft_rst_u8  = BMG160_INIT_VALUE;
+/* Compiler Switch if applicable
+#ifdef
 
-	v_soft_rst_u8 = BMG160_SOFT_RESET;
-	/* check the p_bmg160 struct pointer is NULL*/
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API writes the Bandwidth register (0x10h of 0
+ * to 3 bits)
+ *
+ *
+ *
+ *
+ *\param unsigned char bandwidth,
+ *              The bandwidth to be set passed as a parameter
+ *
+ *              0 no filter(523 Hz)
+ *              1 230Hz
+ *              2 116Hz
+ *              3 47Hz
+ *              4 23Hz
+ *              5 12Hz
+ *              6 64Hz
+ *              7 32Hz
+ *
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_bw(unsigned char bandwidth)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
+	unsigned char v_mode_u8r  = C_BMG160_Zero_U8X;
+	unsigned char v_autosleepduration  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
+	} else {
+		if (bandwidth < C_BMG160_Eight_U8X) {
+			bmg160_get_mode(&v_mode_u8r);
+			if (v_mode_u8r == BMG160_MODE_ADVANCEDPOWERSAVING) {
+				bmg160_get_autosleepdur(&v_autosleepduration);
+				bmg160_set_autosleepdur(v_autosleepduration,
+				bandwidth);
+			}
+			comres = p_bmg160->BMG160_BUS_READ_FUNC
+			(p_bmg160->dev_addr,
+			BMG160_BW_ADDR__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+				BMG160_BW_ADDR, bandwidth);
+			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_BW_ADDR__REG, &v_data_u8r, 1);
 		} else {
-		/* write soft reset*/
+			comres = E_BMG160_OUT_OF_RANGE;
+		}
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API reads the status of External Trigger
+ * selection bits (4 and 5) of 0x12h registers
+ *
+ *
+ *
+ *
+ *\param unsigned char *pwu_ext_tri_sel
+ *                      Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return Communication Results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_pmu_ext_tri_sel(
+unsigned char *pwu_ext_tri_sel)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
+		 BMG160_MODE_LPM2_ADDR_EXT_TRI_SEL__REG, &v_data_u8r, 1);
+		*pwu_ext_tri_sel = BMG160_GET_BITSLICE(v_data_u8r,
+		BMG160_MODE_LPM2_ADDR_EXT_TRI_SEL);
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API writes the External Trigger selection
+ * bits (4 and 5) of 0x12h registers
+ *
+ *
+ *
+ *
+ *\param unsigned char pwu_ext_tri_sel
+ *               Value to be written passed as a parameter
+ *
+ *
+ *
+ *  \return Communication Results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_pmu_ext_tri_sel(
+unsigned char pwu_ext_tri_sel)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
+		BMG160_MODE_LPM2_ADDR_EXT_TRI_SEL__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_MODE_LPM2_ADDR_EXT_TRI_SEL, pwu_ext_tri_sel);
+		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
+		BMG160_MODE_LPM2_ADDR_EXT_TRI_SEL__REG, &v_data_u8r, 1);
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief  This API is used to get data high bandwidth
+ *
+ *
+ *
+ *
+ *\param unsigned char *high_bw : Address of high_bw
+ *                         Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_high_bw(unsigned char *high_bw)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
+		 BMG160_RATED_HBW_ADDR_DATA_HIGHBW__REG, &v_data_u8r, 1);
+		*high_bw = BMG160_GET_BITSLICE(v_data_u8r,
+		BMG160_RATED_HBW_ADDR_DATA_HIGHBW);
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used to set data high bandwidth
+ *
+ *
+ *
+ *
+ *\param unsigned char high_bw:
+ *          Value to be written passed as a parameter
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_high_bw(unsigned char high_bw)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		if (high_bw < C_BMG160_Two_U8X) {
+			comres = p_bmg160->BMG160_BUS_READ_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_RATED_HBW_ADDR_DATA_HIGHBW__REG,
+			&v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_RATED_HBW_ADDR_DATA_HIGHBW, high_bw);
+			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_RATED_HBW_ADDR_DATA_HIGHBW__REG,
+			&v_data_u8r, 1);
+		} else {
+			comres = E_BMG160_OUT_OF_RANGE;
+		}
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used to get shadow dis
+ *
+ *
+ *
+ *
+ *\param unsigned char *shadow_dis : Address of shadow_dis
+ *                       Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_shadow_dis(unsigned char *shadow_dis)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
+		BMG160_RATED_HBW_ADDR_SHADOW_DIS__REG, &v_data_u8r, 1);
+		*shadow_dis = BMG160_GET_BITSLICE(v_data_u8r,
+		BMG160_RATED_HBW_ADDR_SHADOW_DIS);
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used to set shadow dis
+ *
+ *
+ *
+ *
+ *\param unsigned char shadow_dis
+ *         Value to be written passed as a parameter
+ *
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_shadow_dis(unsigned char shadow_dis)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		if (shadow_dis < C_BMG160_Two_U8X) {
+			comres = p_bmg160->BMG160_BUS_READ_FUNC
+			(p_bmg160->dev_addr,
+			BMG160_RATED_HBW_ADDR_SHADOW_DIS__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_RATED_HBW_ADDR_SHADOW_DIS, shadow_dis);
+			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_RATED_HBW_ADDR_SHADOW_DIS__REG, &v_data_u8r, 1);
+		} else {
+			comres = E_BMG160_OUT_OF_RANGE;
+		}
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief
+ *               This function is used for the soft reset
+ *     The soft reset register will be written with 0xB6.
+ *
+ *
+ *
+* \param None
+ *
+ *
+ *
+ *  \return Communication results.
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_soft_reset()
+{
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_SoftReset_u8r  = C_BMG160_Zero_U8X;
+	v_SoftReset_u8r = 0xB6;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
 		comres = p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_BGW_SOFT_RST_ADDR, &v_soft_rst_u8,
-		BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_BGW_SOFTRESET_ADDR, &v_SoftReset_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get the data(data_enable)
- *	interrupt enable bits of the sensor in the registers 0x15 bit 7
- *
- *
- *
- *
- *	@param v_data_enable_u8 : The value of data enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_data_enable(u8 *v_data_enable_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get data enable data
+ *
+ *
+ *
+ *
+ *\param unsigned char *data_en : Address of data_en
+ *                         Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_data_enable(unsigned char *data_en)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read the data enable interrupt */
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_ENABLE0_DATA__REG, &v_data_u8,
-		BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_data_enable_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_INTR_ENABLE0_DATA);
+		 BMG160_INT_ENABLE0_DATAEN__REG, &v_data_u8r, 1);
+		*data_en = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_INT_ENABLE0_DATAEN);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set the data(data_enable)
- *	interrupt enable bits of the sensor in the registers 0x15 bit 7
- *
- *
- *
- *
- *	@param v_data_enable_u8 : The value of data enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_data_enable(u8 v_data_enable_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set data enable data
+ *
+ *
+ *
+ *
+ *  \param unsigned char data_en:
+ *          Value to be written passed as a \parameter
+ *           0 --> Disable
+ *           1 --> Enable
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_data_en(unsigned char data_en)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* write the data enable interrupt*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC
-		(p_bmg160->dev_addr,
-		BMG160_INTR_ENABLE0_DATA__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_INTR_ENABLE0_DATA, v_data_enable_u8);
+			(p_bmg160->dev_addr,
+		BMG160_INT_ENABLE0_DATAEN__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_INT_ENABLE0_DATAEN, data_en);
 		comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-		(p_bmg160->dev_addr,
-		BMG160_INTR_ENABLE0_DATA__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+			(p_bmg160->dev_addr,
+		BMG160_INT_ENABLE0_DATAEN__REG, &v_data_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get the fifo(fifo_enable)
- *	interrupt enable bits of the sensor in the registers 0x15 bit 6
- *
- *
- *
- *
- *	@param v_fifo_enable_u8 : The value of  fifo enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_fifo_enable(u8 *v_fifo_enable_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get fifo enable bit
+ *
+ *
+ *
+ *
+ *  \param unsigned char *fifo_en : Address of fifo_en
+ *                         Pointer to a variable passed as a parameter
+
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_fifo_enable(unsigned char *fifo_en)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read the fifo enable */
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_ENABLE0_FIFO__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_fifo_enable_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_INTR_ENABLE0_FIFO);
+		 BMG160_INT_ENABLE0_FIFOEN__REG, &v_data_u8r, 1);
+		*fifo_en = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_INT_ENABLE0_FIFOEN);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set the fifo(fifo_enable)
- *	interrupt enable bits of the sensor in the registers 0x15 bit 6
- *
- *
- *
- *
- *	@param v_fifo_enable_u8 : The value of  fifo enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_fifo_enable(u8 v_fifo_enable_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set fifo enable bit
+ *
+ *
+ *
+ *
+ *  \param unsigned char fifo_en:
+ *          Value to be written passed as a parameter
+ *           0 --> Disable
+ *           1 --> Enable
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_fifo_enable(unsigned char fifo_en)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		if (v_fifo_enable_u8 < BMG160_BIT_LENGTH_FIFO) {
-			/* write the fifo enable */
+	} else {
+		if (fifo_en < C_BMG160_Two_U8X) {
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ENABLE0_FIFO__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_INTR_ENABLE0_FIFO, v_fifo_enable_u8);
+				(p_bmg160->dev_addr,
+			BMG160_INT_ENABLE0_FIFOEN__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_INT_ENABLE0_FIFOEN, fifo_en);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ENABLE0_FIFO__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_INT_ENABLE0_FIFOEN__REG, &v_data_u8r, 1);
 		} else {
 			comres = E_BMG160_OUT_OF_RANGE;
 		}
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get
- *	the auto offset(auto_offset_enable) interrupt enable bits of
- *	the sensor in the registers 0x15 bit 3
- *
- *
- *
- *	@param v_offset_enable_u8 : The value of offset enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_auto_offset_enable(
-u8 *v_offset_enable_u8)
+/*****************************************************************************
+ * Description: *//**brief This API reads the status of the Auto offset
+ * Enable bit
+ *                      (0x15 Reg 3rd Bit)
+ *
+ *
+ *
+ *
+ *  \param unsigned char *offset_en
+ *              address of a variable,
+ *
+ *
+ *
+ *  \return   Communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_auto_offset_en(
+unsigned char *offset_en)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read auto offset*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_ENABLE0_AUTO_OFFSET__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_offset_enable_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_INTR_ENABLE0_AUTO_OFFSET);
+		 BMG160_INT_ENABLE0_AUTO_OFFSETEN__REG, &v_data_u8r, 1);
+		*offset_en = BMG160_GET_BITSLICE(v_data_u8r,
+		BMG160_INT_ENABLE0_AUTO_OFFSETEN);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set
- *	the auto offset(auto_offset_enable) interrupt enable bits of
- *	the sensor in the registers 0x15 bit 3
- *
- *
- *
- *	@param v_offset_enable_u8 : The value of offset enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_auto_offset_enable(u8 v_offset_enable_u8)
+/*****************************************************************************
+ * Description: *//**brief This API sets the Auto offset enable bit
+ *                      (Reg 0x15 3rd Bit)
+ *
+ *
+ *
+ *
+ *  \param unsigned char offset_en
+ *                      0 --> Disable
+ *                      1 --> Enable
+ *
+ *  \return  Communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_auto_offset_en(unsigned char offset_en)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* write auto offset */
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_ENABLE0_AUTO_OFFSET__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_INTR_ENABLE0_AUTO_OFFSET, v_offset_enable_u8);
+		BMG160_INT_ENABLE0_AUTO_OFFSETEN__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_INT_ENABLE0_AUTO_OFFSETEN, offset_en);
 		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_ENABLE0_AUTO_OFFSET__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_INT_ENABLE0_AUTO_OFFSETEN__REG, &v_data_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get
- *	the output type status in the register 0x16.
- *	@note INT1 -> bit 1
- *	@note INT2 -> bit 3
- *
- *	@param  v_param_u8: The value of output type selection number
- *    v_param_u8| output type
- *  ------------|--------------
- *      0       |   BMG160_INTR1
- *      1       |   BMG160_INTR2
- *
- *	@param v_intr_output_type_u8: The value of output type
- *   value    |  output
- * -----------|-------------
- *    1       | open drain
- *    0       | push pull
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_intr_output_type(u8 v_param_u8,
-u8 *v_intr_output_type_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get the output type status
+ *
+ *
+ *
+ *
+ *  \param unsigned char channel,unsigned char *int_od
+ *                  BMG160_INT1    ->   0
+ *                  BMG160_INT2    ->   1
+ *                  int_od : open drain   ->   1
+ *                           push pull    ->   0
+ *
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_int_od(unsigned char param,
+unsigned char *int_od)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_param_u8) {
-		/* read output type*/
-		case BMG160_INTR1:
+	} else {
+		switch (param) {
+		case BMG160_INT1:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			 BMG160_INTR_ENABLE1_IT1_OUTPUT_TYPE__REG,
-			 &v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_intr_output_type_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_INTR_ENABLE1_IT1_OUTPUT_TYPE);
+				(p_bmg160->dev_addr,
+			 BMG160_INT_ENABLE1_IT1_OD__REG, &v_data_u8r, 1);
+			*int_od = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_INT_ENABLE1_IT1_OD);
 			break;
-		case BMG160_INTR2:
+		case BMG160_INT2:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ENABLE1_IT2_OUTPUT_TYPE__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_intr_output_type_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_INTR_ENABLE1_IT2_OUTPUT_TYPE);
+				(p_bmg160->dev_addr,
+			 BMG160_INT_ENABLE1_IT2_OD__REG, &v_data_u8r, 1);
+			*int_od = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_INT_ENABLE1_IT2_OD);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -1443,69 +1657,67 @@ u8 *v_intr_output_type_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set
- *	the output type status in the register 0x16.
- *	@note INT1 -> bit 1
- *	@note INT2 -> bit 3
- *
- *	@param  v_param_u8: The value of output type selection number
- *    v_param_u8| output type
- *  ------------|--------------
- *      0       |   BMG160_INTR1
- *      1       |   BMG160_INTR2
- *
- *	@param v_intr_output_type_u8: The value of output type
- *   value    |  output
- * -----------|-------------
- *    1       | open drain
- *    0       | push pull
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_intr_output_type(u8 v_param_u8,
-u8 v_intr_output_type_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set the output type status
+ *
+ *
+ *
+ *
+ *  \param unsigned char channel,unsigned char *int_od
+ *                  BMG160_INT1    ->   0
+ *                  BMG160_INT2    ->   1
+ *                  int_od : open drain   ->   1
+ *                           push pull    ->   0
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_int_od(unsigned char param,
+unsigned char int_od)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_param_u8) {
-		/* write output type*/
-		case BMG160_INTR1:
+	} else {
+		switch (param) {
+		case BMG160_INT1:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ENABLE1_IT1_OUTPUT_TYPE__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_INTR_ENABLE1_IT1_OUTPUT_TYPE,
-			v_intr_output_type_u8);
+				(p_bmg160->dev_addr,
+			BMG160_INT_ENABLE1_IT1_OD__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_INT_ENABLE1_IT1_OD, int_od);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ENABLE1_IT1_OUTPUT_TYPE__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_INT_ENABLE1_IT1_OD__REG, &v_data_u8r, 1);
 			break;
-		case BMG160_INTR2:
+		case BMG160_INT2:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ENABLE1_IT2_OUTPUT_TYPE__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_INTR_ENABLE1_IT2_OUTPUT_TYPE,
-			v_intr_output_type_u8);
+				(p_bmg160->dev_addr,
+			BMG160_INT_ENABLE1_IT2_OD__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_INT_ENABLE1_IT2_OD, int_od);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ENABLE1_IT2_OUTPUT_TYPE__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_INT_ENABLE1_IT2_OD__REG, &v_data_u8r, 1);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -1514,59 +1726,61 @@ u8 v_intr_output_type_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get
- *	Active Level status in the register 0x16
- *	@note INT1 -> bit 0
- *	@note INT2 -> bit 2
- *
- *	@param  v_param_u8: The value of Active Level selection number
- *    v_param_u8| Active Level
- *  ------------|--------------
- *      0       |   BMG160_INTR1
- *      1       |   BMG160_INTR2
- *
- *	@param  v_intr_level_u8: The  value of Active Level status value
- *   value    |  Active Level
- * -----------|-------------
- *    1       | Active HIGH
- *    0       | Active LOW
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_intr_level(u8 v_param_u8,
-u8 *v_intr_level_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get Active Level status
+ *
+ *
+ *
+ *
+ *  \param unsigned char channel,unsigned char *int_lvl
+ *                  BMG160_INT1    ->    0
+ *                  BMG160_INT2    ->    1
+ *                  int_lvl : Active HI   ->   1
+ *                            Active LO   ->   0
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_int_lvl(unsigned char param,
+unsigned char *int_lvl)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_param_u8) {
-		/* read active level*/
-		case BMG160_INTR1:
+	} else {
+		switch (param) {
+		case BMG160_INT1:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ENABLE1_IT1_LEVEL__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_intr_level_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_INTR_ENABLE1_IT1_LEVEL);
+				(p_bmg160->dev_addr,
+			 BMG160_INT_ENABLE1_IT1_LVL__REG, &v_data_u8r, 1);
+			*int_lvl = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_INT_ENABLE1_IT1_LVL);
 			break;
-		case BMG160_INTR2:
+		case BMG160_INT2:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ENABLE1_IT2_LEVEL__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_intr_level_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_INTR_ENABLE1_IT2_LEVEL);
+				(p_bmg160->dev_addr,
+			 BMG160_INT_ENABLE1_IT2_LVL__REG, &v_data_u8r, 1);
+			*int_lvl = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_INT_ENABLE1_IT2_LVL);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -1575,67 +1789,67 @@ u8 *v_intr_level_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set
- *	Active Level status in the register 0x16
- *	@note INT1 -> bit 0
- *	@note INT2 -> bit 2
- *
- *	@param  v_param_u8: The value of Active Level selection number
- *    v_param_u8| Active Level
- *  ------------|--------------
- *      0       |   BMG160_INTR1
- *      1       |   BMG160_INTR2
- *
- *	@param  v_intr_level_u8: The  value of Active Level status value
- *   value    |  Active Level
- * -----------|-------------
- *    1       | Active HIGH
- *    0       | Active LOW
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_intr_level(u8 v_param_u8,
-u8 v_intr_level_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set Active Level status
+ *
+ *
+ *
+ *
+ *  \param unsigned char channel,unsigned char *int_lvl
+ *                  BMG160_INT1    ->    0
+ *                  BMG160_INT2    ->    1
+ *                  int_lvl : Active HI   ->   1
+ *                            Active LO   ->   0
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_int_lvl(unsigned char param,
+unsigned char int_lvl)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_param_u8) {
-		/* write active level*/
-		case BMG160_INTR1:
+	} else {
+		switch (param) {
+		case BMG160_INT1:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ENABLE1_IT1_LEVEL__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_INTR_ENABLE1_IT1_LEVEL, v_intr_level_u8);
+				(p_bmg160->dev_addr,
+			BMG160_INT_ENABLE1_IT1_LVL__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_INT_ENABLE1_IT1_LVL, int_lvl);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ENABLE1_IT1_LEVEL__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_INT_ENABLE1_IT1_LVL__REG, &v_data_u8r, 1);
 			break;
-		case BMG160_INTR2:
+		case BMG160_INT2:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ENABLE1_IT2_LEVEL__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_INTR_ENABLE1_IT2_LEVEL, v_intr_level_u8);
+				(p_bmg160->dev_addr,
+			BMG160_INT_ENABLE1_IT2_LVL__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_INT_ENABLE1_IT2_LVL, int_lvl);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ENABLE1_IT2_LEVEL__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_INT_ENABLE1_IT2_LVL__REG, &v_data_u8r, 1);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -1644,219 +1858,242 @@ u8 v_intr_level_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get
- *	the high rate(int1_high) interrupt1 enable bits of
- *	the sensor in the registers 0x17 bit 3
- *
- *
- *
- *	@param v_intr1_u8 : The value of interrupt1 high_rate enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_intr1_highrate(u8 *v_intr1_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get High Interrupt1
+ *
+ *
+ *
+ *
+ *  \param unsigned char *int1_high : Address of high_bw
+ *                         Pointer to a variable passed as a parameter
+
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_int1_high(unsigned char *int1_high)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read high_rate enable */
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_MAP_ZERO_INTR1_HIGHRATE__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_intr1_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_INTR_MAP_ZERO_INTR1_HIGHRATE);
+		 BMG160_INT_MAP_0_INT1_HIGH__REG, &v_data_u8r, 1);
+		*int1_high = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_INT_MAP_0_INT1_HIGH);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set
- *	the high rate(int1_high) interrupt1 enable bits of
- *	the sensor in the registers 0x17 bit 3
- *
- *
- *
- *	@param v_intr1_u8 : The value of interrupt1 high_rate enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_intr1_highrate(
-u8 v_intr1_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set High Interrupt1
+ *
+ *
+ *
+ *
+ *  \param unsigned char int1_high
+ *                  0 -> Disable
+ *                  1 -> Enable
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_int1_high(unsigned char int1_high)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* write high_rate enable */
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_MAP_ZERO_INTR1_HIGHRATE__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_INTR_MAP_ZERO_INTR1_HIGHRATE, v_intr1_u8);
+		BMG160_INT_MAP_0_INT1_HIGH__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_INT_MAP_0_INT1_HIGH, int1_high);
 		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_MAP_ZERO_INTR1_HIGHRATE__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_INT_MAP_0_INT1_HIGH__REG, &v_data_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get
- *	the any motion(int1_any) interrupt1 enable bits of
- *	the sensor in the registers 0x17 bit 1
- *
- *
- *
- *	@param v_int1r_any_motion_u8 : The value of any motion interrupt1
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_intr1_any_motion(
-u8 *v_int1r_any_motion_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get Any Interrupt1
+ *
+ *
+ *
+ *
+ *  \param unsigned char *int1_any : Address of high_bw
+ *                         Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_int1_any(unsigned char *int1_any)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read any motion interrupt*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_MAP_ZERO_INTR1_ANY_MOTION__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_int1r_any_motion_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_INTR_MAP_ZERO_INTR1_ANY_MOTION);
+		 BMG160_INT_MAP_0_INT1_ANY__REG, &v_data_u8r, 1);
+		*int1_any = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_INT_MAP_0_INT1_ANY);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set
- *	the any motion(int1_any) interrupt1 enable bits of
- *	the sensor in the registers 0x17 bit 1
- *
- *
- *
- *	@param v_int1r_any_motion_u8 : The value of any motion interrupt1
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_intr1_any_motion(
-u8 v_int1r_any_motion_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set Any Interrupt1
+ *
+ *
+ *
+ *
+ *\param unsigned char int1_any
+ *                   0 -> Disable
+ *                   1 -> Enable
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_int1_any(unsigned char int1_any)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* write any motion interrupt */
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_MAP_ZERO_INTR1_ANY_MOTION__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_INTR_MAP_ZERO_INTR1_ANY_MOTION, v_int1r_any_motion_u8);
+		BMG160_INT_MAP_0_INT1_ANY__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_INT_MAP_0_INT1_ANY, int1_any);
 		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_MAP_ZERO_INTR1_ANY_MOTION__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_INT_MAP_0_INT1_ANY__REG, &v_data_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get
- *	the data interrupt1 and interrupt2(int1_data and int2_data)
- *	in the register 0x18
- *	@note INT1 -> bit 0
- *	@note INT2 -> bit 7
- *
- *	@param  v_axis_u8: data interrupt selection
- *    v_axis_u8 | Data interrupt
- *  ------------|--------------
- *      0       |   BMG160_INTR1_DATA
- *      1       |   BMG160_INTR2_DATA
- *
- *	@param  v_intr_data_u8: The value of data interrupt1 or interrupt2
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_intr_data(u8 v_axis_u8,
-u8 *v_intr_data_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get data Interrupt1 and data
+ * Interrupt2
+ *
+ *
+ *
+ *
+ *  \param unsigned char axis,unsigned char *int_data
+ *                       axis :
+ *                       BMG160_INT1_DATA -> 0
+ *                       BMG160_INT2_DATA -> 1
+ *                       int_data :
+ *                       Disable     -> 0
+ *                       Enable      -> 1
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_int_data(unsigned char axis,
+unsigned char *int_data)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_axis_u8) {
-		/* read data interrupt */
-		case BMG160_INTR1_DATA:
+	} else {
+		switch (axis) {
+		case BMG160_INT1_DATA:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MAP_ONE_INTR1_DATA__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_intr_data_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_MAP_ONE_INTR1_DATA);
+				(p_bmg160->dev_addr,
+			 BMG160_MAP_1_INT1_DATA__REG, &v_data_u8r, 1);
+			*int_data = BMG160_GET_BITSLICE(v_data_u8r,
+				BMG160_MAP_1_INT1_DATA);
 			break;
-		case BMG160_INTR2_DATA:
+		case BMG160_INT2_DATA:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MAP_ONE_INTR2_DATA__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_intr_data_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_MAP_ONE_INTR2_DATA);
+				(p_bmg160->dev_addr,
+			 BMG160_MAP_1_INT2_DATA__REG, &v_data_u8r, 1);
+			*int_data = BMG160_GET_BITSLICE(v_data_u8r,
+				BMG160_MAP_1_INT2_DATA);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -1865,66 +2102,70 @@ u8 *v_intr_data_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set
- *	the data interrupt1 and interrupt2(int1_data and int2_data)
- *	in the register 0x18
- *	@note INT1 -> bit 0
- *	@note INT2 -> bit 7
- *
- *	@param  v_axis_u8: data interrupt selection
- *    v_axis_u8 | Data interrupt
- *  ------------|--------------
- *      0       |   BMG160_INTR1_DATA
- *      1       |   BMG160_INTR2_DATA
- *
- *	@param  v_intr_data_u8: The value of data interrupt1 or interrupt2
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_intr_data(u8 v_axis_u8,
-u8 v_intr_data_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set data Interrupt1 and data
+ * Interrupt2
+ *
+ *
+ *
+ *
+ * \param unsigned char axis,unsigned char *int_data
+ *                       axis :
+ *                       BMG160_INT1_DATA -> 0
+ *                       BMG160_INT2_DATA -> 1
+ *                       int_data :
+ *                       Disable     -> 0
+ *                       Enable      -> 1
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_int_data(unsigned char axis,
+unsigned char int_data)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		}   else {
-			switch (v_axis_u8) {
-			/* write data interrupt*/
-			case BMG160_INTR1_DATA:
+	}   else {
+			switch (axis) {
+			case BMG160_INT1_DATA:
 				comres = p_bmg160->BMG160_BUS_READ_FUNC
-				(p_bmg160->dev_addr,
-				BMG160_MAP_ONE_INTR1_DATA__REG,
-				&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-				v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-				BMG160_MAP_ONE_INTR1_DATA, v_intr_data_u8);
+					(p_bmg160->dev_addr,
+				BMG160_MAP_1_INT1_DATA__REG, &v_data_u8r, 1);
+				v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+				BMG160_MAP_1_INT1_DATA, int_data);
 				comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-				(p_bmg160->dev_addr,
-				BMG160_MAP_ONE_INTR1_DATA__REG,
-				&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+					(p_bmg160->dev_addr,
+				BMG160_MAP_1_INT1_DATA__REG, &v_data_u8r, 1);
 				break;
-			case BMG160_INTR2_DATA:
+			case BMG160_INT2_DATA:
 				comres = p_bmg160->BMG160_BUS_READ_FUNC
-				(p_bmg160->dev_addr,
-				BMG160_MAP_ONE_INTR2_DATA__REG,
-				&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-				v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-				BMG160_MAP_ONE_INTR2_DATA, v_intr_data_u8);
+					(p_bmg160->dev_addr,
+				BMG160_MAP_1_INT2_DATA__REG, &v_data_u8r, 1);
+				v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+				BMG160_MAP_1_INT2_DATA, int_data);
 				comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-				(p_bmg160->dev_addr,
-				BMG160_MAP_ONE_INTR2_DATA__REG,
-				&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+					(p_bmg160->dev_addr,
+				BMG160_MAP_1_INT2_DATA__REG, &v_data_u8r, 1);
 				break;
 			default:
 				comres = E_BMG160_OUT_OF_RANGE;
@@ -1933,58 +2174,65 @@ u8 v_intr_data_u8)
 		}
 		return comres;
 	}
-/*!
- *	@brief This API is used to get
- *	the fast offset(intr2_fast_offset) and auto offset(intr2_auto_offset)
- *	of interrupt2 in the register 0x18
- *	@note int2_fast_offset -> bit 6
-  *	@note int2_auto_offset -> bit 4
- *
- *	@param v_axis_u8: The value of fast/auto offset interrupts selection
- *    v_axis_u8 | Data interrupt
- *  ------------|--------------
- *      1       |   BMG160_FAST_OFFSET
- *      2       |   BMG160_AUTO_OFFSET
- *
- *	@param v_intr2_offset_u8: The value of fast/auto offset enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_intr2_offset(u8 v_axis_u8,
-u8 *v_intr2_offset_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get fast offset and auto
+ * offset Interrupt2
+ *
+ *
+ *
+ *
+ *\param unsigned char axis,unsigned char *int2_offset
+ *                       axis :
+ *                       BMG160_AUTO_OFFSET -> 1
+ *                       BMG160_FAST_OFFSET -> 2
+ *                       int2_offset :
+ *                       Disable     -> 0
+ *                       Enable      -> 1
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_int2_offset(unsigned char axis,
+unsigned char *int2_offset)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_axis_u8) {
-		/* read offset*/
+	} else {
+		switch (axis) {
 		case BMG160_FAST_OFFSET:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MAP_ONE_INTR2_FAST_OFFSET__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_intr2_offset_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_MAP_ONE_INTR2_FAST_OFFSET);
+				(p_bmg160->dev_addr,
+			 BMG160_MAP_1_INT2_FAST_OFFSET__REG, &v_data_u8r, 1);
+			*int2_offset = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_MAP_1_INT2_FAST_OFFSET);
 			break;
 		case BMG160_AUTO_OFFSET:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MAP_ONE_INTR2_AUTO_OFFSET__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_intr2_offset_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_MAP_ONE_INTR2_AUTO_OFFSET);
+				(p_bmg160->dev_addr,
+			 BMG160_MAP_1_INT2_AUTO_OFFSET__REG, &v_data_u8r, 1);
+			*int2_offset = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_MAP_1_INT2_AUTO_OFFSET);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -1993,66 +2241,70 @@ u8 *v_intr2_offset_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set
- *	the fast offset(intr2_fast_offset) and auto offset(intr2_auto_offset)
- *	of interrupt2 in the register 0x18
- *	@note int2_fast_offset -> bit 6
-  *	@note int2_auto_offset -> bit 4
- *
- *	@param v_axis_u8: The value of fast/auto offset interrupts selection
- *    v_axis_u8 | Data interrupt
- *  ------------|--------------
- *      1       |   BMG160_FAST_OFFSET
- *      2       |   BMG160_AUTO_OFFSET
- *
- *	@param v_intr2_offset_u8: The value of fast/auto offset enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_intr2_offset(u8 v_axis_u8,
-u8 v_intr2_offset_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set fast offset and auto
+ * offset Interrupt2
+ *
+ *
+ *
+ *
+ *\param unsigned char axis,unsigned char *int2_offset
+ *                       axis :
+ *                       BMG160_AUTO_OFFSET -> 1
+ *                       BMG160_FAST_OFFSET -> 2
+ *                       int2_offset :
+ *                       Disable     -> 0
+ *                       Enable      -> 1
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_int2_offset(unsigned char axis,
+unsigned char int2_offset)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_axis_u8) {
-		/* write offset */
+	} else {
+		switch (axis) {
 		case BMG160_FAST_OFFSET:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MAP_ONE_INTR2_FAST_OFFSET__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_MAP_ONE_INTR2_FAST_OFFSET, v_intr2_offset_u8);
+				(p_bmg160->dev_addr,
+			BMG160_MAP_1_INT2_FAST_OFFSET__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_MAP_1_INT2_FAST_OFFSET, int2_offset);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MAP_ONE_INTR2_FAST_OFFSET__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_MAP_1_INT2_FAST_OFFSET__REG, &v_data_u8r, 1);
 			break;
 		case BMG160_AUTO_OFFSET:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MAP_ONE_INTR2_AUTO_OFFSET__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_MAP_ONE_INTR2_AUTO_OFFSET, v_intr2_offset_u8);
+				(p_bmg160->dev_addr,
+			BMG160_MAP_1_INT2_AUTO_OFFSET__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_MAP_1_INT2_AUTO_OFFSET, int2_offset);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MAP_ONE_INTR2_AUTO_OFFSET__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_MAP_1_INT2_AUTO_OFFSET__REG, &v_data_u8r, 1);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -2061,58 +2313,64 @@ u8 v_intr2_offset_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get
- *	the fast offset(int1_fast_offset) and auto offset(int1_auto_offset)
- *	of interrupt1 in the register 0x18
- *	@note int1_fast_offset -> bit 1
- *	@note int1_auto_offset -> bit 3
- *
- *	@param v_axis_u8: The value of fast/auto offset interrupts selection
- *    v_axis_u8 | Data interrupt
- *  ------------|--------------
- *      1       |   BMG160_FAST_OFFSET
- *      2       |   BMG160_AUTO_OFFSET
- *
- *  @param v_intr1_offset_u8: The value of fast/auto offset
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_intr_offset(u8 v_axis_u8,
-u8 *v_intr1_offset_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get fast offset and auto
+ * offset Interrupt1
+ *
+ *
+ *
+ *
+ *\param unsigned char axis,unsigned char *int1_offset
+ *                       axis :
+ *                       BMG160_AUTO_OFFSET -> 1
+ *                       BMG160_FAST_OFFSET -> 2
+ *                       int2_offset :
+ *                       Disable     -> 0
+ *                       Enable      -> 1
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_int1_offset(unsigned char axis,
+unsigned char *int1_offset)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_axis_u8) {
-		/* read offset*/
+	} else {
+		switch (axis) {
 		case BMG160_FAST_OFFSET:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MAP_ONE_INTR1_FAST_OFFSET__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_intr1_offset_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_MAP_ONE_INTR1_FAST_OFFSET);
+				(p_bmg160->dev_addr,
+			 BMG160_MAP_1_INT1_FAST_OFFSET__REG, &v_data_u8r, 1);
+			*int1_offset = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_MAP_1_INT1_FAST_OFFSET);
 			break;
 		case BMG160_AUTO_OFFSET:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MAP_ONE_INTR1_AUTO_OFFSET__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_intr1_offset_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_MAP_ONE_INTR1_AUTO_OFFSET);
+				(p_bmg160->dev_addr,
+			 BMG160_MAP_1_INT1_AUTO_OFFSET__REG, &v_data_u8r, 1);
+			*int1_offset = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_MAP_1_INT1_AUTO_OFFSET);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -2121,66 +2379,70 @@ u8 *v_intr1_offset_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set
- *	the fast offset(int1_fast_offset) and auto offset(int1_auto_offset)
- *	of interrupt1 in the register 0x18
- *	@note int1_fast_offset -> bit 1
- *	@note int1_auto_offset -> bit 3
- *
- *	@param v_axis_u8: The value of fast/auto offset interrupts selection
- *    v_axis_u8 | Data interrupt
- *  ------------|--------------
- *      1       |   BMG160_FAST_OFFSET
- *      2       |   BMG160_AUTO_OFFSET
- *
- *  @param v_intr1_offset_u8: The value of fast/auto offset
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_intr1_offset(u8 v_axis_u8,
-u8 v_intr1_offset_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set fast offset and auto
+ * offset Interrupt1
+ *
+ *
+ *
+ *
+ *\param unsigned char axis,unsigned char *int1_offset
+ *                       axis :
+ *                       BMG160_AUTO_OFFSET -> 1
+ *                       BMG160_FAST_OFFSET -> 2
+ *                       int2_offset :
+ *                       Disable     -> 0
+ *                       Enable      -> 1
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_int1_offset(unsigned char axis,
+unsigned char int1_offset)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_axis_u8) {
-		/* write offset */
+	} else {
+		switch (axis) {
 		case BMG160_FAST_OFFSET:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MAP_ONE_INTR1_FAST_OFFSET__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_MAP_ONE_INTR1_FAST_OFFSET, v_intr1_offset_u8);
+				(p_bmg160->dev_addr,
+			BMG160_MAP_1_INT1_FAST_OFFSET__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_MAP_1_INT1_FAST_OFFSET, int1_offset);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MAP_ONE_INTR1_FAST_OFFSET__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_MAP_1_INT1_FAST_OFFSET__REG, &v_data_u8r, 1);
 			break;
 		case BMG160_AUTO_OFFSET:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MAP_ONE_INTR1_AUTO_OFFSET__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_MAP_ONE_INTR1_AUTO_OFFSET, v_intr1_offset_u8);
+				(p_bmg160->dev_addr,
+			BMG160_MAP_1_INT1_AUTO_OFFSET__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_MAP_1_INT1_AUTO_OFFSET, int1_offset);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MAP_ONE_INTR1_AUTO_OFFSET__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_MAP_1_INT1_AUTO_OFFSET__REG, &v_data_u8r, 1);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -2189,142 +2451,198 @@ u8 v_intr1_offset_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get
- *	the fifo(int2_fifo) interrupt2 enable bits of
- *	the sensor in the registers 0x18 bit 5
- *
- *
- *
- *	@param v_intr_fifo_u8 : The interrupt2 fifo value
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_intr2_fifo(u8 *v_intr_fifo_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get status of FIFO Interrupt
+ *
+ *
+ *
+ *
+ *\param unsigned char *int_fifo : Address of int_fifo
+ *                         Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_int_fifo(unsigned char *int_fifo)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_MAP_ONE_INTR2_FIFO__REG, &v_data_u8,
-		BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_intr_fifo_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_MAP_ONE_INTR2_FIFO);
+		 BMG160_INT_STATUS1_FIFO_INT__REG, &v_data_u8r, 1);
+		*int_fifo = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_INT_STATUS1_FIFO_INT);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get
- *	the fifo(int1_fifo) interrupt1 enable bits of
- *	the sensor in the registers 0x18 bit 5
- *
- *
- *
- *	@param v_intr_fifo_u8 : The interrupt1 fifo value
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_intr1_fifo(u8 *v_intr_fifo_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get FIFO Interrupt2
+ *
+ *
+ *
+ *
+ *\param unsigned char *int_fifo
+ *                  int_fifo :
+ *                       Disable     -> 0
+ *                       Enable      -> 1
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_int2_fifo(unsigned char *int_fifo)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read fifo interrupt */
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_MAP_ONE_INTR1_FIFO__REG, &v_data_u8,
-		BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_intr_fifo_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_MAP_ONE_INTR1_FIFO);
+		BMG160_MAP_1_INT2_FIFO__REG, &v_data_u8r, 1);
+		*int_fifo = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_MAP_1_INT2_FIFO);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set the value of
- *	the fifo interrupt1 and interrupt2(int1_fifo and int2_fifo)
- *	in the register 0x18
- *	@note int1_fifo -> bit 2
- *	@note int2_fifo -> bit 5
- *
- *	@param v_axis_u8: The value of fifo interrupts selection
- *    v_axis_u8 | fifo interrupt
- *  ------------|--------------
- *      0       |   BMG160_INTR1
- *      1       |   BMG160_INTR2
- *
- *	@param v_intr_fifo_u8: the value of int1_fifo/int2_fifo enable/disable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_intr_fifo(u8 v_axis_u8,
-u8 v_intr_fifo_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get FIFO Interrupt1
+ *
+ *
+ *
+ *
+ *\param unsigned char *int_fifo
+ *                  int_fifo :
+ *                       Disable     -> 0
+ *                       Enable      -> 1
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_int1_fifo(unsigned char *int_fifo)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_axis_u8) {
-		/* write fifo interrupt */
-		case BMG160_INTR1:
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
+		 BMG160_MAP_1_INT1_FIFO__REG, &v_data_u8r, 1);
+		*int_fifo = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_MAP_1_INT1_FIFO);
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief
+ *
+ *
+ *
+ *
+ *  \param
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_int_fifo(unsigned char axis,
+unsigned char int_fifo)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		switch (axis) {
+		case BMG160_INT1:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MAP_ONE_INTR1_FIFO__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_MAP_ONE_INTR1_FIFO, v_intr_fifo_u8);
+				(p_bmg160->dev_addr,
+			 BMG160_MAP_1_INT1_FIFO__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_MAP_1_INT1_FIFO, int_fifo);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MAP_ONE_INTR1_FIFO__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_MAP_1_INT1_FIFO__REG, &v_data_u8r, 1);
 			break;
-		case BMG160_INTR2:
+		case BMG160_INT2:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MAP_ONE_INTR2_FIFO__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_MAP_ONE_INTR2_FIFO, v_intr_fifo_u8);
+				(p_bmg160->dev_addr,
+			BMG160_MAP_1_INT2_FIFO__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_MAP_1_INT2_FIFO, int_fifo);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MAP_ONE_INTR2_FIFO__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_MAP_1_INT2_FIFO__REG, &v_data_u8r, 1);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -2333,222 +2651,355 @@ u8 v_intr_fifo_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get
- *	the high rate(int2_high_rate) interrupt2 enable bits of
- *	the sensor in the registers 0x19 bit 3
- *
- *
- *
- *	@param v_intr2_highrate_u8 : The interrupt2 high_rate value
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_intr2_highrate(
-u8 *v_intr2_highrate_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set FIFO Interrupt1
+ *
+ *
+ *
+ *
+ *\param unsigned char *fifo_int1
+ *                  fifo_int1 :
+ *                       Disable     -> 0
+ *                       Enable      -> 1
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_int1_fifo(unsigned char fifo_int1)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
+	} else {
+		if (fifo_int1 < C_BMG160_Two_U8X) {
+			comres = p_bmg160->BMG160_BUS_READ_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_MAP_1_INT1_FIFO__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_MAP_1_INT1_FIFO, fifo_int1);
+			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_MAP_1_INT1_FIFO__REG, &v_data_u8r, 1);
 		} else {
-		/* read high rate interrupt*/
-		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_MAP_TWO_INTR2_HIGHRATE__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_intr2_highrate_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_INTR_MAP_TWO_INTR2_HIGHRATE);
+			comres = E_BMG160_OUT_OF_RANGE;
+		}
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set
- *	the high rate(int2_high_rate) interrupt2 enable bits of
- *	the sensor in the registers 0x19 bit 3
- *
- *
- *
- *	@param v_intr2_highrate_u8 : The interrupt2 high_rate value
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_intr2_highrate(
-u8 v_intr2_highrate_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set FIFO Interrupt2
+ *
+ *
+ *
+ *
+ *\param unsigned char *fifo_int2
+ *                  fifo_int2 :
+ *                       Disable     -> 0
+ *                       Enable      -> 1
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_int2_fifo(unsigned char fifo_int2)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
+	} else {
+		if (fifo_int2 < C_BMG160_Two_U8X) {
+			comres = p_bmg160->BMG160_BUS_READ_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_MAP_1_INT2_FIFO__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_MAP_1_INT2_FIFO, fifo_int2);
+			comres = p_bmg160->BMG160_BUS_WRITE_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_MAP_1_INT2_FIFO__REG, &v_data_u8r, 1);
 		} else {
-		/* write high rate interrupt */
-		comres = p_bmg160->BMG160_BUS_READ_FUNC(
-		p_bmg160->dev_addr,
-		BMG160_INTR_MAP_TWO_INTR2_HIGHRATE__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_INTR_MAP_TWO_INTR2_HIGHRATE, v_intr2_highrate_u8);
+			comres = E_BMG160_OUT_OF_RANGE;
+		}
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used to get High Interrupt2
+ *
+ *
+ *
+ *
+ *\param unsigned char *int2_high : Address of int2_high
+ *                         Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_int2_high(unsigned char *int2_high)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
+		BMG160_INT_MAP_2_INT2_HIGH__REG, &v_data_u8r, 1);
+		*int2_high = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_INT_MAP_2_INT2_HIGH);
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used to get High Interrupt2
+ *
+ *
+ *
+ *
+ *\param unsigned char int2_high
+ *                  0 -> Disable
+ *                  1 -> Enable
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_int2_high(unsigned char int2_high)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
+		BMG160_INT_MAP_2_INT2_HIGH__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_INT_MAP_2_INT2_HIGH, int2_high);
 		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_MAP_TWO_INTR2_HIGHRATE__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_INT_MAP_2_INT2_HIGH__REG, &v_data_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get
- *	the any motion(int2_any_motion) interrupt2 enable bits of
- *	the sensor in the registers 0x19 bit 1
- *
- *
- *
- *	@param v_intr2_any_motion_u8 : The value of interrupt2 any_motion
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_intr2_any_motion(
-u8 *v_intr2_any_motion_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get Any Interrupt2
+ *
+ *
+ *
+ *
+ *\param unsigned char *int2_any : Address of int2_any
+ *                         Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_int2_any(unsigned char *int2_any)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read any motion interrupt */
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_MAP_TWO_INTR2_ANY_MOTION__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_intr2_any_motion_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_INTR_MAP_TWO_INTR2_ANY_MOTION);
+		BMG160_INT_MAP_2_INT2_ANY__REG, &v_data_u8r, 1);
+		*int2_any = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_INT_MAP_2_INT2_ANY);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set
- *	the any motion(int2_any_motion) interrupt2 enable bits of
- *	the sensor in the registers 0x19 bit 1
- *
- *
- *
- *	@param v_intr2_any_motion_u8 : The value of interrupt2 any_motion
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_intr2_any_motion(
-u8 v_intr2_any_motion_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set Any Interrupt2
+ *
+ *
+ *
+ *
+ *\param unsigned char int2_any
+ *                  0 -> Disable
+ *                  1 -> Enable
+ *
+ *
+ *
+ *
+ * \return  communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_int2_any(unsigned char int2_any)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* write any motion interrupt */
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_MAP_TWO_INTR2_ANY_MOTION__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_INTR_MAP_TWO_INTR2_ANY_MOTION, v_intr2_any_motion_u8);
+		BMG160_INT_MAP_2_INT2_ANY__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_INT_MAP_2_INT2_ANY, int2_any);
 		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_MAP_TWO_INTR2_ANY_MOTION__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_INT_MAP_2_INT2_ANY__REG, &v_data_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get
- *	the slow offset and fast offset unfilt data in the register 0x1A and 1B
- *	@note slow_offset_unfilt -> 0x1A bit 5
- *	@note fast_offset_unfilt -> 0x1B bit 7
- *
- *	@param  v_param_u8: The value of fast/slow offset unfilt data selection
- *   v_param_u8 | offset selection
- *  ------------|--------------
- *      0       |   BMG160_SLOW_OFFSET
- *      1       |   BMG160_FAST_OFFSET
- *
- *  @param v_offset_unfilt_u8: The value of fast/slow offset unfilt data
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_offset_unfilt(u8 v_param_u8,
-u8 *v_offset_unfilt_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get slow offset and fast
+ * offset unfilt data
+ *
+ *
+ *
+ *\param unsigned char param,unsigned char *offset_unfilt
+ *                  param :
+ *                  BMG160_SLOW_OFFSET -> 0
+ *                  BMG160_FAST_OFFSET -> 2
+ *                  offset_unfilt: Enable  -> 1
+ *                                Disable -> 0
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_offset_unfilt(unsigned char param,
+unsigned char *offset_unfilt)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_param_u8) {
-		/* read offset unfilt data */
+	} else {
+		switch (param) {
 		case BMG160_SLOW_OFFSET:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ZERO_ADDR_SLOW_OFFSET_UNFILT__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_offset_unfilt_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_INTR_ZERO_ADDR_SLOW_OFFSET_UNFILT);
+				(p_bmg160->dev_addr,
+			BMG160_INT_0_ADDR_SLOW_OFFSET_UNFILT__REG,
+			&v_data_u8r, 1);
+			*offset_unfilt = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_INT_0_ADDR_SLOW_OFFSET_UNFILT);
 			break;
 		case BMG160_FAST_OFFSET:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ONE_ADDR_FAST_OFFSET_UNFILT__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_offset_unfilt_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_INTR_ONE_ADDR_FAST_OFFSET_UNFILT);
+				(p_bmg160->dev_addr,
+			BMG160_INT_1_ADDR_FAST_OFFSET_UNFILT__REG,
+			&v_data_u8r, 1);
+			*offset_unfilt = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_INT_1_ADDR_FAST_OFFSET_UNFILT);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -2557,69 +3008,73 @@ u8 *v_offset_unfilt_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set
- *	the slow offset and fast offset unfilt data in the register 0x1A and 1B
- *	@note slow_offset_unfilt -> 0x1A bit 5
- *	@note fast_offset_unfilt -> 0x1B bit 7
- *
- *	@param  v_param_u8: The value of fast/slow offset unfilt data selection
- *   v_param_u8 | offset selection
- *  ------------|--------------
- *      0       |   BMG160_SLOW_OFFSET
- *      1       |   BMG160_FAST_OFFSET
- *
- *  @param v_offset_unfilt_u8: The value of fast/slow offset unfilt data
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_offset_unfilt(u8 v_param_u8,
-u8 v_offset_unfilt_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set slow offset and fast
+ * offset unfilt data
+ *
+ *
+ *
+ *
+ *\param unsigned char param,unsigned char *offset_unfilt
+ *                  param :
+ *                  BMG160_SLOW_OFFSET -> 0
+ *                  BMG160_FAST_OFFSET -> 2
+ *                  offset_unfilt: Enable  -> 1
+ *                                Disable -> 0
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_offset_unfilt(unsigned char param,
+unsigned char offset_unfilt)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_param_u8) {
-		/* write offset unfilt data */
+	} else {
+		switch (param) {
 		case BMG160_SLOW_OFFSET:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ZERO_ADDR_SLOW_OFFSET_UNFILT__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_INTR_ZERO_ADDR_SLOW_OFFSET_UNFILT,
-			v_offset_unfilt_u8);
+				(p_bmg160->dev_addr,
+			BMG160_INT_0_ADDR_SLOW_OFFSET_UNFILT__REG,
+			&v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_INT_0_ADDR_SLOW_OFFSET_UNFILT, offset_unfilt);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ZERO_ADDR_SLOW_OFFSET_UNFILT__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_INT_0_ADDR_SLOW_OFFSET_UNFILT__REG,
+			&v_data_u8r, 1);
 			break;
 		case BMG160_FAST_OFFSET:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ONE_ADDR_FAST_OFFSET_UNFILT__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_INTR_ONE_ADDR_FAST_OFFSET_UNFILT,
-			v_offset_unfilt_u8);
+				(p_bmg160->dev_addr,
+			BMG160_INT_1_ADDR_FAST_OFFSET_UNFILT__REG,
+			&v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_INT_1_ADDR_FAST_OFFSET_UNFILT, offset_unfilt);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ONE_ADDR_FAST_OFFSET_UNFILT__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_INT_1_ADDR_FAST_OFFSET_UNFILT__REG,
+			&v_data_u8r, 1);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -2628,58 +3083,66 @@ u8 v_offset_unfilt_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get
- *	the any motion  and high rate unfilt data in the register 0x1A
- *	@note any_unfilt_data -> bit 1
- *	@note high_unfilt_data -> bit 3
- *
- *	@param  v_param_u8: The value of any/high offset unfilt data selection
- *   v_param_u8 | offset selection
- *  ------------|--------------
- *      1       |   BMG160_HIGHRATE_UNFILT_DATA
- *      3       |   BMG160_ANY_MOTION_UNFILT_DATA
- *
- *  @param v_unfilt_data_u8: The value of any/high unfilt data
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_unfilt_data(u8 v_param_u8,
-u8 *v_unfilt_data_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get Tap, High, Constant, Any,
+ * Shake unfilt data
+ *
+ *
+ *
+ *
+ *\param unsigned char param,unsigned char *unfilt_data
+ *                  param :
+ *
+ *                  BMG160_HIGH_UNFILT_DATA      -> 1
+ *                  BMG160_ANY_UNFILT_DATA       -> 3
+ *
+ *                  unfilt_data:   Enable  -> 1
+ *                                Disable -> 0
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_unfilt_data(unsigned char param,
+unsigned char *unfilt_data)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_param_u8) {
-		/* read unfilt data */
-		case BMG160_HIGHRATE_UNFILT_DATA:
+	} else {
+		switch (param) {
+		case BMG160_HIGH_UNFILT_DATA:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ZERO_ADDR_HIGHRATE_UNFILT_DATA__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_unfilt_data_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_INTR_ZERO_ADDR_HIGHRATE_UNFILT_DATA);
+				(p_bmg160->dev_addr,
+			BMG160_INT_0_ADDR_HIGH_UNFILT_DATA__REG,
+			&v_data_u8r, 1);
+			*unfilt_data = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_INT_0_ADDR_HIGH_UNFILT_DATA);
 			break;
-		case BMG160_ANY_MOTION_UNFILT_DATA:
+		case BMG160_ANY_UNFILT_DATA:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ZERO_ADDR_ANY_MOTION_UNFILT_DATA__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_unfilt_data_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_INTR_ZERO_ADDR_ANY_MOTION_UNFILT_DATA);
+				(p_bmg160->dev_addr,
+			BMG160_INT_0_ADDR_ANY_UNFILT_DATA__REG, &v_data_u8r, 1);
+			*unfilt_data = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_INT_0_ADDR_ANY_UNFILT_DATA);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -2688,68 +3151,73 @@ u8 *v_unfilt_data_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set
- *	the any motion  and high rate unfilt data in the register 0x1A
- *	@note any_unfilt_data -> bit 1
- *	@note high_unfilt_data -> bit 3
- *
- *	@param  v_param_u8: The value of any/high offset unfilt data selection
- *   v_param_u8 | offset selection
- *  ------------|--------------
- *      1       |   BMG160_HIGHRATE_UNFILT_DATA
- *      3       |   BMG160_ANY_MOTION_UNFILT_DATA
- *
- *  @param v_unfilt_data_u8: The value of any/high unfilt data
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_unfilt_data(u8 v_param_u8,
-u8 v_unfilt_data_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set Tap, High, Constant, Any,
+ * Shake unfilt data
+ *
+ *
+ *
+ *
+ *\param unsigned char param,unsigned char *unfilt_data
+ *                  param :
+ *
+ *                  BMG160_HIGH_UNFILT_DATA      -> 1
+ *                  BMG160_ANY_UNFILT_DATA       -> 3
+ *
+ *                  unfilt_data:   Enable  -> 1
+ *                                Disable -> 0
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_unfilt_data(unsigned char param,
+unsigned char unfilt_data)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_param_u8) {
-		/* write unfilt data */
-		case BMG160_HIGHRATE_UNFILT_DATA:
+	} else {
+		switch (param) {
+		case BMG160_HIGH_UNFILT_DATA:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ZERO_ADDR_HIGHRATE_UNFILT_DATA__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_INTR_ZERO_ADDR_HIGHRATE_UNFILT_DATA,
-			v_unfilt_data_u8);
+				(p_bmg160->dev_addr,
+			BMG160_INT_0_ADDR_HIGH_UNFILT_DATA__REG,
+			&v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_INT_0_ADDR_HIGH_UNFILT_DATA, unfilt_data);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ZERO_ADDR_HIGHRATE_UNFILT_DATA__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_INT_0_ADDR_HIGH_UNFILT_DATA__REG,
+			&v_data_u8r, 1);
 			break;
-		case BMG160_ANY_MOTION_UNFILT_DATA:
+		case BMG160_ANY_UNFILT_DATA:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ZERO_ADDR_ANY_MOTION_UNFILT_DATA__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_INTR_ZERO_ADDR_ANY_MOTION_UNFILT_DATA,
-			v_unfilt_data_u8);
+				(p_bmg160->dev_addr,
+			BMG160_INT_0_ADDR_ANY_UNFILT_DATA__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_INT_0_ADDR_ANY_UNFILT_DATA, unfilt_data);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_ZERO_ADDR_ANY_MOTION_UNFILT_DATA__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_INT_0_ADDR_ANY_UNFILT_DATA__REG, &v_data_u8r, 1);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -2758,802 +3226,873 @@ u8 v_unfilt_data_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get Any motion Threshold
- *	in the register 0x1B bit from 0 to 6
- *
- *
- *
- *	@param v_any_motion_thres_u8 : The value of any_motion Threshold
- *
- *	@note Any motion threshold can be calculate using
- *	@note ((1+ v_any_motion_thres_u8)*16LSB)
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_any_motion_thres(
-u8 *v_any_motion_thres_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get Any Threshold
+ *
+ *
+ *
+ *
+ *\param unsigned char *any_th : Address of any_th
+ *                         Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_any_th(unsigned char *any_th)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read any motion threshold */
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_ONE_ADDR_ANY_MOTION_THRES__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_any_motion_thres_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_INTR_ONE_ADDR_ANY_MOTION_THRES);
+		BMG160_INT_1_ADDR_ANY_TH__REG, &v_data_u8r, 1);
+		*any_th = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_INT_1_ADDR_ANY_TH);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set Any motion Threshold
- *	in the register 0x1B bit from 0 to 6
- *
- *
- *
- *	@param v_any_motion_thres_u8 : The value of any_motion Threshold
- *
- *	@note Any motion threshold can be calculate using
- *	@note ((1+ v_any_motion_thres_u8)*16LSB)
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_any_motion_thres(
-u8 v_any_motion_thres_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set Any Threshold
+ *
+ *
+ *
+ *
+ *\param unsigned char any_th:
+ *          Value to be written passed as a parameter
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_any_th(unsigned char any_th)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* write any motion threshold*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_ONE_ADDR_ANY_MOTION_THRES__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_INTR_ONE_ADDR_ANY_MOTION_THRES, v_any_motion_thres_u8);
+		BMG160_INT_1_ADDR_ANY_TH__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_INT_1_ADDR_ANY_TH, any_th);
 		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_ONE_ADDR_ANY_MOTION_THRES__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_INT_1_ADDR_ANY_TH__REG, &v_data_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get the awake Duration
- *	in the register 0x1C bit 6 and 7
- *
- *
- *
- *	@param v_awake_durn_u8 : The value of awake Duration
- *  value   |  Duration
- * ---------|-----------
- *   0x00   | 8 samples
- *   0x01   | 16 samples
- *   0x02   | 32 samples
- *   0x03   | 64 samples
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_awake_durn(u8 *v_awake_durn_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get Awake Duration
+ *
+ *
+ *
+ *
+ *\param unsigned char *awake_dur : Address of awake_dur
+ *                         Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_awake_dur(unsigned char *awake_dur)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read awake duration*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_TWO_ADDR_AWAKE_DURN__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_awake_durn_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_INTR_TWO_ADDR_AWAKE_DURN);
+		BMG160_INT_2_ADDR_AWAKE_DUR__REG, &v_data_u8r, 1);
+		*awake_dur = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_INT_2_ADDR_AWAKE_DUR);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set the awake Duration
- *	in the register 0x1C bit 6 and 7
- *
- *
- *
- *	@param v_awake_durn_u8 : The value of awake Duration
- *  value   |  Duration
- * ---------|-----------
- *   0x00   | 8 samples
- *   0x01   | 16 samples
- *   0x02   | 32 samples
- *   0x03   | 64 samples
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_awake_durn(u8 v_awake_durn_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set Awake Duration
+ *
+ *
+ *
+ *
+ *\param unsigned char awake_dur:
+ *          Value to be written passed as a parameter
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************
+ * Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_awake_dur(unsigned char awake_dur)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* write awake duration*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_TWO_ADDR_AWAKE_DURN__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_INTR_TWO_ADDR_AWAKE_DURN, v_awake_durn_u8);
+		BMG160_INT_2_ADDR_AWAKE_DUR__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_INT_2_ADDR_AWAKE_DUR, awake_dur);
 		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_TWO_ADDR_AWAKE_DURN__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_INT_2_ADDR_AWAKE_DUR__REG, &v_data_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get
- *	the any motion Duration samples in the register 0x1C bit 4 and 5
- *
- *
- *
- *	@param v_durn_sample_u8 : The value of any motion duration samples
- *  value   |  Samples
- * ---------|-----------
- *   0x00   | 4 samples
- *   0x01   | 8 samples
- *   0x02   | 12 samples
- *   0x03   | 16 samples
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_any_motion_durn_sample(
-u8 *v_durn_sample_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get Any Duration Sample
+ *
+ *
+ *
+ *
+ *\param unsigned char *dursample : Address of dursample
+ *                         Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_any_dursample(unsigned char *dursample)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read any motion awake samples*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_TWO_ADDR_ANY_MOTION_DURN_SAMPLE__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_durn_sample_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_INTR_TWO_ADDR_ANY_MOTION_DURN_SAMPLE);
+		BMG160_INT_2_ADDR_ANY_DURSAMPLE__REG, &v_data_u8r, 1);
+		*dursample = BMG160_GET_BITSLICE(v_data_u8r,
+		BMG160_INT_2_ADDR_ANY_DURSAMPLE);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set
- *	the any motion Duration samples in the register 0x1C bit 4 and 5
- *
- *
- *
- *	@param v_durn_sample_u8 : The value of any motion duration samples
- *  value   |  Samples
- * ---------|-----------
- *   0x00   | 4 samples
- *   0x01   | 8 samples
- *   0x02   | 12 samples
- *   0x03   | 16 samples
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_any_motion_durn_sample(
-u8 v_durn_sample_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set Any Duration Sample
+ *
+ *
+ *
+ *
+ *\param unsigned char dursample:
+ *          Value to be written passed as a parameter
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_any_dursample(unsigned char dursample)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* write awake duration samples*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_TWO_ADDR_ANY_MOTION_DURN_SAMPLE__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_INTR_TWO_ADDR_ANY_MOTION_DURN_SAMPLE,
-		v_durn_sample_u8);
-		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(
-		p_bmg160->dev_addr,
-		BMG160_INTR_TWO_ADDR_ANY_MOTION_DURN_SAMPLE__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-	}
-	return comres;
-}
-/*!
- *	@brief This API is used to get the status of
- *	Any motion interrupt axis(X,Y,Z) enable channel
- *	@note BMG160_X_AXIS -> bit 0
- *	@note BMG160_Y_AXIS -> bit 1
- *	@note BMG160_Z_AXIS -> bit 2
- *
- *	@param v_channel_u8 : The value of Any Enable channel number
- *   v_channel_u8 | axis
- *  --------------|--------------
- *      0         | BMG160_X_AXIS
- *      1         | BMG160_Y_AXIS
- *      2         | BMG160_Z_AXIS
- *
- *	@param v_data_u8: The value of Any motion axis enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_any_motion_enable_axis(u8 v_channel_u8,
-u8 *v_any_motion_axis_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data1_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_channel_u8) {
-		/* read any motion axis enable*/
-		case BMG160_X_AXIS:
-			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_TWO_ADDR_ANY_MOTION_ENABLE_X__REG,
-			&v_data1_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_any_motion_axis_u8 = BMG160_GET_BITSLICE(v_data1_u8,
-			BMG160_INTR_TWO_ADDR_ANY_MOTION_ENABLE_X);
-			break;
-		case BMG160_Y_AXIS:
-			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_TWO_ADDR_ANY_MOTION_ENABLE_Y__REG,
-			&v_data1_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_any_motion_axis_u8 = BMG160_GET_BITSLICE(v_data1_u8,
-				BMG160_INTR_TWO_ADDR_ANY_MOTION_ENABLE_Y);
-			break;
-		case BMG160_Z_AXIS:
-			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_TWO_ADDR_ANY_MOTION_ENABLE_Z__REG,
-			&v_data1_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_any_motion_axis_u8 = BMG160_GET_BITSLICE(v_data1_u8,
-			BMG160_INTR_TWO_ADDR_ANY_MOTION_ENABLE_Z);
-			break;
-		default:
-			comres = E_BMG160_OUT_OF_RANGE;
-			break;
-		}
-	}
-	return comres;
-}
-/*!
- *	@brief This API is used to set the status of
- *	Any motion interrupt axis(X,Y,Z) enable channel
- *	@note BMG160_X_AXIS -> bit 0
- *	@note BMG160_Y_AXIS -> bit 1
- *	@note BMG160_Z_AXIS -> bit 2
- *
- *	@param v_channel_u8 : The value of Any Enable channel number
- *   v_channel_u8 | axis
- *  --------------|--------------
- *      0         | BMG160_X_AXIS
- *      1         | BMG160_Y_AXIS
- *      2         | BMG160_Z_AXIS
- *
- *	@param v_any_motion_axis_u8: The value of Any motion axis enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_any_motion_enable_axis(u8 v_channel_u8,
-u8 v_any_motion_axis_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_channel_u8) {
-		/* write any motion axis enable*/
-		case BMG160_X_AXIS:
-			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_TWO_ADDR_ANY_MOTION_ENABLE_X__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_INTR_TWO_ADDR_ANY_MOTION_ENABLE_X,
-			v_any_motion_axis_u8);
-			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_TWO_ADDR_ANY_MOTION_ENABLE_X__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			break;
-		case BMG160_Y_AXIS:
-			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_TWO_ADDR_ANY_MOTION_ENABLE_Y__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_INTR_TWO_ADDR_ANY_MOTION_ENABLE_Y,
-			v_any_motion_axis_u8);
-			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_TWO_ADDR_ANY_MOTION_ENABLE_Y__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			break;
-		case BMG160_Z_AXIS:
-			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_TWO_ADDR_ANY_MOTION_ENABLE_Z__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_INTR_TWO_ADDR_ANY_MOTION_ENABLE_Z,
-			v_any_motion_axis_u8);
-			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_TWO_ADDR_ANY_MOTION_ENABLE_Z__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			break;
-		default:
-			comres = E_BMG160_OUT_OF_RANGE;
-			break;
-		}
-	}
-	return comres;
-}
-/*!
- *	@brief This API is used to get
- *	the status of fifo water mark in the register 0x1E bit 7
- *
- *
- *
- *	@param v_fifo_wm_enable_u8 : The value of fifo water mark enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_fifo_wm_enable(
-u8 *v_fifo_wm_enable_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read fifo water mark enable */
-		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_INTR_4_FIFO_WM_ENABLE__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_fifo_wm_enable_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_INTR_4_FIFO_WM_ENABLE);
-	}
-	return comres;
-}
-/*!
- *	@brief This API is used to set
- *	the status of fifo water mark in the register 0x1E bit 7
- *
- *
- *
- *	@param v_fifo_wm_enable_u8 : The value of fifo water mark enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_fifo_wm_enable(
-u8 v_fifo_wm_enable_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		/* write fifo water mark enable*/
-		if (v_fifo_wm_enable_u8 < BMG160_BIT_LENGTH_FIFO_WM) {
-			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_4_FIFO_WM_ENABLE__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_INTR_4_FIFO_WM_ENABLE, v_fifo_wm_enable_u8);
-			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_INTR_4_FIFO_WM_ENABLE__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		} else {
-			comres = E_BMG160_OUT_OF_RANGE;
-		}
-	}
-	return comres;
-}
-/*!
- *	@brief This API is used to set the Interrupt Reset
- *	in the register 0x21 bit 7
- *
- *
- *
- *	@param v_rst_int_u8: the value of reset interrupt
- *
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_rst_intr(u8 v_rst_int_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		/* write reset interrupt */
-		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_RST_LATCH_ADDR_RST_INTR__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_RST_LATCH_ADDR_RST_INTR, v_rst_int_u8);
+		BMG160_INT_2_ADDR_ANY_DURSAMPLE__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_INT_2_ADDR_ANY_DURSAMPLE, dursample);
 		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_RST_LATCH_ADDR_RST_INTR__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_INT_2_ADDR_ANY_DURSAMPLE__REG, &v_data_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set the offset Reset
- *	in the register 0x21 bit 6
- *
- *
- *
- *	@param v_offset_rst_u8: the value of reset offset
- *
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_offset_rst(
-u8 v_offset_rst_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get the status of Any Enable
+ * Channel X,Y,Z
+ *
+ *
+ *
+ *
+ *\param unsigned char channel,unsigned char *data
+ *                       channel :
+ *                       BMG160_X_AXIS -> 0
+ *                       BMG160_Y_AXIS -> 1
+ *                       BMG160_Z_AXIS -> 2
+ *                       data :
+ *                       Enable  -> 1
+ *                       disable -> 0
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_any_en_ch(unsigned char channel,
+unsigned char *data)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* write reset offset */
+	} else {
+		switch (channel) {
+		case BMG160_X_AXIS:
+			comres = p_bmg160->BMG160_BUS_READ_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_INT_2_ADDR_ANY_EN_X__REG, &v_data_u8r, 1);
+			*data = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_INT_2_ADDR_ANY_EN_X);
+			break;
+		case BMG160_Y_AXIS:
+			comres = p_bmg160->BMG160_BUS_READ_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_INT_2_ADDR_ANY_EN_Y__REG, &v_data_u8r, 1);
+			*data = BMG160_GET_BITSLICE(v_data_u8r,
+				BMG160_INT_2_ADDR_ANY_EN_Y);
+			break;
+		case BMG160_Z_AXIS:
+			comres = p_bmg160->BMG160_BUS_READ_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_INT_2_ADDR_ANY_EN_Z__REG, &v_data_u8r, 1);
+			*data = BMG160_GET_BITSLICE(v_data_u8r,
+				BMG160_INT_2_ADDR_ANY_EN_Z);
+			break;
+		default:
+			comres = E_BMG160_OUT_OF_RANGE;
+			break;
+		}
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used to set the status of Any Enable
+ * Channel X,Y,Z
+ *
+ *
+ *
+ *
+ *\param unsigned char channel,unsigned char *data
+ *                       channel :
+ *                       BMG160_X_AXIS -> 0
+ *                       BMG160_Y_AXIS -> 1
+ *                       BMG160_Z_AXIS -> 2
+ *                       data :
+ *                       Enable  -> 1
+ *                       disable -> 0
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_any_en_ch(unsigned char channel,
+unsigned char data)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		switch (channel) {
+		case BMG160_X_AXIS:
+			comres = p_bmg160->BMG160_BUS_READ_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_INT_2_ADDR_ANY_EN_X__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_INT_2_ADDR_ANY_EN_X, data);
+			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_INT_2_ADDR_ANY_EN_X__REG, &v_data_u8r, 1);
+			break;
+		case BMG160_Y_AXIS:
+			comres = p_bmg160->BMG160_BUS_READ_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_INT_2_ADDR_ANY_EN_Y__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_INT_2_ADDR_ANY_EN_Y, data);
+			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_INT_2_ADDR_ANY_EN_Y__REG, &v_data_u8r, 1);
+			break;
+		case BMG160_Z_AXIS:
+			comres = p_bmg160->BMG160_BUS_READ_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_INT_2_ADDR_ANY_EN_Z__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_INT_2_ADDR_ANY_EN_Z, data);
+			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_INT_2_ADDR_ANY_EN_Z__REG, &v_data_u8r, 1);
+			break;
+		default:
+			comres = E_BMG160_OUT_OF_RANGE;
+			break;
+		}
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used to get the status of FIFO WM
+ * Enable
+ *
+ *
+ *
+ *
+ *\param unsigned char *fifo_wn_en
+ *                       Enable  -> 1
+ *                       Disable -> 0
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_fifo_watermark_enable(
+unsigned char *fifo_wn_en)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_RST_LATCH_ADDR_OFFSET_RST__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_RST_LATCH_ADDR_OFFSET_RST, v_offset_rst_u8);
+		BMG160_INT_4_FIFO_WM_EN__REG, &v_data_u8r, 1);
+		*fifo_wn_en = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_INT_4_FIFO_WM_EN);
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used to set FIFO WM Enable
+ *
+ *
+ *
+ *
+ *\param unsigned char *fifo_wn_en
+ *                       Enable  -> 1
+ *                       Disable -> 0
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_fifo_watermark_enable(
+unsigned char fifo_wn_en)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		if (fifo_wn_en < C_BMG160_Two_U8X) {
+			comres = p_bmg160->BMG160_BUS_READ_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_INT_4_FIFO_WM_EN__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_INT_4_FIFO_WM_EN, fifo_wn_en);
+			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_INT_4_FIFO_WM_EN__REG, &v_data_u8r, 1);
+		} else {
+			comres = E_BMG160_OUT_OF_RANGE;
+		}
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used to set the Interrupt Reset
+ *
+ *
+ *
+ *
+ *\param unsigned char reset_int
+ *                    1 -> Reset All Interrupts
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_reset_int(unsigned char reset_int)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
+		BMG160_RST_LATCH_ADDR_RESET_INT__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_RST_LATCH_ADDR_RESET_INT, reset_int);
 		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_RST_LATCH_ADDR_OFFSET_RST__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_RST_LATCH_ADDR_RESET_INT__REG, &v_data_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get the Latch Status
- *	in the register 0x21 bit 4
- *
- *
- *
- *	@param v_latch_stat_u8 : The value of latch status
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_latch_stat(
-u8 *v_latch_stat_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set the Offset Reset
+ *
+ *
+ *
+ *
+ *\param unsigned char offset_reset
+ *                  1 -> Resets All the Offsets
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_offset_reset(
+unsigned char offset_reset)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read the latch status*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_RST_LATCH_ADDR_LATCH_STAT__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_latch_stat_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_RST_LATCH_ADDR_LATCH_STAT);
-	}
-	return comres;
-}
-/*!
- *	@brief This API is used to set the Latch Status
- *	in the register 0x21 bit 4
- *
- *
- *
- *	@param v_latch_stat_u8 : The value of latch status
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_latch_stat(
-u8 v_latch_stat_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		/* write the latch status */
-		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_RST_LATCH_ADDR_LATCH_STAT__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_RST_LATCH_ADDR_LATCH_STAT, v_latch_stat_u8);
+		BMG160_RST_LATCH_ADDR_OFFSET_RESET__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_RST_LATCH_ADDR_OFFSET_RESET, offset_reset);
 		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_RST_LATCH_ADDR_LATCH_STAT__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_RST_LATCH_ADDR_OFFSET_RESET__REG, &v_data_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get the Latch interrupt
- *	in the register 0x21 bit from 0 to 3
- *
- *
- *
- *	@param v_latch_intr_u8 : The value of latch interrupt
- *      Latch Interrupt        |  Value
- * ----------------------------|-----------------
- * BMG160_NON_LATCH            | 0x00
- * BMG160_LATCH_250_MS         | 0x01
- * BMG160_LATCH_500_MS         | 0x02
- * BMG160_LATCH_1_SEC          | 0x03
- * BMG160_LATCH_2_SEC          | 0x04
- * BMG160_LATCH_4_SEC          | 0x05
- * BMG160_LATCH_8_SEC          | 0x06
- * BMG160_LATCH_LATCHED        | 0x07
- * BMG160_LATCH_NON_LATCHED    | 0x08
- * BMG160_LATCH_250_MICRO_SEC  | 0x09
- * BMG160_LATCH_500_MICRO_SEC  | 0x0A
- * BMG160_LATCH_1_MILLI_SEC    | 0x0B
- * BMG160_LATCH_12.5_MILLI_SEC | 0x0C
- * BMG160_LATCH_25_MILLI_SEC   | 0x0D
- * BMG160_LATCH_50_MILLI_SEC   | 0x0E
- * BMG160_LATCH_LATCHED        | 0x0F
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_latch_intr(u8 *v_latch_intr_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get the Latch Status
+ *
+ *
+ *
+ *
+ *\param unsigned char *latch_status : Address of latch_status
+ *                         Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_latch_status(
+unsigned char *latch_status)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read latch interrupt */
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_RST_LATCH_ADDR_LATCH_INTR__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_latch_intr_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_RST_LATCH_ADDR_LATCH_INTR);
+		BMG160_RST_LATCH_ADDR_LATCH_STATUS__REG, &v_data_u8r, 1);
+		*latch_status = BMG160_GET_BITSLICE(v_data_u8r,
+		BMG160_RST_LATCH_ADDR_LATCH_STATUS);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set the Latch interrupt
- *	in the register 0x21 bit from 0 to 3
- *
- *
- *
- *	@param v_latch_intr_u8 : The value of latch interrupt
- *      Latch Interrupt        |  Value
- * ----------------------------|-----------------
- * BMG160_NON_LATCH            | 0x00
- * BMG160_LATCH_250_MS         | 0x01
- * BMG160_LATCH_500_MS         | 0x02
- * BMG160_LATCH_1_SEC          | 0x03
- * BMG160_LATCH_2_SEC          | 0x04
- * BMG160_LATCH_4_SEC          | 0x05
- * BMG160_LATCH_8_SEC          | 0x06
- * BMG160_LATCH_LATCHED        | 0x07
- * BMG160_LATCH_NON_LATCHED    | 0x08
- * BMG160_LATCH_250_MICRO_SEC  | 0x09
- * BMG160_LATCH_500_MICRO_SEC  | 0x0A
- * BMG160_LATCH_1_MILLI_SEC    | 0x0B
- * BMG160_LATCH_12.5_MILLI_SEC | 0x0C
- * BMG160_LATCH_25_MILLI_SEC   | 0x0D
- * BMG160_LATCH_50_MILLI_SEC   | 0x0E
- * BMG160_LATCH_LATCHED        | 0x0F
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_latch_intr(u8 v_latch_intr_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set the Latch Status
+ *
+ *
+ *
+ *
+ *\param unsigned char latch_status:
+ *          Value to be written passed as a parameter
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_latch_status(
+unsigned char latch_status)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* write latch interrupt */
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_RST_LATCH_ADDR_LATCH_INTR__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_RST_LATCH_ADDR_LATCH_INTR, v_latch_intr_u8);
+		BMG160_RST_LATCH_ADDR_LATCH_STATUS__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_RST_LATCH_ADDR_LATCH_STATUS, latch_status);
 		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_RST_LATCH_ADDR_LATCH_INTR__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_RST_LATCH_ADDR_LATCH_STATUS__REG, &v_data_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get the status of High
- *	Hysteresis of X,Y,Z axis in the registers 0x22,0x24 and 0x26
- *	@note X_AXIS - 0x22 bit 6 and 7
- *	@note Y_AXIS - 0x24 bit 6 and 7
- *	@note Z_AXIS - 0x26 bit 6 and 7
- *
- *	@param v_channel_u8: The value of high Hysteresis channel number
- *  v_channel_u8  |    value
- *  --------------|--------------
- *  BMG160_X_AXIS |   0
- *  BMG160_Y_AXIS |   1
- *  BMG160_Z_AXIS |   2
- *
- *	@param v_highrate_hyst_u8: The value of high Hysteresis
- *
- *	@note High hysteresis can be calculated by
- *	@note High_hyst = ((255+256 *v_highrate_hyst_u8) * 4LSB)
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_highrate_hyst(u8 v_channel_u8,
-u8 *v_highrate_hyst_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get the Latch Interrupt
+ *
+ *
+ *
+ *
+ *\param unsigned char *latch_int : Address of latch_int
+ *                         Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_latch_int(unsigned char *latch_int)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_channel_u8) {
-		/* read high hysteresis*/
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
+		BMG160_RST_LATCH_ADDR_LATCH_INT__REG, &v_data_u8r, 1);
+		*latch_int = BMG160_GET_BITSLICE(v_data_u8r,
+		BMG160_RST_LATCH_ADDR_LATCH_INT);
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used to set the Latch Interrupt
+ *
+ *
+ *
+ *
+ *\param unsigned char latch_int:
+ *          Value to be written passed as a parameter
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_latch_int(unsigned char latch_int)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
+		BMG160_RST_LATCH_ADDR_LATCH_INT__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_RST_LATCH_ADDR_LATCH_INT, latch_int);
+		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
+		BMG160_RST_LATCH_ADDR_LATCH_INT__REG, &v_data_u8r, 1);
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used to get the status of High
+ * Hysteresis X,Y,Z
+ *
+ *
+ *
+ *
+ *\param unsigned char channel,unsigned char *high_hy
+ *                       channel :
+ *                       BMG160_X_AXIS -> 0
+ *                       BMG160_Y_AXIS -> 1
+ *                       BMG160_Z_AXIS -> 2
+ *                       high_hy :
+ *                       Enable  -> 1
+ *                       disable -> 0
+ *
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_high_hy(unsigned char channel,
+unsigned char *high_hy)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		switch (channel) {
 		case BMG160_X_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_HYST_X__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_highrate_hyst_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_HIGHRATE_HYST_X);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_HY_X__REG, &v_data_u8r, 1);
+			*high_hy = BMG160_GET_BITSLICE(v_data_u8r,
+				BMG160_HIGH_HY_X);
 			break;
 		case BMG160_Y_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_HYST_Y__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_highrate_hyst_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_HIGHRATE_HYST_Y);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_HY_Y__REG, &v_data_u8r, 1);
+			*high_hy = BMG160_GET_BITSLICE(v_data_u8r,
+				BMG160_HIGH_HY_Y);
 			break;
 		case BMG160_Z_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_HYST_Z__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_highrate_hyst_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_HIGHRATE_HYST_Z);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_HY_Z__REG, &v_data_u8r, 1);
+			*high_hy = BMG160_GET_BITSLICE(v_data_u8r,
+				BMG160_HIGH_HY_Z);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -3562,78 +4101,83 @@ u8 *v_highrate_hyst_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set the status of High
- *	Hysteresis of X,Y,Z axis in the registers 0x22,0x24 and 0x26
- *	@note X_AXIS - 0x22 bit 6 and 7
- *	@note Y_AXIS - 0x24 bit 6 and 7
- *	@note Z_AXIS - 0x26 bit 6 and 7
- *
- *	@param v_channel_u8: The value of high Hysteresis channel number
- *  v_channel_u8  |    value
- *  --------------|--------------
- *  BMG160_X_AXIS |   0
- *  BMG160_Y_AXIS |   1
- *  BMG160_Z_AXIS |   2
- *
- *	@param v_highrate_hyst_u8: The value of high Hysteresis
- *
- *	@note High hysteresis can be calculated by
- *	@note High_hyst = ((255+256 *v_highrate_hyst_u8) * 4LSB)
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_highrate_hyst(u8 v_channel_u8,
-u8 v_highrate_hyst_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set the status of High
+ * Hysteresis X,Y,Z
+ *
+ *
+ *
+ *
+ *\param unsigned char channel,unsigned char *high_hy
+ *                       channel :
+ *                       BMG160_X_AXIS -> 0
+ *                       BMG160_Y_AXIS -> 1
+ *                       BMG160_Z_AXIS -> 2
+ *                       high_hy :
+ *                       Enable  -> 1
+ *                       disable -> 0
+ *
+ *
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_high_hy(unsigned char channel,
+unsigned char high_hy)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_channel_u8) {
-		/* write high hysteresis*/
+	} else {
+		switch (channel) {
 		case BMG160_X_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_HYST_X__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_HIGHRATE_HYST_X, v_highrate_hyst_u8);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_HY_X__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_HIGH_HY_X, high_hy);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_HYST_X__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_HY_X__REG, &v_data_u8r, 1);
 			break;
 		case BMG160_Y_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_HYST_Y__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_HIGHRATE_HYST_Y, v_highrate_hyst_u8);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_HY_Y__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_HIGH_HY_Y, high_hy);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_HYST_Y__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_HY_Y__REG, &v_data_u8r, 1);
 			break;
 		case BMG160_Z_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_HYST_Z__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_HIGHRATE_HYST_Z, v_highrate_hyst_u8);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_HY_Z__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_HIGH_HY_Z, high_hy);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_HYST_Z__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_HY_Z__REG, &v_data_u8r, 1);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -3642,66 +4186,74 @@ u8 v_highrate_hyst_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get the value of High rate
- *	Threshold of X,Y,Z axis in the registers 0x22, 0x24 and 0x26
- *	@note X_AXIS - 0x22 bit from 1 to 5
- *	@note Y_AXIS - 0x24 bit from 1 to 5
- *	@note Z_AXIS - 0x26 bit from 1 to 5
- *
- *	@param  v_channel_u8 : The value of high threshold channel number
- *  v_channel_u8  |    value
- *  --------------|--------------
- *  BMG160_X_AXIS |   0
- *  BMG160_Y_AXIS |   1
- *  BMG160_Z_AXIS |   2
- *
- *	@param v_highrate_thres_u8: the high threshold value
- *
- *	@note High Threshold can be calculated by
- *	@note High_thres = ((255+256 *v_highrate_thres_u8) * 4LSB)
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_highrate_thres(u8 v_channel_u8,
-u8 *v_highrate_thres_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get the status of High
+ * Threshold X,Y,Z
+ *
+ *
+ *
+ *
+ *\param unsigned char channel,unsigned char *high_th
+ *                       channel :
+ *                       BMG160_X_AXIS -> 0
+ *                       BMG160_Y_AXIS -> 1
+ *                       BMG160_Z_AXIS -> 2
+ *                       high_th :
+ *                       Enable  -> 1
+ *                       disable -> 0
+ *
+ *
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_high_th(unsigned char channel,
+unsigned char *high_th)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_channel_u8) {
-		/* read high rate threshold*/
+	} else {
+		switch (channel) {
 		case BMG160_X_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_THRES_X__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_highrate_thres_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_HIGHRATE_THRES_X);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_TH_X__REG, &v_data_u8r, 1);
+			*high_th = BMG160_GET_BITSLICE(v_data_u8r,
+				BMG160_HIGH_TH_X);
 			break;
 		case BMG160_Y_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_THRES_Y__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_highrate_thres_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_HIGHRATE_THRES_Y);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_TH_Y__REG, &v_data_u8r, 1);
+			*high_th = BMG160_GET_BITSLICE(v_data_u8r,
+				BMG160_HIGH_TH_Y);
 			break;
 		case BMG160_Z_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_THRES_Z__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_highrate_thres_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_HIGHRATE_THRES_Z);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_TH_Z__REG, &v_data_u8r, 1);
+			*high_th = BMG160_GET_BITSLICE(v_data_u8r,
+				BMG160_HIGH_TH_Z);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -3710,78 +4262,83 @@ u8 *v_highrate_thres_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set the value of High rate
- *	Threshold of X,Y,Z axis in the registers 0x22, 0x24 and 0x26
- *	@note X_AXIS - 0x22 bit from 1 to 5
- *	@note Y_AXIS - 0x24 bit from 1 to 5
- *	@note Z_AXIS - 0x26 bit from 1 to 5
- *
- *	@param  v_channel_u8 : The value of high threshold channel number
- *  v_channel_u8  |    value
- *  --------------|--------------
- *  BMG160_X_AXIS |   0
- *  BMG160_Y_AXIS |   1
- *  BMG160_Z_AXIS |   2
- *
- *	@param v_highrate_thres_u8: the high threshold value
- *
- *	@note High Threshold can be calculated by
- *	@note High_thres = ((255+256 *v_highrate_thres_u8) * 4LSB)
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_highrate_thres(u8 v_channel_u8,
-u8 v_highrate_thres_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set the status of High
+ * Threshold X,Y,Z
+ *
+ *
+ *
+ *
+ *\param unsigned char channel,unsigned char *high_th
+ *                       channel :
+ *                       BMG160_X_AXIS -> 0
+ *                       BMG160_Y_AXIS -> 1
+ *                       BMG160_Z_AXIS -> 2
+ *                       high_th :
+ *                       Enable  -> 1
+ *                       disable -> 0
+ *
+ *
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_high_th(unsigned char channel,
+unsigned char high_th)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_channel_u8) {
-		/* write high rate threshold*/
+	} else {
+		switch (channel) {
 		case BMG160_X_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_THRES_X__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_HIGHRATE_THRES_X, v_highrate_thres_u8);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_TH_X__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+				BMG160_HIGH_TH_X, high_th);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_THRES_X__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_TH_X__REG, &v_data_u8r, 1);
 			break;
 		case BMG160_Y_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_THRES_Y__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_HIGHRATE_THRES_Y, v_highrate_thres_u8);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_TH_Y__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+				BMG160_HIGH_TH_Y, high_th);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_THRES_Y__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_TH_Y__REG, &v_data_u8r, 1);
 			break;
 		case BMG160_Z_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_THRES_Z__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_HIGHRATE_THRES_Z, v_highrate_thres_u8);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_TH_Z__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+				BMG160_HIGH_TH_Z, high_th);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_THRES_Z__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_TH_Z__REG, &v_data_u8r, 1);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -3790,67 +4347,74 @@ u8 v_highrate_thres_u8)
 	}
 	return comres;
 }
-/*!
- * @brief This API is used to get the status of High Enable
- * Channel X,Y,Z in the registers 0x22, 0x24 and 0x26
- *	@note X_AXIS - 0x22 bit 0
- *	@note Y_AXIS - 0x24 bit 0
- *	@note Z_AXIS - 0x26 bit 0
- *
- *  @param v_channel_u8 : The value of high enable channel number
- *  v_channel_u8  |    value
- *  --------------|--------------
- *  BMG160_X_AXIS |   0
- *  BMG160_Y_AXIS |   1
- *  BMG160_Z_AXIS |   2
- *
- *	@param v_enable_u8: The value of high axis enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_highrate_enable_axis(u8 v_channel_u8,
-u8 *v_enable_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get the status of High Enable
+ * Channel X,Y,Z
+ *
+ *
+ *
+ *
+ *\param unsigned char channel,unsigned char *high_en
+ *                       channel :
+ *                       BMG160_X_AXIS -> 0
+ *                       BMG160_Y_AXIS -> 1
+ *                       BMG160_Z_AXIS -> 2
+ *                       high_en :
+ *                       Enable  -> 1
+ *                       disable -> 0
+ *
+ *
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_high_en_ch(unsigned char channel,
+unsigned char *high_en)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_channel_u8) {
-		/* read high rate axis enable */
+	} else {
+		switch (channel) {
 		case BMG160_X_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_ENABLE_X__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_enable_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_HIGHRATE_ENABLE_X);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_EN_X__REG, &v_data_u8r, 1);
+			*high_en = BMG160_GET_BITSLICE(v_data_u8r,
+				BMG160_HIGH_EN_X);
 			break;
 		case BMG160_Y_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_ENABLE_Y__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_enable_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_HIGHRATE_ENABLE_Y);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_EN_Y__REG, &v_data_u8r, 1);
+			*high_en = BMG160_GET_BITSLICE(v_data_u8r,
+				BMG160_HIGH_EN_Y);
 			break;
 		case BMG160_Z_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_ENABLE_Z__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_enable_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_HIGHRATE_ENABLE_Z);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_EN_Z__REG, &v_data_u8r, 1);
+			*high_en = BMG160_GET_BITSLICE(v_data_u8r,
+				BMG160_HIGH_EN_Z);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -3859,79 +4423,83 @@ u8 *v_enable_u8)
 	}
 	return comres;
 }
-/*!
- * @brief This API is used to set the status of High Enable
- * Channel X,Y,Z in the registers 0x22, 0x24 and 0x26
- *	@note X_AXIS - 0x22 bit 0
- *	@note Y_AXIS - 0x24 bit 0
- *	@note Z_AXIS - 0x26 bit 0
- *
- *  @param v_channel_u8 : The value of high enable channel number
- *  v_channel_u8  |    value
- *  --------------|--------------
- *  BMG160_X_AXIS |   0
- *  BMG160_Y_AXIS |   1
- *  BMG160_Z_AXIS |   2
- *
- *	@param v_enable_u8: The value of high axis enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_highrate_enable_axis(u8 v_channel_u8,
-u8 v_enable_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set the status of High Enable
+ * Channel X,Y,Z
+ *
+ *
+ *
+ *
+ *\param unsigned char channel,unsigned char *high_en
+ *                       channel :
+ *                       BMG160_X_AXIS -> 0
+ *                       BMG160_Y_AXIS -> 1
+ *                       BMG160_Z_AXIS -> 2
+ *                       high_en :
+ *                       Enable  -> 1
+ *                       disable -> 0
+ *
+ *
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_high_en_ch(unsigned char channel,
+unsigned char high_en)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_channel_u8) {
-		/* write high rate axis enable */
+	} else {
+		switch (channel) {
 		case BMG160_X_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_ENABLE_X__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_HIGHRATE_ENABLE_X, v_enable_u8);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_EN_X__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+				BMG160_HIGH_EN_X, high_en);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_ENABLE_X__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_EN_X__REG, &v_data_u8r, 1);
 			break;
 		case BMG160_Y_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_ENABLE_Y__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_HIGHRATE_ENABLE_Y, v_enable_u8);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_EN_Y__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+				BMG160_HIGH_EN_Y, high_en);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_ENABLE_Y__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_EN_Y__REG, &v_data_u8r, 1);
 			break;
 		case BMG160_Z_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_ENABLE_Z__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_HIGHRATE_ENABLE_Z, v_enable_u8);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_EN_Z__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+				BMG160_HIGH_EN_Z, high_en);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_ENABLE_Z__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_EN_Z__REG, &v_data_u8r, 1);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -3940,66 +4508,67 @@ u8 v_enable_u8)
 	}
 	return comres;
 }
-/*!
- * @brief This API is used to get the status
- * of High duration of X,Y,Z axis in
- * the registers 0x23, 0x25 and 0x27
- *	@note X_AXIS - 0x23 bit form 0 to 7
- *	@note Y_AXIS - 0x25 bit form 0 to 7
- *	@note Z_AXIS - 0x27 bit form 0 to 7
- *
- *
- *
- *	@param  v_channel_u8: The value of High Duration channel number
- *  v_channel_u8  |    value
- *  --------------|--------------
- *  BMG160_X_AXIS |   0
- *  BMG160_Y_AXIS |   1
- *  BMG160_Z_AXIS |   2
- *
- *	@param v_highrate_durn_axis_u8: The value of high duration
- *
- *	@note High rate duration can be calculated by using the formula
- *	@note High_durn = ((1+v_highrate_durn_axis_u8)*2.5ms)
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_highrate_durn_axis(u8 v_channel_u8,
-u8 *v_highrate_durn_axis_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get High Duration
+ *
+ *
+ *
+ *
+ *\param unsigned char channel,unsigned char *high_dur
+ *                       channel :
+ *                       BMG160_X_AXIS -> 0
+ *                       BMG160_Y_AXIS -> 1
+ *                       BMG160_Z_AXIS -> 2
+ *                       *high_dur : Address of high_bw
+ *                                   Pointer to a variable passed as a
+ *                                   parameter
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_high_dur_ch(unsigned char channel,
+unsigned char *high_dur)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_channel_u8) {
-		/* read high rate duration*/
+	} else {
+		switch (channel) {
 		case BMG160_X_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_DURN_X_ADDR,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_highrate_durn_axis_u8 = v_data_u8;
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_DUR_X_ADDR, &v_data_u8r, 1);
+			*high_dur = v_data_u8r;
 			break;
 		case BMG160_Y_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_THRES_Y_ADDR,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_highrate_durn_axis_u8 = v_data_u8;
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_DUR_Y_ADDR, &v_data_u8r, 1);
+			*high_dur = v_data_u8r;
 			break;
 		case BMG160_Z_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_THRES_Z_ADDR,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_highrate_durn_axis_u8 = v_data_u8;
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_DUR_Z_ADDR, &v_data_u8r, 1);
+			*high_dur = v_data_u8r;
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -4008,66 +4577,68 @@ u8 *v_highrate_durn_axis_u8)
 	}
 	return comres;
 }
-/*!
- * @brief This API is used to set the value
- * of High duration of X,Y,Z axis in
- * the registers 0x23, 0x25 and 0x27
- *	@note X_AXIS - 0x23 bit form 0 to 7
- *	@note Y_AXIS - 0x25 bit form 0 to 7
- *	@note Z_AXIS - 0x27 bit form 0 to 7
- *
- *
- *
- *	@param  v_channel_u8: The value of High Duration channel number
- *  v_channel_u8  |    value
- *  --------------|--------------
- *  BMG160_X_AXIS |   0
- *  BMG160_Y_AXIS |   1
- *  BMG160_Z_AXIS |   2
- *
- *	@param v_highrate_durn_axis_u8: The value of high duration
- *
- *	@note High rate duration can be calculated by using the formula
- *	@note High_durn = ((1+v_highrate_durn_axis_u8)*2.5ms)
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_highrate_durn_axis(u8 v_channel_u8,
-u8 v_highrate_durn_axis_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set High Duration
+ *
+ *
+ *
+ *
+ *\param unsigned char channel,unsigned char *high_dur
+ *                       channel :
+ *                       BMG160_X_AXIS -> 0
+ *                       BMG160_Y_AXIS -> 1
+ *                       BMG160_Z_AXIS -> 2
+ *                       high_dur : Value to be written passed as a parameter
+ *
+ *
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_high_dur_ch(unsigned char channel,
+unsigned char high_dur)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_channel_u8) {
-		/* write high rate duration*/
+	} else {
+		switch (channel) {
 		case BMG160_X_AXIS:
-			v_data_u8 = v_highrate_durn_axis_u8;
+			v_data_u8r = high_dur;
 			comres = p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_THRES_X_ADDR,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_DUR_X_ADDR, &v_data_u8r, 1);
 			break;
 		case BMG160_Y_AXIS:
-			v_data_u8 = v_highrate_durn_axis_u8;
+			v_data_u8r = high_dur;
 			comres = p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_THRES_Y_ADDR,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_DUR_Y_ADDR, &v_data_u8r, 1);
 			break;
 		case BMG160_Z_AXIS:
-			v_data_u8 = v_highrate_durn_axis_u8;
+			v_data_u8r = high_dur;
 			comres = p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_HIGHRATE_THRES_Z_ADDR,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_HIGH_DUR_Z_ADDR, &v_data_u8r, 1);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -4076,239 +4647,258 @@ u8 v_highrate_durn_axis_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get Slow Offset Threshold
- *	status in the register 0x31 bit 6 and 7
- *
- *
- *
- *	@param v_offset_thres_u8 : The value of slow offset Threshold
- *  value    |   threshold
- * ----------|-------------
- *    0x00   | 0.1 degree/sec
- *    0x01   | 0.2 degree/sec
- *    0x02   | 0.5 degree/sec
- *    0x03   | 1 degree/sec
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_slow_offset_thres(
-u8 *v_offset_thres_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get Slow Offset Threshold
+ *
+ *
+ *
+ *
+ *\param unsigned char *offset_th : Address of offset_th
+ *                         Pointer to a variable passed as a parameter
+
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_slow_offset_th(
+unsigned char *offset_th)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read slow offset threshold*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_SLOW_OFFSET_THRES__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_offset_thres_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_SLOW_OFFSET_THRES);
+		BMG160_SLOW_OFFSET_TH__REG, &v_data_u8r, 1);
+		*offset_th = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_SLOW_OFFSET_TH);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set Slow Offset Threshold
- *	status in the register 0x31 bit 6 and 7
- *
- *
- *
- *	@param v_offset_thres_u8 : The value of slow offset Threshold
- *  value    |   threshold
- * ----------|-------------
- *    0x00   | 0.1 degree/sec
- *    0x01   | 0.2 degree/sec
- *    0x02   | 0.5 degree/sec
- *    0x03   | 1 degree/sec
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_slow_offset_thres(u8 v_offset_thres_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set Slow Offset Threshold
+ *
+ *
+ *
+ *
+ *\param unsigned char offset_th:
+ *          Value to be written passed as a parameter
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_slow_offset_th(unsigned char offset_th)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* write slow offset threshold*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_SLOW_OFFSET_THRES__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_SLOW_OFFSET_THRES, v_offset_thres_u8);
+		BMG160_SLOW_OFFSET_TH__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_SLOW_OFFSET_TH, offset_th);
 		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_SLOW_OFFSET_THRES__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_SLOW_OFFSET_TH__REG, &v_data_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get Slow Offset duration
- *	status in the register 0x31 bit 4,5 and 6
- *
- *
- *
- *	@param v_offset_durn_u8 : The value of Slow Offset duration
- *   value    |  Duration
- * -----------|-----------
- *    0x00    | 40ms
- *    0x01    | 80ms
- *    0x02    | 160ms
- *    0x03    | 320ms
- *    0x04    | 640ms
- *    0x05    | 1280ms
- *    0x06    | unused
- *    0x07    | unused
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_slow_offset_durn(
-u8 *v_offset_durn_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get Slow Offset Duration
+ *
+ *
+ *
+ *
+ *\param unsigned char *offset_dur : Address of offset_dur
+ *                         Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_slow_offset_dur(
+unsigned char *offset_dur)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read slow offset duration*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_SLOW_OFFSET_DURN__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_offset_durn_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_SLOW_OFFSET_DURN);
+		BMG160_SLOW_OFFSET_DUR__REG, &v_data_u8r, 1);
+		*offset_dur = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_SLOW_OFFSET_DUR);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set Slow Offset duration
- *	status in the register 0x31 bit 4,5 and 6
- *
- *
- *
- *	@param v_offset_durn_u8 : The value of Slow Offset duration
- *   value    |  Duration
- * -----------|-----------
- *    0x00    | 40ms
- *    0x01    | 80ms
- *    0x02    | 160ms
- *    0x03    | 320ms
- *    0x04    | 640ms
- *    0x05    | 1280ms
- *    0x06    | unused
- *    0x07    | unused
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_slow_offset_durn(
-u8 v_offset_durn_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set Slow Offset Duration
+ *
+ *
+ *
+ *
+ *\param unsigned char offset_dur:
+ *          Value to be written passed as a parameter
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_slow_offset_dur(
+unsigned char offset_dur)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* write slow offset duration*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_SLOW_OFFSET_DURN__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_SLOW_OFFSET_DURN, v_offset_durn_u8);
+		BMG160_SLOW_OFFSET_DUR__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_SLOW_OFFSET_DUR, offset_dur);
 		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_SLOW_OFFSET_DURN__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_SLOW_OFFSET_DUR__REG, &v_data_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get Slow Offset Enable channel
- *	X,Y,Z in the register 0x31
- *	@note X_AXIS -> bit 0
- *	@note Y_AXIS -> bit 1
- *	@note Z_AXIS -> bit 2
- *
- *
- *	@param v_channel_u8: The value of slow offset channel number
- *  v_channel_u8  |    value
- *  --------------|--------------
- *  BMG160_X_AXIS |   0
- *  BMG160_Y_AXIS |   1
- *  BMG160_Z_AXIS |   2
- *
- *	@param v_slow_offset_u8: The slow offset value
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_slow_offset_enable_axis(
-u8 v_channel_u8, u8 *v_slow_offset_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get Slow Offset Enable channel
+ * X,Y,Z
+ *
+ *
+ *
+ *
+ *\param unsigned char channel,unsigned char *slow_offset
+ *                       channel :
+ *                       BMG160_X_AXIS -> 0
+ *                       BMG160_Y_AXIS -> 1
+ *                       BMG160_Z_AXIS -> 2
+ *                       slow_offset :
+ *                       Enable  -> 1
+ *                       disable -> 0
+ *
+ *
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_slow_offset_en_ch(
+unsigned char channel, unsigned char *slow_offset)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_channel_u8) {
-		/* read slow offset axis enable */
+	} else {
+		switch (channel) {
 		case BMG160_X_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_SLOW_OFFSET_ENABLE_X__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_slow_offset_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_SLOW_OFFSET_ENABLE_X);
+				(p_bmg160->dev_addr,
+			BMG160_SLOW_OFFSET_EN_X__REG, &v_data_u8r, 1);
+			*slow_offset = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_SLOW_OFFSET_EN_X);
 			break;
 		case BMG160_Y_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_SLOW_OFFSET_ENABLE_Y__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_slow_offset_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_SLOW_OFFSET_ENABLE_Y);
+				(p_bmg160->dev_addr,
+			BMG160_SLOW_OFFSET_EN_Y__REG, &v_data_u8r, 1);
+			*slow_offset = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_SLOW_OFFSET_EN_Y);
 			break;
 		case BMG160_Z_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_SLOW_OFFSET_ENABLE_Z__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_slow_offset_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_SLOW_OFFSET_ENABLE_Z);
+				(p_bmg160->dev_addr,
+			BMG160_SLOW_OFFSET_EN_Z__REG, &v_data_u8r, 1);
+			*slow_offset = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_SLOW_OFFSET_EN_Z);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -4317,81 +4907,84 @@ u8 v_channel_u8, u8 *v_slow_offset_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set Slow Offset Enable channel
- *	X,Y,Z in the register 0x31
- *	@note X_AXIS -> bit 0
- *	@note Y_AXIS -> bit 1
- *	@note Z_AXIS -> bit 2
- *
- *
- *	@param v_channel_u8: The value of slow offset channel number
- *  v_channel_u8  |    value
- *  --------------|--------------
- *  BMG160_X_AXIS |   0
- *  BMG160_Y_AXIS |   1
- *  BMG160_Z_AXIS |   2
- *
- *	@param v_slow_offset_u8: The slow offset value
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_slow_offset_enable_axis(
-u8 v_channel_u8, u8 v_slow_offset_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set Slow Offset Enable channel
+ * X,Y,Z
+ *
+ *
+ *
+ *
+ *\param unsigned char channel,unsigned char *slow_offset
+ *                       channel :
+ *                       BMG160_X_AXIS -> 0
+ *                       BMG160_Y_AXIS -> 1
+ *                       BMG160_Z_AXIS -> 2
+ *                       slow_offset :
+ *                       Enable  -> 1
+ *                       disable -> 0
+ *
+ *
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_slow_offset_en_ch(
+unsigned char channel, unsigned char slow_offset)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_channel_u8) {
-		/* write slow offset axis enable */
+	} else {
+		switch (channel) {
 		case BMG160_X_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_SLOW_OFFSET_ENABLE_X__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_SLOW_OFFSET_ENABLE_X, v_slow_offset_u8);
+				(p_bmg160->dev_addr,
+			BMG160_SLOW_OFFSET_EN_X__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_SLOW_OFFSET_EN_X, slow_offset);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_SLOW_OFFSET_ENABLE_X__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_SLOW_OFFSET_EN_X__REG, &v_data_u8r, 1);
 			break;
 		case BMG160_Y_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_SLOW_OFFSET_ENABLE_Y__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_SLOW_OFFSET_ENABLE_Y, v_slow_offset_u8);
+				(p_bmg160->dev_addr,
+			BMG160_SLOW_OFFSET_EN_Y__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_SLOW_OFFSET_EN_Y, slow_offset);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_SLOW_OFFSET_ENABLE_Y__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_SLOW_OFFSET_EN_Y__REG, &v_data_u8r, 1);
 			break;
 		case BMG160_Z_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_SLOW_OFFSET_ENABLE_Z__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_SLOW_OFFSET_ENABLE_Z,
-			v_slow_offset_u8);
+				(p_bmg160->dev_addr,
+			BMG160_SLOW_OFFSET_EN_Z__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+				BMG160_SLOW_OFFSET_EN_Z,
+			slow_offset);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_SLOW_OFFSET_ENABLE_Z__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_SLOW_OFFSET_EN_Z__REG, &v_data_u8r, 1);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -4400,61 +4993,62 @@ u8 v_channel_u8, u8 v_slow_offset_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get
- *	Fast Offset WordLength and Auto Offset WordLength in the register 0x32
- *	@note fast_offset_wordlength -> bit 4 and 5
- *	@note auto_offset_wordlength -> bit 6 and 7
- *
- *
- *	@param v_channel_u8: The value of WordLengthchannel number
- *  v_channel_u8          |    value
- *  ----------------------|--------------
- *  BMG160_AUTO_OFFSET_WL |   0
- *  BMG160_FAST_OFFSET_WL |   1
- *
- *	@param  v_offset_word_length_u8: The value of offset word length
- *   value    |  word length
- *  ----------|--------------
- *    0x00    | 32 samples
- *    0x01    | 64 samples
- *    0x02    | 128 samples
- *    0x03    | 256 samples
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_offset_word_length(u8 v_channel_u8,
-u8 *v_offset_word_length_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get Fast Offset WordLength and
+ * Auto Offset WordLength
+ *
+ *
+ *
+ *
+ *\param unsigned char channel,unsigned char *offset_wl
+ *                       channel :
+ *                       BMG160_AUTO_OFFSET_WL -> 0
+ *                       BMG160_FAST_OFFSET_WL -> 1
+ *                       *offset_wl : Address of high_bw
+ *                                    Pointer to a variable passed as a
+ *                                    parameter
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_offset_wl(unsigned char channel,
+unsigned char *offset_wl)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_channel_u8) {
-		case BMG160_AUTO_OFFSET_WORD_LENGHTH:
+	} else {
+		switch (channel) {
+		case BMG160_AUTO_OFFSET_WL:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_AUTO_OFFSET_WORD_LENGHTH__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_offset_word_length_u8 =
-			BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_AUTO_OFFSET_WORD_LENGHTH);
+				(p_bmg160->dev_addr,
+			BMG160_AUTO_OFFSET_WL__REG, &v_data_u8r, 1);
+			*offset_wl = BMG160_GET_BITSLICE(v_data_u8r,
+				BMG160_AUTO_OFFSET_WL);
 			break;
-		case BMG160_FAST_OFFSET_WORD_LENGHTH:
+		case BMG160_FAST_OFFSET_WL:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_FAST_OFFSET_WORD_LENGHTH__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_offset_word_length_u8 =
-			BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_FAST_OFFSET_WORD_LENGHTH);
+				(p_bmg160->dev_addr,
+			BMG160_FAST_OFFSET_WL__REG, &v_data_u8r, 1);
+			*offset_wl = BMG160_GET_BITSLICE(v_data_u8r,
+				BMG160_FAST_OFFSET_WL);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -4463,69 +5057,68 @@ u8 *v_offset_word_length_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set
- *	Fast Offset WordLength and Auto Offset WordLength in the register 0x32
- *	@note fast_offset_wordlength -> bit 4 and 5
- *	@note auto_offset_wordlength -> bit 6 and 7
- *
- *
- *	@param v_channel_u8: The value of WordLengthchannel number
- *  v_channel_u8          |    value
- *  ----------------------|--------------
- *  BMG160_AUTO_OFFSET_WL |   0
- *  BMG160_FAST_OFFSET_WL |   1
- *
- *	@param  v_offset_word_length_u8: The value of offset word length
- *   value    |  word length
- *  ----------|--------------
- *    0x00    | 32 samples
- *    0x01    | 64 samples
- *    0x02    | 128 samples
- *    0x03    | 256 samples
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_offset_word_length(
-u8 v_channel_u8, u8 v_offset_word_length_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set Fast Offset WordLength and
+ *  Auto Offset WordLength
+ *
+ *
+ *
+ *
+ *\param unsigned char channel,unsigned char *offset_wl
+ *                       channel :
+ *                       BMG160_AUTO_OFFSET_WL -> 0
+ *                       BMG160_FAST_OFFSET_WL -> 1
+ *                       offset_wl : Value to be written passed as a parameter
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_offset_wl(
+unsigned char channel, unsigned char offset_wl)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_channel_u8) {
-		case BMG160_AUTO_OFFSET_WORD_LENGHTH:
+	} else {
+		switch (channel) {
+		case BMG160_AUTO_OFFSET_WL:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_AUTO_OFFSET_WORD_LENGHTH__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_AUTO_OFFSET_WORD_LENGHTH,
-			v_offset_word_length_u8);
+				(p_bmg160->dev_addr,
+			BMG160_AUTO_OFFSET_WL__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_AUTO_OFFSET_WL, offset_wl);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_AUTO_OFFSET_WORD_LENGHTH__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_AUTO_OFFSET_WL__REG, &v_data_u8r, 1);
 			break;
-		case BMG160_FAST_OFFSET_WORD_LENGHTH:
+		case BMG160_FAST_OFFSET_WL:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_FAST_OFFSET_WORD_LENGHTH__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_FAST_OFFSET_WORD_LENGHTH,
-			v_offset_word_length_u8);
+				(p_bmg160->dev_addr,
+			BMG160_FAST_OFFSET_WL__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_FAST_OFFSET_WL, offset_wl);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_FAST_OFFSET_WORD_LENGHTH__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_FAST_OFFSET_WL__REG, &v_data_u8r, 1);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -4534,158 +5127,171 @@ u8 v_channel_u8, u8 v_offset_word_length_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to enable fast offset
- *	in the register 0x32 bit 3 it is a write only register
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_enable_fast_offset(void)
+/*****************************************************************************
+ * Description: *//**brief This API is used to enable fast offset
+ *
+ *
+ *
+ *
+* \param bmg160_enable_fast_offset
+ *                 Enable  -> 1
+ *                 Disable -> 0
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_enable_fast_offset()
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_FAST_OFFSET_ENABLE__REG, &v_data_u8,
-		BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_FAST_OFFSET_ENABLE,
-		BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_FAST_OFFSET_EN__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_FAST_OFFSET_EN, 1);
 		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_FAST_OFFSET_ENABLE__REG, &v_data_u8,
-		BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_FAST_OFFSET_EN__REG, &v_data_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief This API read the Fast offset enable
- *	v_axis_u8(X,Y and Z) in the register 0x32
- *	@note X_AXIS -> bit 0
- *	@note Y_AXIS -> bit 1
- *	@note Z_AXIS -> bit 2
- *
- *
- *
- *  @param v_fast_offset_u8: The value of fast offset enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_fast_offset_enable_axis(
-u8 *v_fast_offset_u8)
+/*****************************************************************************
+ * Description: *//**brief This API read the Fast offset en status from the
+ * 0x32h of 0 to 2 bits.
+ *
+ *
+ *
+ *
+ *\param unsigned char *fast_offset
+ *             Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return Communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_fast_offset_en_ch(
+unsigned char *fast_offset)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read fast offset enable axis*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC
-		(p_bmg160->dev_addr,
-		BMG160_FAST_OFFSET_ENABLE_XYZ__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_fast_offset_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_FAST_OFFSET_ENABLE_XYZ);
+			(p_bmg160->dev_addr,
+		BMG160_FAST_OFFSET_EN_XYZ__REG, &v_data_u8r, 1);
+		*fast_offset = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_FAST_OFFSET_EN_XYZ);
 	}
 	return comres;
 }
-/*!
- *	@brief This API set the Fast offset enable
- *	v_axis_u8(X,Y and Z) in the register 0x32
- *	@note X_AXIS -> bit 0
- *	@note Y_AXIS -> bit 1
- *	@note Z_AXIS -> bit 2
- *
- *
- *	@param v_channel_u8: The value of fast offset channel select
- *  v_channel_u8    |    value
- *  ----------------|--------------
- *  BMG160_X_AXIS   |   0
- *  BMG160_Y_AXIS   |   1
- *  BMG160_Z_AXIS   |   2
- *
- *  @param v_fast_offset_u8: The value of fast offset enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_fast_offset_enable_axis(
-u8 v_channel_u8, u8 v_fast_offset_u8)
+/*****************************************************************************
+ * Description: *//**brief This API writes the Fast offset enable bit based
+ * on the Channel selection 0x32h of (0 to 2 bits)
+ *
+ *
+ *
+ *
+* \param  unsigned char channel,unsigned char fast_offset
+ *
+ *                      channel --> BMG160_X_AXIS,BMG160_Y_AXIS,BMG160_Z_AXIS
+ *                      fast_offset --> 0 - Disable
+ *                                      1 - Enable
+ *
+ *
+ *
+ *  \return Communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_fast_offset_en_ch(
+unsigned char channel, unsigned char fast_offset)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres  = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_channel_u8) {
-		/* write fast offset enable axis*/
+	} else {
+		switch (channel) {
 		case BMG160_X_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_FAST_OFFSET_ENABLE_X__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_FAST_OFFSET_ENABLE_X, v_fast_offset_u8);
+				(p_bmg160->dev_addr,
+			BMG160_FAST_OFFSET_EN_X__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_FAST_OFFSET_EN_X, fast_offset);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_FAST_OFFSET_ENABLE_X__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_FAST_OFFSET_EN_X__REG, &v_data_u8r, 1);
 			break;
 		case BMG160_Y_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_FAST_OFFSET_ENABLE_Y__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_FAST_OFFSET_ENABLE_Y, v_fast_offset_u8);
+				(p_bmg160->dev_addr,
+			BMG160_FAST_OFFSET_EN_Y__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_FAST_OFFSET_EN_Y, fast_offset);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_FAST_OFFSET_ENABLE_Y__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_FAST_OFFSET_EN_Y__REG, &v_data_u8r, 1);
 			break;
 		case BMG160_Z_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_FAST_OFFSET_ENABLE_Z__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_FAST_OFFSET_ENABLE_Z, v_fast_offset_u8);
+				(p_bmg160->dev_addr,
+			BMG160_FAST_OFFSET_EN_Z__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_FAST_OFFSET_EN_Z, fast_offset);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_FAST_OFFSET_ENABLE_Z__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_FAST_OFFSET_EN_Z__REG, &v_data_u8r, 1);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -4694,275 +5300,352 @@ u8 v_channel_u8, u8 v_fast_offset_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get the status of nvm program
- *	remain in the register 0x33 bit from 4 to 7
- *
- *
- *	@param v_nvm_remain_u8: The value of nvm program
- *   value    |  Description
- * -----------|---------------
- *    1       |  Do not trigger
- *    0       |  Trigger
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_nvm_remain(u8 *v_nvm_remain_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get the status of nvm program
+ * remain
+ *
+ *
+ *
+ *
+ *\param unsigned char *nvm_remain
+ *
+ *
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_nvm_remain(unsigned char *nvm_remain)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read NVM program*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_TRIM_NVM_CTRL_ADDR_NVM_REMAIN__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_nvm_remain_u8 = BMG160_GET_BITSLICE(v_data_u8,
+		BMG160_TRIM_NVM_CTRL_ADDR_NVM_REMAIN__REG, &v_data_u8r, 1);
+		*nvm_remain = BMG160_GET_BITSLICE(v_data_u8r,
 		BMG160_TRIM_NVM_CTRL_ADDR_NVM_REMAIN);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set the status of nvm program
- *	remain in the register 0x33 bit from 4 to 7
- *
- *
- *	@param v_nvm_load_u8: The value of nvm program
- *   value    |  Description
- * -----------|---------------
- *    1       |  Do not trigger
- *    0       |  Trigger
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_nvm_load(u8 v_nvm_load_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set the status of nvm load
+ *
+ *
+ *
+ *
+ *\param unsigned char nvm_load
+ *              1 -> load offset value from NVM
+ *              0 -> no action
+ *
+ *
+ *
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_nvm_load(unsigned char nvm_load)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* write NVM program*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_TRIM_NVM_CTRL_ADDR_NVM_LOAD__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_TRIM_NVM_CTRL_ADDR_NVM_LOAD, v_nvm_load_u8);
+		BMG160_TRIM_NVM_CTRL_ADDR_NVM_LOAD__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_TRIM_NVM_CTRL_ADDR_NVM_LOAD, nvm_load);
 		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_TRIM_NVM_CTRL_ADDR_NVM_LOAD__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_TRIM_NVM_CTRL_ADDR_NVM_LOAD__REG, &v_data_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get the status of nvm
- *	program in the register 0x33 bit 2
- *
- *	@param v_nvm_rdy_u8: The value of nvm program
- *   value    |  Description
- * -----------|---------------
- *    1       |  NVM write is in progress
- *    0       |  NVM is ready to accept a new write
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_nvm_rdy(u8 *v_nvm_rdy_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get the status of nvmprogram
+ * ready
+ *
+ *
+ *
+ *
+ *\param unsigned char *nvm_rdy
+ *             1 -> program seq finished
+ *             0 -> program seq in progress
+ *
+ *
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_nvm_rdy(unsigned char *nvm_rdy)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_TRIM_NVM_CTRL_ADDR_NVM_RDY__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_nvm_rdy_u8 = BMG160_GET_BITSLICE(v_data_u8,
+		BMG160_TRIM_NVM_CTRL_ADDR_NVM_RDY__REG, &v_data_u8r, 1);
+		*nvm_rdy = BMG160_GET_BITSLICE(v_data_u8r,
 		BMG160_TRIM_NVM_CTRL_ADDR_NVM_RDY);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set the status of nvm
- *	ready in the register 0x33 bit 1
- *
- *	@param nvm_prog_trig: The value of nvm program
- *   value    |  Description
- * -----------|---------------
- *    1       |  program seq in progress
- *    0       |  program seq finished
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_nvm_prog_trig(u8 nvm_prog_trig)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set the status of nvm program
+ * trigger
+ *
+ *
+ *
+ *
+ *\param unsigned char trig
+ *            1 -> trig program seq (wo)
+ *            0 -> No Action
+ *
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_nvm_prog_trig(unsigned char prog_trig)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_TRIM_NVM_CTRL_ADDR_NVM_PROG_TRIG__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_TRIM_NVM_CTRL_ADDR_NVM_PROG_TRIG, nvm_prog_trig);
+		BMG160_TRIM_NVM_CTRL_ADDR_NVM_PROG_TRIG__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_TRIM_NVM_CTRL_ADDR_NVM_PROG_TRIG, prog_trig);
 		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_TRIM_NVM_CTRL_ADDR_NVM_PROG_TRIG__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_TRIM_NVM_CTRL_ADDR_NVM_PROG_TRIG__REG, &v_data_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get
- *	the status of nvm program mode in the register 0x33 bit 0
- *
- *
- *	@param nvm_prog_mode: The value of nvm program mode
- *   value    |  Description
- * -----------|---------------
- *    1       |  Unlock
- *    0       |  Lock nvm write
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_nvm_prog_mode(u8 *nvm_prog_mode)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get the status of nvm program
+ * mode
+ *
+ *
+ *
+ *
+* \param unsigned char *prog_mode : Address of *prog_mode
+ *                  1 -> Enable program mode
+ *                  0 -> Disable program mode
+ *
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_nvm_prog_mode(unsigned char *prog_mode)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_TRIM_NVM_CTRL_ADDR_NVM_PROG_MODE__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*nvm_prog_mode = BMG160_GET_BITSLICE(v_data_u8,
+		BMG160_TRIM_NVM_CTRL_ADDR_NVM_PROG_MODE__REG, &v_data_u8r, 1);
+		*prog_mode = BMG160_GET_BITSLICE(v_data_u8r,
 		BMG160_TRIM_NVM_CTRL_ADDR_NVM_PROG_MODE);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set
- *	the status of nvm program mode in the register 0x33 bit 0
- *
- *
- *	@param nvm_prog_mode: The value of nvm program mode
- *   value    |  Description
- * -----------|---------------
- *    1       |  Unlock
- *    0       |  Lock nvm write
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_nvm_prog_mode(u8 nvm_prog_mode)
+/******************************************************************************
+ * Description: *//**brief This API is used to set the status of nvmprogram
+ * mode
+ *
+ *
+ *
+ *
+* \param(unsigned char prog_mode)
+ *                   1 -> Enable program mode
+ *                   0 -> Disable program mode
+ *
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_nvm_prog_mode(unsigned char prog_mode)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_TRIM_NVM_CTRL_ADDR_NVM_PROG_MODE__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_TRIM_NVM_CTRL_ADDR_NVM_PROG_MODE, nvm_prog_mode);
+		BMG160_TRIM_NVM_CTRL_ADDR_NVM_PROG_MODE__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_TRIM_NVM_CTRL_ADDR_NVM_PROG_MODE, prog_mode);
 		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_TRIM_NVM_CTRL_ADDR_NVM_PROG_MODE__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_TRIM_NVM_CTRL_ADDR_NVM_PROG_MODE__REG, &v_data_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get
- *	the status of i2c wdt select and enable in the register 0x34
- *	@note i2c_wdt_select -> bit 1
- *	@note i2c_wdt_enable -> bit 2
- *
- *	@param v_channel_u8: The value of i2c wdt channel number
- *  v_channel_u8            |    value
- *  ------------------------|--------------
- *  BMG160_I2C_WDT_ENABLE   |   1
- *  BMG160_I2C_WDT_SELECT   |   0
- *
- *	@param v_i2c_wdt_u8: The value of I2C enable and WDT select
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_i2c_wdt(u8 v_channel_u8,
-u8 *v_i2c_wdt_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get the status of i2c wdt
+ *
+ *
+ *
+ *
+ *\param unsigned char channel,unsigned char *prog_mode
+ *            BMG160_I2C_WDT_SEL               1
+ *            BMG160_I2C_WDT_EN                0
+ *            *prog_mode : Address of prog_mode
+ *                         Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_i2c_wdt(unsigned char i2c_wdt,
+unsigned char *prog_mode)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_channel_u8) {
-		/* read i2c wdt*/
-		case BMG160_I2C_WDT_ENABLE:
+	} else {
+		switch (i2c_wdt) {
+		case BMG160_I2C_WDT_EN:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_ENABLE__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_i2c_wdt_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_ENABLE);
+				(p_bmg160->dev_addr,
+			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_EN__REG,
+			&v_data_u8r, 1);
+			*prog_mode = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_EN);
 			break;
-		case BMG160_I2C_WDT_SELECT:
+		case BMG160_I2C_WDT_SEL:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_SELECT__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_i2c_wdt_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_SELECT);
+				(p_bmg160->dev_addr,
+			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_SEL__REG,
+			&v_data_u8r, 1);
+			*prog_mode = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_SEL);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -4971,66 +5654,70 @@ u8 *v_i2c_wdt_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set
- *	the status of i2c wdt select and enable in the register 0x34
- *	@note i2c_wdt_select -> bit 1
- *	@note i2c_wdt_enable -> bit 2
- *
- *	@param v_channel_u8: The value of i2c wdt channel number
- *  v_channel_u8            |    value
- *  ------------------------|--------------
- *  BMG160_I2C_WDT_ENABLE   |   1
- *  BMG160_I2C_WDT_SELECT   |   0
- *
- *	@param v_i2c_wdt_u8: The value of I2C enable and WDT select
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_i2c_wdt(u8 v_channel_u8,
-u8 v_i2c_wdt_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set the status of i2c wdt
+ *
+ *
+ *
+ *
+ *\param unsigned char channel,unsigned char prog_mode
+ *            BMG160_I2C_WDT_SEL               1
+ *            BMG160_I2C_WDT_EN                0
+ *            prog_mode : Value to be written passed as a parameter
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_i2c_wdt(unsigned char i2c_wdt,
+unsigned char prog_mode)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_channel_u8) {
-		/* write i2c wdt*/
-		case BMG160_I2C_WDT_ENABLE:
+	} else {
+		switch (i2c_wdt) {
+		case BMG160_I2C_WDT_EN:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_ENABLE__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_ENABLE, v_i2c_wdt_u8);
+				(p_bmg160->dev_addr,
+			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_EN__REG,
+			&v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_EN, prog_mode);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_ENABLE__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_EN__REG,
+			&v_data_u8r, 1);
 			break;
-		case BMG160_I2C_WDT_SELECT:
+		case BMG160_I2C_WDT_SEL:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_SELECT__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_SELECT, v_i2c_wdt_u8);
+				(p_bmg160->dev_addr,
+			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_SEL__REG,
+			&v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_SEL, prog_mode);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_SELECT__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_BGW_SPI3_WDT_ADDR_I2C_WDT_SEL__REG,
+			&v_data_u8r, 1);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -5039,362 +5726,382 @@ u8 v_i2c_wdt_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief  This API is used to get the status of spi3
- *	in the register 0x34 bit 0
- *
- *
- *
- *  @param  v_spi3_u8 : The value of spi3 enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_spi3(u8 *v_spi3_u8)
+/*****************************************************************************
+ * Description: *//**brief  This API is used to get the status of spi3
+ *
+ *
+ *
+ *
+* \param unsigned char *spi3 : Address of spi3
+ *                                Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_spi3(unsigned char *spi3)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		comres = p_bmg160->BMG160_BUS_READ_FUNC(
-		p_bmg160->dev_addr,
-		BMG160_BGW_SPI3_WDT_ADDR_SPI3__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_spi3_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_BGW_SPI3_WDT_ADDR_SPI3);
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
+		BMG160_BGW_SPI3_WDT_ADDR_SPI3__REG, &v_data_u8r, 1);
+		*spi3 = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_BGW_SPI3_WDT_ADDR_SPI3);
 	}
 	return comres;
 }
-/*!
- *	@brief  This API is used to set the status of spi3
- *	in the register 0x34 bit 0
- *
- *
- *
- *  @param  v_spi3_u8 : The value of spi3 enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_spi3(u8 v_spi3_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set the status of spi3
+ *
+ *
+ *
+ *
+ *\param unsigned char spi3
+ *
+ *
+ *
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_spi3(unsigned char spi3)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_BGW_SPI3_WDT_ADDR_SPI3__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_BGW_SPI3_WDT_ADDR_SPI3, v_spi3_u8);
+		BMG160_BGW_SPI3_WDT_ADDR_SPI3__REG, &v_data_u8r, 1);
+		v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+		BMG160_BGW_SPI3_WDT_ADDR_SPI3, spi3);
 		comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-		BMG160_BGW_SPI3_WDT_ADDR_SPI3__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_BGW_SPI3_WDT_ADDR_SPI3__REG, &v_data_u8r, 1);
 	}
 	return comres;
 }
-/*!
- *	@brief  This API is used to get the status of FIFO tag
- *	in the register 0x3D bit 7
+/* Scheduling:
  *
  *
  *
- *	@param  v_fifo_tag_u8 : The value of fifo tag enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
+ * Usage guide:
  *
  *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_fifo_tag(u8 *v_fifo_tag_u8)
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_fifo_tag(unsigned char *tag)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read fifo tag*/
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_FIFO_CGF1_ADDR_TAG__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_fifo_tag_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_FIFO_CGF1_ADDR_TAG);
+		BMG160_FIFO_CGF1_ADDR_TAG__REG, &v_data_u8r, 1);
+		*tag = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_FIFO_CGF1_ADDR_TAG);
 	}
 	return comres;
 }
-/*!
- *	@brief  This API is used to set the status of FIFO tag
- *	in the register 0x3D bit 7
- *
- *
- *
- *	@param  v_fifo_tag_u8 : The value of fifo tag enable
- *   value    |  Description
- * -----------|---------------
- *    1       |  BMG160_ENABLE
- *    0       |  BMG160_DISABLE
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_fifo_tag(u8 v_fifo_tag_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set the status of Tag
+ *
+ *
+ *
+ *
+ *\param unsigned char tag
+ *                  Enable  -> 1
+ *                  Disable -> 0
+ *
+ *
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_fifo_tag(unsigned char tag)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		if (v_fifo_tag_u8 < BMG160_BIT_LENGTH_FIFO_TAG) {
-			/* write fifo tag */
+	} else {
+		if (tag < C_BMG160_Two_U8X) {
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_FIFO_CGF1_ADDR_TAG__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_FIFO_CGF1_ADDR_TAG, v_fifo_tag_u8);
+				(p_bmg160->dev_addr,
+			BMG160_FIFO_CGF1_ADDR_TAG__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_FIFO_CGF1_ADDR_TAG, tag);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_FIFO_CGF1_ADDR_TAG__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_FIFO_CGF1_ADDR_TAG__REG, &v_data_u8r, 1);
 		} else {
 			comres = E_BMG160_OUT_OF_RANGE;
 		}
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get Water Mark Level
- *	in the register 0x3D bit from 0 to 6
- *
- *
- *
- *	@param v_fifo_wm_level_u8 : The value of fifo water mark level
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_fifo_wm_level(
-u8 *v_fifo_wm_level_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get Water Mark Level
+ *
+ *
+ *
+ *
+ *\param unsigned char *water_mark_level : Address of water_mark_level
+ *                         Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_fifo_watermarklevel(
+unsigned char *water_mark_level)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_FIFO_CGF1_ADDR_WML__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_fifo_wm_level_u8 = BMG160_GET_BITSLICE(v_data_u8,
+		BMG160_FIFO_CGF1_ADDR_WML__REG, &v_data_u8r, 1);
+		*water_mark_level = BMG160_GET_BITSLICE(v_data_u8r,
 		BMG160_FIFO_CGF1_ADDR_WML);
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set Water Mark Level
- *	in the register 0x3D bit from 0 to 6
- *
- *
- *
- *	@param v_fifo_wm_level_u8 : The value of fifo water mark level
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_fifo_wm_level(
-u8 v_fifo_wm_level_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set Water Mark Level
+ *
+ *
+ *
+ *
+ *\param unsigned char water_mark_level:
+ *          Value to be written passed as a parameter
+
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_fifo_watermarklevel(
+unsigned char water_mark_level)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		if (v_fifo_wm_level_u8 < BMG160_FIFO_WM_LENGTH) {
+	} else {
+		if (water_mark_level < C_BMG160_OneTwentyEight_U8X) {
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_FIFO_CGF1_ADDR_WML__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_FIFO_CGF1_ADDR_WML, v_fifo_wm_level_u8);
+				(p_bmg160->dev_addr,
+			BMG160_FIFO_CGF1_ADDR_WML__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_FIFO_CGF1_ADDR_WML, water_mark_level);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_FIFO_CGF1_ADDR_WML__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_FIFO_CGF1_ADDR_WML__REG, &v_data_u8r, 1);
 		} else {
 			comres = E_BMG160_OUT_OF_RANGE;
 		}
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get the value of offset
- *	X, Y and Z in the registers 0x36, 0x37, 0x38, 0x39 and 0x3A
- *	the offset is a 12bit value
- *	@note X_AXIS ->
- *		@note bit 0 and 1 is available in the register 0x3A bit 2 and 3
- *		@note bit 2 and 3 is available in the register 0x36 bit 6 and 7
- *		@note bit 4 to 11 is available in the register 0x37 bit 0 to 7
- *	@note Y_AXIS ->
- *		@note bit 0 is available in the register 0x3A bit 1
- *		@note bit 1,2 and 3 is available in the register 0x36 bit 3,4 and 5
- *		@note bit 4 to 11 is available in the register 0x38 bit 0 to 7
- *	@note Z_AXIS ->
- *		@note bit 0 is available in the register 0x3A bit 0
- *		@note bit 1,2 and 3 is available in the register 0x36 bit 0,1 and 3
- *		@note bit 4 to 11 is available in the register 0x39 bit 0 to 7
- *
- *  @param  v_axis_u8 : The value of offset axis selection
- *  v_axis_u8       |    value
- *  ----------------|--------------
- *  BMG160_X_AXIS   |   1
- *  BMG160_Y_AXIS   |   0
- *  BMG160_Z_AXIS   |   0
- *
- *	@param v_offset_s16: The value of offset
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_offset(u8 v_axis_u8,
-s16 *v_offset_s16)
+/*****************************************************************************
+ * Description: *//**brief This API is used to get the status of offset
+ *
+ *
+ *
+ *
+ *\param unsigned char axis,unsigned char *offset
+ *                         axis ->
+ *                   BMG160_X_AXIS     ->      0
+ *                   BMG160_Y_AXIS     ->      1
+ *                   BMG160_Z_AXIS     ->      2
+ *                   offset -> Any valid value
+ *
+ *
+ *
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_offset(unsigned char axis,
+BMG160_S16 *offset)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data1_u8r = BMG160_INIT_VALUE;
-	u8 v_data2_u8r = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data1_u8r = C_BMG160_Zero_U8X;
+	unsigned char v_data2_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_axis_u8) {
-		/* read offset */
+	} else {
+		switch (axis) {
 		case BMG160_X_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_TRIM_GP0_ADDR_OFFSET_X__REG,
-			&v_data1_u8r, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_TRIM_GP0_ADDR_OFFSET_X__REG, &v_data1_u8r, 1);
 			v_data1_u8r = BMG160_GET_BITSLICE(v_data1_u8r,
 			BMG160_TRIM_GP0_ADDR_OFFSET_X);
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_OFC1_ADDR_OFFSET_X__REG,
-			&v_data2_u8r, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_OFC1_ADDR_OFFSET_X__REG, &v_data2_u8r, 1);
 			v_data2_u8r = BMG160_GET_BITSLICE(v_data2_u8r,
 			BMG160_OFC1_ADDR_OFFSET_X);
 			v_data2_u8r = ((v_data2_u8r <<
-			BMG160_SHIFT_BIT_POSITION_BY_02_BITS)
-			| v_data1_u8r);
+			BMG160_SHIFT_2_POSITION) | v_data1_u8r);
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr, BMG160_OFC2_ADDR,
-			&v_data1_u8r, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_offset_s16 = (s16)((((s16)
-			((s8)v_data1_u8r))
-			<< BMG160_SHIFT_BIT_POSITION_BY_04_BITS)
-			| (v_data2_u8r));
+			(p_bmg160->dev_addr, BMG160_OFC2_ADDR, &v_data1_u8r, 1);
+			*offset = (BMG160_S16)((((BMG160_S16)
+				((signed char)v_data1_u8r))
+			<< BMG160_SHIFT_4_POSITION) | (v_data2_u8r));
 			break;
 		case BMG160_Y_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_TRIM_GP0_ADDR_OFFSET_Y__REG,
-			&v_data1_u8r, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_TRIM_GP0_ADDR_OFFSET_Y__REG, &v_data1_u8r, 1);
 			v_data1_u8r = BMG160_GET_BITSLICE(v_data1_u8r,
 			BMG160_TRIM_GP0_ADDR_OFFSET_Y);
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_OFC1_ADDR_OFFSET_Y__REG,
-			&v_data2_u8r, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_OFC1_ADDR_OFFSET_Y__REG, &v_data2_u8r, 1);
 			v_data2_u8r = BMG160_GET_BITSLICE(v_data2_u8r,
 			BMG160_OFC1_ADDR_OFFSET_Y);
 			v_data2_u8r = ((v_data2_u8r <<
-			BMG160_SHIFT_BIT_POSITION_BY_01_BIT)
-			| v_data1_u8r);
+			BMG160_SHIFT_1_POSITION) | v_data1_u8r);
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_OFC3_ADDR, &v_data1_u8r,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_offset_s16 = (s16)((((s16)
-			((s8)v_data1_u8r))
-			<< BMG160_SHIFT_BIT_POSITION_BY_04_BITS)
-			| (v_data2_u8r));
+				(p_bmg160->dev_addr,
+			BMG160_OFC3_ADDR, &v_data1_u8r, 1);
+			*offset = (BMG160_S16)((((BMG160_S16)
+				((signed char)v_data1_u8r))
+			<< BMG160_SHIFT_4_POSITION) | (v_data2_u8r));
 			break;
 		case BMG160_Z_AXIS:
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_TRIM_GP0_ADDR_OFFSET_Z__REG,
-			&v_data1_u8r, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_TRIM_GP0_ADDR_OFFSET_Z__REG, &v_data1_u8r, 1);
 			v_data1_u8r = BMG160_GET_BITSLICE(v_data1_u8r,
 			BMG160_TRIM_GP0_ADDR_OFFSET_Z);
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_OFC1_ADDR_OFFSET_Z__REG,
-			&v_data2_u8r, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_OFC1_ADDR_OFFSET_Z__REG, &v_data2_u8r, 1);
 			v_data2_u8r = BMG160_GET_BITSLICE(v_data2_u8r,
 			BMG160_OFC1_ADDR_OFFSET_Z);
-			v_data2_u8r = ((v_data2_u8r <<
-			BMG160_SHIFT_BIT_POSITION_BY_01_BIT)
-			| v_data1_u8r);
+			v_data2_u8r = ((v_data2_u8r << BMG160_SHIFT_1_POSITION)
+				| v_data1_u8r);
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_OFC4_ADDR, &v_data1_u8r,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_offset_s16 = (s16)((((s16)
-			((s8)v_data1_u8r))
-			<< BMG160_SHIFT_BIT_POSITION_BY_04_BITS)
-			| (v_data2_u8r));
+				(p_bmg160->dev_addr,
+			BMG160_OFC4_ADDR, &v_data1_u8r, 1);
+			*offset = (BMG160_S16)((((BMG160_S16)
+				((signed char)v_data1_u8r))
+			<< BMG160_SHIFT_4_POSITION) | (v_data2_u8r));
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -5403,133 +6110,115 @@ s16 *v_offset_s16)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to set the value of offset
- *	X, Y and Z in the registers 0x36, 0x37, 0x38, 0x39 and 0x3A
- *	the offset is a 12bit value
- *	@note X_AXIS ->
- *		@note bit 0 and 1 is available in the register 0x3A bit 2 and 3
- *		@note bit 2 and 3 is available in the register 0x36 bit 6 and 7
- *		@note bit 4 to 11 is available in the register 0x37 bit 0 to 7
- *	@note Y_AXIS ->
- *		@note bit 0 is available in the register 0x3A bit 1
- *		@note bit 1,2 and 3 is available in the register 0x36 bit 3,4 and 5
- *		@note bit 4 to 11 is available in the register 0x38 bit 0 to 7
- *	@note Z_AXIS ->
- *		@note bit 0 is available in the register 0x3A bit 0
- *		@note bit 1,2 and 3 is available in the register 0x36 bit 0,1 and 3
- *		@note bit 4 to 11 is available in the register 0x39 bit 0 to 7
- *
- *  @param  v_axis_u8 : The value of offset axis selection
- *  v_axis_u8       |    value
- *  ----------------|--------------
- *  BMG160_X_AXIS   |   1
- *  BMG160_Y_AXIS   |   0
- *  BMG160_Z_AXIS   |   0
- *
- *	@param v_offset_s16: The value of offset
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
+/*****************************************************************************
+ * Description: *//**brief This API is used to set the status of offset
+ *
+ *
+ *
+ *
+ *\param unsigned char axis,unsigned char offset
+ *                         axis ->
+ *                   BMG160_X_AXIS     ->      0
+ *                   BMG160_Y_AXIS     ->      1
+ *                   BMG160_Z_AXIS     ->      2
+ *                   offset -> Any valid value
+ *
+ *
+ *
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
 BMG160_RETURN_FUNCTION_TYPE bmg160_set_offset(
-u8 v_axis_u8, s16 v_offset_s16)
+unsigned char axis, BMG160_S16 offset)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data1_u8r = BMG160_INIT_VALUE;
-	u8 v_data2_u8r = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data1_u8r = C_BMG160_Zero_U8X;
+	unsigned char v_data2_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_axis_u8) {
-		/* write offset */
+	} else {
+		switch (axis) {
 		case BMG160_X_AXIS:
-			v_data1_u8r = ((s8) (v_offset_s16
-			& BMG160_OFFSET_MASK_BYTE_OF_DATA))
-			>> BMG160_SHIFT_BIT_POSITION_BY_04_BITS;
+			v_data1_u8r = ((signed char) (offset & 0x0FF0))
+			>> BMG160_SHIFT_4_POSITION;
 			comres = p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_OFC2_ADDR, &v_data1_u8r,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_OFC2_ADDR, &v_data1_u8r, 1);
 
-			v_data1_u8r = (u8) (v_offset_s16
-			& BMG160_OFFSET_X_BIT_MASK1);
+			v_data1_u8r = (unsigned char) (offset & 0x000C);
 			v_data2_u8r = BMG160_SET_BITSLICE(v_data2_u8r,
 			BMG160_OFC1_ADDR_OFFSET_X, v_data1_u8r);
 			comres += p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_OFC1_ADDR_OFFSET_X__REG,
-			&v_data2_u8r, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_OFC1_ADDR_OFFSET_X__REG, &v_data2_u8r, 1);
 
-			v_data1_u8r = (u8) (v_offset_s16
-			& BMG160_OFFSET_X_BIT_MASK2);
+			v_data1_u8r = (unsigned char) (offset & 0x0003);
 			v_data2_u8r = BMG160_SET_BITSLICE(v_data2_u8r,
 			BMG160_TRIM_GP0_ADDR_OFFSET_X, v_data1_u8r);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
 				(p_bmg160->dev_addr,
-			BMG160_TRIM_GP0_ADDR_OFFSET_X__REG,
-			&v_data2_u8r, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+			BMG160_TRIM_GP0_ADDR_OFFSET_X__REG, &v_data2_u8r, 1);
 			break;
 		case BMG160_Y_AXIS:
-			v_data1_u8r = ((s8) (v_offset_s16
-			& BMG160_OFFSET_MASK_BYTE_OF_DATA)) >>
-			BMG160_SHIFT_BIT_POSITION_BY_04_BITS;
+			v_data1_u8r = ((signed char) (offset & 0x0FF0)) >>
+			BMG160_SHIFT_4_POSITION;
 			comres = p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_OFC3_ADDR, &v_data1_u8r,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_OFC3_ADDR, &v_data1_u8r, 1);
 
-			v_data1_u8r = (u8) (v_offset_s16
-			& BMG160_OFFSET_Y_Z_BIT_MASK2);
+			v_data1_u8r = (unsigned char) (offset & 0x000E);
 			v_data2_u8r = BMG160_SET_BITSLICE(v_data2_u8r,
 			BMG160_OFC1_ADDR_OFFSET_Y, v_data1_u8r);
 			comres += p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_OFC1_ADDR_OFFSET_Y__REG,
-			&v_data2_u8r, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_OFC1_ADDR_OFFSET_Y__REG, &v_data2_u8r, 1);
 
-			v_data1_u8r = (u8) (v_offset_s16
-			& BMG160_OFFSET_Y_Z_BIT_MASK1);
+			v_data1_u8r = (unsigned char) (offset & 0x0001);
 			v_data2_u8r = BMG160_SET_BITSLICE(v_data2_u8r,
 			BMG160_TRIM_GP0_ADDR_OFFSET_Y, v_data1_u8r);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_TRIM_GP0_ADDR_OFFSET_Y__REG,
-			&v_data2_u8r, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_TRIM_GP0_ADDR_OFFSET_Y__REG, &v_data2_u8r, 1);
 			break;
 		case BMG160_Z_AXIS:
-			v_data1_u8r = ((s8) (v_offset_s16
-			& BMG160_OFFSET_MASK_BYTE_OF_DATA)) >>
-			BMG160_SHIFT_BIT_POSITION_BY_04_BITS;
+			v_data1_u8r = ((signed char) (offset & 0x0FF0)) >>
+			BMG160_SHIFT_4_POSITION;
 			comres = p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_OFC4_ADDR, &v_data1_u8r,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_OFC4_ADDR, &v_data1_u8r, 1);
 
-			v_data1_u8r = (u8) (v_offset_s16
-			& BMG160_OFFSET_Y_Z_BIT_MASK2);
+			v_data1_u8r = (unsigned char) (offset & 0x000E);
 			v_data2_u8r = BMG160_SET_BITSLICE(v_data2_u8r,
 			BMG160_OFC1_ADDR_OFFSET_Z, v_data1_u8r);
 			comres += p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_OFC1_ADDR_OFFSET_Z__REG,
-			&v_data2_u8r, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_OFC1_ADDR_OFFSET_Z__REG, &v_data2_u8r, 1);
 
-			v_data1_u8r = (u8) (v_offset_s16
-			& BMG160_OFFSET_Y_Z_BIT_MASK1);
+			v_data1_u8r = (unsigned char) (offset & 0x0001);
 			v_data2_u8r = BMG160_SET_BITSLICE(v_data2_u8r,
 			BMG160_TRIM_GP0_ADDR_OFFSET_Z, v_data1_u8r);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_TRIM_GP0_ADDR_OFFSET_Z__REG,
-			&v_data2_u8r, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_TRIM_GP0_ADDR_OFFSET_Z__REG, &v_data2_u8r, 1);
 			break;
 		default:
 			comres = E_BMG160_OUT_OF_RANGE;
@@ -5538,493 +6227,589 @@ u8 v_axis_u8, s16 v_offset_s16)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to get the status of general
- *	purpose register in the register 0x3A and 0x3B
- *
- *
- *
- *
- *  @param v_param_u8: The value of general purpose register select
- *  v_param_u8      |    value
- *  ----------------|--------------
- *  BMG160_GP0      |  0
- *  BMG160_GP1      |  1
- *
- *	@param v_gp_u8: The value of general purpose register
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_gp(u8 v_param_u8,
-u8 *v_gp_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_param_u8) {
-		/* read general purpose register*/
-		case BMG160_GP0:
-			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_TRIM_GP0_ADDR_GP0__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_gp_u8 = BMG160_GET_BITSLICE(v_data_u8,
-			BMG160_TRIM_GP0_ADDR_GP0);
-			break;
-		case BMG160_GP1:
-			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_TRIM_GP1_ADDR, &v_data_u8,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			*v_gp_u8 = v_data_u8;
-			break;
-		default:
-			comres = E_BMG160_OUT_OF_RANGE;
-			break;
-		}
-	}
-	return comres;
-}
-/*!
- *	@brief This API is used to set the status of general
- *	purpose register in the register 0x3A and 0x3B
- *
- *
- *
- *
- *  @param v_param_u8: The value of general purpose register select
- *  v_param_u8      |    value
- *  ----------------|--------------
- *  BMG160_GP0      |  0
- *  BMG160_GP1      |  1
- *
- *	@param v_gp_u8: The value of general purpose register
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_gp(u8 v_param_u8,
-u8 v_gp_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		switch (v_param_u8) {
-		/* write general purpose register*/
-		case BMG160_GP0:
-			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_TRIM_GP0_ADDR_GP0__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_TRIM_GP0_ADDR_GP0, v_gp_u8);
-			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_TRIM_GP0_ADDR_GP0__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			break;
-		case BMG160_GP1:
-			v_data_u8 = v_gp_u8;
-			comres = p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_TRIM_GP1_ADDR,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			break;
-		default:
-			comres = E_BMG160_OUT_OF_RANGE;
-			break;
-		}
-	}
-	return comres;
-}
-/*!
- * @brief Reads FIFO data from location 0x3F
- *
- *
- *
- *
- *  @param v_fifo_data_u8 : The data of fifo
- *
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error result of communication routines
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_FIFO_data_reg(u8 *v_fifo_data_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read the fifo data */
-		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_FIFO_DATA_ADDR, &v_data_u8,
-		BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_fifo_data_u8 = v_data_u8;
-	}
-	return comres;
-}
-/*!
- *	@brief this api is used to read the fifo status
- *	of frame_counter and overrun in the register 0x0E
- *	@note frame_counter > bit from 0 to 6
- *	@note overrun -> bit 7
- *
- *
- *
- *	@param v_fifo_stat_u8 : The value of fifo overrun and fifo counter
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_fifo_stat_reg(
-u8 *v_fifo_stat_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read fifo over run and frame counter */
-		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_FIFO_STAT_ADDR, &v_data_u8,
-		BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_fifo_stat_u8 = v_data_u8;
-	}
-	return comres;
-}
-/*!
- *	@brief this API is used to get the fifo frame counter
- *	in the register 0x0E bit 0 to 6
- *
- *
- *
- *	@param v_fifo_frame_count_u8: The value of fifo frame counter
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_fifo_frame_count(
-u8 *v_fifo_frame_count_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8  = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read fifo frame counter */
-		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_FIFO_STAT_FRAME_COUNTER__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_fifo_frame_count_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_FIFO_STAT_FRAME_COUNTER);
-	}
-	return comres;
-}
-/*!
- *	@brief this API is used to get the fifo over run
- *	in the register 0x0E bit 7
- *
- *
- *
- *	@param v_fifo_overrun_u8: The value of fifo over run
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_fifo_overrun(
-u8 *v_fifo_overrun_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read fifo over run*/
-		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_FIFO_STAT_OVERRUN__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_fifo_overrun_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_FIFO_STAT_OVERRUN);
-	}
-	return comres;
-}
-/*!
- *	@brief This API is used to get the status of fifo mode
- *	in the register 0x3E bit 6 and 7
- *
- *
- *
- *	@param v_fifo_mode_u8 : The value of fifo mode
- *        mode      |    value
- *  ----------------|--------------
- *      BYPASS      |  0
- *      FIFO        |  1
- *      STREAM      |  2
- *      RESERVED    |  3
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_fifo_mode(u8 *v_fifo_mode_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read fifo mode*/
-		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_FIFO_CGF0_ADDR_MODE__REG, &v_data_u8,
-		BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_fifo_mode_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_FIFO_CGF0_ADDR_MODE);
-	}
-	return comres;
-}
-/*!
- *	@brief This API is used to set the status of fifo mode
- *	in the register 0x3E bit 6 and 7
- *
- *
- *
- *	@param v_fifo_mode_u8 : The value of fifo mode
- *        mode      |    value
- *  ----------------|--------------
- *      BYPASS      |  0
- *      FIFO        |  1
- *      STREAM      |  2
- *      RESERVED    |  3
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_fifo_mode(u8 v_fifo_mode_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		if (v_fifo_mode_u8 < BMG160_BIT_LENGTH_FIFO_MODE) {
-			/* write fifo mode*/
-			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_FIFO_CGF0_ADDR_MODE__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_FIFO_CGF0_ADDR_MODE, v_fifo_mode_u8);
-			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_FIFO_CGF0_ADDR_MODE__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		} else {
-			comres = E_BMG160_OUT_OF_RANGE;
-		}
-	}
-	return comres;
-}
-/*!
- *	@brief This API is used to get the status of fifo
- *	data select in the register 0x3E bit 0 and 1
- *
- *
- *	@param v_fifo_data_select_u8 : The value of fifo data selection
- *      data selection         |    value
- *  ---------------------------|--------------
- *      X,Y and Z (DEFAULT)    |  0
- *      X only                 |  1
- *      Y only                 |  2
- *      Z only                 |  3
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_fifo_data_select(
-u8 *v_fifo_data_select_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read fifo data select*/
-		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_FIFO_CGF0_ADDR_DATA_SELECT__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_fifo_data_select_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_FIFO_CGF0_ADDR_DATA_SELECT);
-	}
-	return comres;
-}
-/*!
- *	@brief This API is used to set the status of fifo
- *	data select in the register 0x3E bit 0 and 1
- *
- *
- *	@param v_fifo_data_select_u8 : The value of fifo data selection
- *      data selection         |    value
- *  ---------------------------|--------------
- *      X,Y and Z (DEFAULT)    |  0
- *      X only                 |  1
- *      Y only                 |  2
- *      Z only                 |  3
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_fifo_data_select(
-u8 v_fifo_data_select_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		if (v_fifo_data_select_u8 <
-		BMG160_BIT_LENGTH_FIFO_DATA_SELECT) {
-			/* write fifo data select*/
-			comres = p_bmg160->BMG160_BUS_READ_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_FIFO_CGF0_ADDR_DATA_SELECT__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_FIFO_CGF0_ADDR_DATA_SELECT,
-			v_fifo_data_select_u8);
-			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_FIFO_CGF0_ADDR_DATA_SELECT__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		} else {
-			comres = E_BMG160_OUT_OF_RANGE;
-		}
-	}
-	return comres;
-}
-/*!
- *	@brief This API is used to get the operating modes of the
- *	sensor in the registers 0x11 and 0x12
- *
- *
- *
- *  @param  v_power_mode_u8 :The value of power mode
- *  value     |   power mode
- * -----------|----------------
- *     0      | BMG160_MODE_NORMAL
- *     1      | BMG160_MODE_SUSPEND
- *     2      | BMG160_MODE_DEEPSUSPEND
- *     3      | BMG160_MODE_FASTPOWERUP
- *     4      | BMG160_MODE_ADVANCEDPOWERSAVING
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_power_mode(u8 *v_power_mode_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 data1 = BMG160_INIT_VALUE;
-	u8 data2 = BMG160_INIT_VALUE;
-	u8 data3 = BMG160_INIT_VALUE;
+/* Compiler Switch if applicable
+#ifdef
 
-	if (p_bmg160 == BMG160_INIT_VALUE) {
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used to get the status of general
+ * purpose register
+ *
+ *
+ *
+ *
+ *\param unsigned char param,unsigned char *value
+ *             param ->
+ *              BMG160_GP0                      0
+ *              BMG160_GP0                      1
+ *               *value -> Address of high_bw
+ *                         Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_gp(unsigned char param,
+unsigned char *value)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read the power mode*/
+	} else {
+		switch (param) {
+		case BMG160_GP0:
+			comres = p_bmg160->BMG160_BUS_READ_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_TRIM_GP0_ADDR_GP0__REG, &v_data_u8r, 1);
+			*value = BMG160_GET_BITSLICE(v_data_u8r,
+				BMG160_TRIM_GP0_ADDR_GP0);
+			break;
+		case BMG160_GP1:
+			comres = p_bmg160->BMG160_BUS_READ_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_TRIM_GP1_ADDR, &v_data_u8r, 1);
+			*value = v_data_u8r;
+			break;
+		default:
+			comres = E_BMG160_OUT_OF_RANGE;
+			break;
+		}
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used to set the status of general
+ * purpose register
+ *
+ *
+ *
+ *
+ *\param unsigned char param,unsigned char value
+ *             param ->
+ *              BMG160_GP0                      0
+ *              BMG160_GP0                      1
+ *             value -> Value to be written passed as a parameter
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_gp(unsigned char param,
+unsigned char value)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		switch (param) {
+		case BMG160_GP0:
+			comres = p_bmg160->BMG160_BUS_READ_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_TRIM_GP0_ADDR_GP0__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_TRIM_GP0_ADDR_GP0, value);
+			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_TRIM_GP0_ADDR_GP0__REG, &v_data_u8r, 1);
+			break;
+		case BMG160_GP1:
+			v_data_u8r = value;
+			comres = p_bmg160->BMG160_BUS_WRITE_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_TRIM_GP1_ADDR, &v_data_u8r, 1);
+			break;
+		default:
+			comres = E_BMG160_OUT_OF_RANGE;
+			break;
+		}
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief Reads FIFI data from location 3Fh
+ *
+ *
+ *
+ *
+ *  \param
+ *      unsigned char *fifo_data : Address of FIFO data bits
+ *
+ *
+ *
+ *
+ *  \return result of communication routines
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_FIFO_data_reg(unsigned char *fifo_data)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_MODE_LPM1_ADDR, &data1,
-		BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_FIFO_DATA_ADDR, &v_data_u8r, 1);
+		*fifo_data = v_data_u8r;
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief Reads interrupt fifo status register byte from 0Eh
+ *
+ *
+ *
+ *
+ *  \param
+ *      unsigned char *fifo_status : Address of Fifo status register
+ *
+ *
+ *  \return
+ *      Result of bus communication function
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_fifostatus_reg(
+unsigned char *fifo_status)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
+		BMG160_FIFO_STATUS_ADDR, fifo_status, 1);
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief Reads interrupt fifo status register byte from 0Eh
+ *
+ *
+ *
+ *
+ *  \param
+ *      unsigned char *fifo_framecount: Address of FIFO status register
+ *
+ *
+ *  \return
+ *      Result of bus communication function
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_fifo_framecount(
+unsigned char *fifo_framecount)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r  = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
+		BMG160_FIFO_STATUS_FRAME_COUNTER__REG, &v_data_u8r, 1);
+		*fifo_framecount = BMG160_GET_BITSLICE(v_data_u8r,
+		BMG160_FIFO_STATUS_FRAME_COUNTER);
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief Reads interrupt fifo status register byte from 0Eh
+ *
+ *
+ *
+ *
+ *  \param
+ *      unsigned char *fifo_overrun: Address of FIFO status register
+ *
+ *
+ *  \return
+ *      Result of bus communication function
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_fifo_overrun(
+unsigned char *fifo_overrun)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
+		BMG160_FIFO_STATUS_OVERRUN__REG, &v_data_u8r, 1);
+		*fifo_overrun = BMG160_GET_BITSLICE(v_data_u8r,
+		BMG160_FIFO_STATUS_OVERRUN);
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used to get the status of fifo mode
+ *
+ *
+ *
+ *
+ *\param unsigned char *mode : Address of mode
+ *                         fifo_mode  0 --> Bypass
+ *                         1 --> FIFO
+ *                         2 --> Stream
+ *                         3 --> Reserved
+ *
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_fifo_mode(unsigned char *mode)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
+		BMG160_FIFO_CGF0_ADDR_MODE__REG, &v_data_u8r, 1);
+		*mode = BMG160_GET_BITSLICE(v_data_u8r,
+			BMG160_FIFO_CGF0_ADDR_MODE);
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used set to FIFO mode
+ *
+ *
+ *
+ *
+* \param             0 --> BYPASS
+ *                      1 --> FIFO
+ *                      2 --> STREAM
+ *
+ *
+ *  \return Communication Results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_fifo_mode(unsigned char mode)
+{
+	int comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		if (mode < C_BMG160_Four_U8X) {
+			comres = p_bmg160->BMG160_BUS_READ_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_FIFO_CGF0_ADDR_MODE__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_FIFO_CGF0_ADDR_MODE, mode);
+			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_FIFO_CGF0_ADDR_MODE__REG, &v_data_u8r, 1);
+		} else {
+			comres = E_BMG160_OUT_OF_RANGE;
+		}
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used to get the status of fifo data
+ * sel
+ *
+ *
+ *
+ *
+ *\param unsigned char *data_sel : Address of data_sel
+ *         data_sel --> [0:3]
+ *         0 --> X,Y and Z (DEFAULT)
+ *         1 --> X only
+ *         2 --> Y only
+ *         3 --> Z only
+ *
+ *
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_fifo_data_sel(unsigned char *data_sel)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
+		BMG160_FIFO_CGF0_ADDR_DATA_SEL__REG, &v_data_u8r, 1);
+		*data_sel = BMG160_GET_BITSLICE(v_data_u8r,
+		BMG160_FIFO_CGF0_ADDR_DATA_SEL);
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used to set the status of fifo data
+ * sel
+ *
+ *
+ *
+ *
+ *\param unsigned char data_sel
+ *         data_sel --> [0:3]
+ *         0 --> X,Y and Z (DEFAULT)
+ *         1 --> X only
+ *         2 --> Y only
+ *         3 --> Z only
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_fifo_data_sel(unsigned char data_sel)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		if (data_sel < C_BMG160_Four_U8X) {
+			comres = p_bmg160->BMG160_BUS_READ_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_FIFO_CGF0_ADDR_DATA_SEL__REG, &v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_FIFO_CGF0_ADDR_DATA_SEL, data_sel);
+			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_FIFO_CGF0_ADDR_DATA_SEL__REG, &v_data_u8r, 1);
+		} else {
+			comres = E_BMG160_OUT_OF_RANGE;
+		}
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used to get the operating modes of the
+ * sensor
+ *
+ *
+ *
+ *
+ *\param unsigned char * mode : Address of mode
+ *                       0 -> NORMAL
+ *                       1 -> SUSPEND
+ *                       2 -> DEEP SUSPEND
+ *						 3 -> FAST POWERUP
+ *						 4 -> ADVANCED POWERSAVING
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_mode(unsigned char *mode)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char data1 = C_BMG160_Zero_U8X;
+	unsigned char data2 = C_BMG160_Zero_U8X;
+	unsigned char data3 = C_BMG160_Zero_U8X;
+	if (p_bmg160 == C_BMG160_Zero_U8X) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
+		BMG160_MODE_LPM1_ADDR, &data1, C_BMG160_One_U8X);
 		comres += p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		BMG160_MODE_LPM2_ADDR, &data2,
-		BMG160_GEN_READ_WRITE_DATA_LENGTH);
+		BMG160_MODE_LPM2_ADDR, &data2, C_BMG160_One_U8X);
 		data1  = (data1 & 0xA0) >> 5;
 		data3  = (data2 & 0x40) >> 6;
 		data2  = (data2 & 0x80) >> 7;
 		if (data3 == 0x01) {
-			*v_power_mode_u8  = BMG160_MODE_ADVANCEDPOWERSAVING;
+			*mode  = BMG160_MODE_ADVANCEDPOWERSAVING;
 		} else {
 			if ((data1 == 0x00) && (data2 == 0x00)) {
-				*v_power_mode_u8  = BMG160_MODE_NORMAL;
+				*mode  = BMG160_MODE_NORMAL;
 				} else {
 				if ((data1 == 0x01) || (data1 == 0x05)) {
-					*v_power_mode_u8  =
-					BMG160_MODE_DEEPSUSPEND;
+					*mode  = BMG160_MODE_DEEPSUSPEND;
 					} else {
 					if ((data1 == 0x04) &&
 					(data2 == 0x00)) {
-						*v_power_mode_u8  =
-						BMG160_MODE_SUSPEND;
+						*mode  = BMG160_MODE_SUSPEND;
 					} else {
 					if ((data1 == 0x04) &&
 						(data2 == 0x01))
-							*v_power_mode_u8  =
+							*mode  =
 							BMG160_MODE_FASTPOWERUP;
 						}
 					}
@@ -6033,169 +6818,157 @@ BMG160_RETURN_FUNCTION_TYPE bmg160_get_power_mode(u8 *v_power_mode_u8)
 		}
 	return comres;
 }
-/*!
- *	@brief This API is used to set the operating modes of the
- *	sensor in the registers 0x11 and 0x12
- *
- *
- *
- *  @param  v_power_mode_u8 :The value of power mode
- *  value     |   power mode
- * -----------|----------------
- *     0      | BMG160_MODE_NORMAL
- *     1      | BMG160_MODE_SUSPEND
- *     2      | BMG160_MODE_DEEPSUSPEND
- *     3      | BMG160_MODE_FASTPOWERUP
- *     4      | BMG160_MODE_ADVANCEDPOWERSAVING
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_power_mode(u8 v_power_mode_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 data1 = BMG160_INIT_VALUE;
-	u8 data2 = BMG160_INIT_VALUE;
-	u8 data3 = BMG160_INIT_VALUE;
-	u8 v_autosleepduration = BMG160_INIT_VALUE;
-	u8 v_bw_u8r = BMG160_INIT_VALUE;
+/* Compiler Switch if applicable
+#ifdef
 
-	if (p_bmg160 == BMG160_INIT_VALUE) {
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used to set the operating Modes of the
+ * sensor
+ *
+ *
+ *
+ *
+ *\param unsigned char Mode
+ *                       0 -> NORMAL
+ *                       1 -> DEEPSUSPEND
+ *                       2 -> SUSPEND
+ *						 3 -> Fast Powerup
+ *						 4 -> Advance Powerup
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_mode(unsigned char mode)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char data1 = C_BMG160_Zero_U8X;
+	unsigned char data2 = C_BMG160_Zero_U8X;
+	unsigned char data3 = C_BMG160_Zero_U8X;
+	unsigned char v_autosleepduration = C_BMG160_Zero_U8X;
+	unsigned char v_bw_u8r = C_BMG160_Zero_U8X;
+	if (p_bmg160 == C_BMG160_Zero_U8X) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		if (v_power_mode_u8 < BMG160_BIT_LENGTH_POWER_MODE) {
-			/* write the power mode*/
+	} else {
+		if (mode < C_BMG160_Five_U8X) {
 			comres = p_bmg160->BMG160_BUS_READ_FUNC
 				(p_bmg160->dev_addr,
-			BMG160_MODE_LPM1_ADDR, &data1,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
+			BMG160_MODE_LPM1_ADDR, &data1, C_BMG160_One_U8X);
 			comres += p_bmg160->BMG160_BUS_READ_FUNC
 				(p_bmg160->dev_addr,
-			BMG160_MODE_LPM2_ADDR, &data2,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			switch (v_power_mode_u8) {
+			BMG160_MODE_LPM2_ADDR, &data2, C_BMG160_One_U8X);
+			switch (mode) {
 			case BMG160_MODE_NORMAL:
 				data1  = BMG160_SET_BITSLICE(data1,
-				BMG160_MODE_LPM1, BMG160_INIT_VALUE);
+				BMG160_MODE_LPM1, C_BMG160_Zero_U8X);
 				data2  = BMG160_SET_BITSLICE(data2,
 				BMG160_MODE_LPM2_ADDR_FAST_POWERUP,
-				BMG160_INIT_VALUE);
+				C_BMG160_Zero_U8X);
 				data3  = BMG160_SET_BITSLICE(data2,
 				BMG160_MODE_LPM2_ADDR_ADV_POWERSAVING,
-				BMG160_INIT_VALUE);
+				C_BMG160_Zero_U8X);
 				comres += p_bmg160->BMG160_BUS_WRITE_FUNC
 				(p_bmg160->dev_addr,
-			BMG160_MODE_LPM1_ADDR, &data1,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			p_bmg160->delay_msec(BMG160_POWER_MODE_DELAY);
-			/*A minimum delay of at least
+			BMG160_MODE_LPM1_ADDR, &data1, C_BMG160_One_U8X);
+			p_bmg160->delay_msec(1);/*A minimum delay of atleast
 			450us is required for Multiple write.*/
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
 				(p_bmg160->dev_addr,
-			BMG160_MODE_LPM2_ADDR, &data3,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
+			BMG160_MODE_LPM2_ADDR, &data3, C_BMG160_One_U8X);
 				break;
 			case BMG160_MODE_DEEPSUSPEND:
 				data1  = BMG160_SET_BITSLICE(data1,
-				BMG160_MODE_LPM1,
-				BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				BMG160_MODE_LPM1, C_BMG160_One_U8X);
 				data2  = BMG160_SET_BITSLICE(data2,
 				BMG160_MODE_LPM2_ADDR_FAST_POWERUP,
-				BMG160_INIT_VALUE);
+				C_BMG160_Zero_U8X);
 				data3  = BMG160_SET_BITSLICE(data2,
 				BMG160_MODE_LPM2_ADDR_ADV_POWERSAVING,
-				BMG160_INIT_VALUE);
+				C_BMG160_Zero_U8X);
 				comres += p_bmg160->BMG160_BUS_WRITE_FUNC
 				(p_bmg160->dev_addr,
-			BMG160_MODE_LPM1_ADDR, &data1,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			p_bmg160->delay_msec(BMG160_POWER_MODE_DELAY);
-			/*A minimum delay of at least
+			BMG160_MODE_LPM1_ADDR, &data1, C_BMG160_One_U8X);
+			p_bmg160->delay_msec(1);/*A minimum delay of atleast
 			450us is required for Multiple write.*/
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
 				(p_bmg160->dev_addr,
-			BMG160_MODE_LPM2_ADDR, &data3,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
+			BMG160_MODE_LPM2_ADDR, &data3, C_BMG160_One_U8X);
 				break;
 			case BMG160_MODE_SUSPEND:
 				data1  = BMG160_SET_BITSLICE(data1,
-				BMG160_MODE_LPM1, BMG160_BIT_MASK_MODE_LPM1);
+				BMG160_MODE_LPM1, C_BMG160_Four_U8X);
 				data2  = BMG160_SET_BITSLICE(data2,
 				BMG160_MODE_LPM2_ADDR_FAST_POWERUP,
-				BMG160_INIT_VALUE);
+				C_BMG160_Zero_U8X);
 				data3  = BMG160_SET_BITSLICE(data2,
 				BMG160_MODE_LPM2_ADDR_ADV_POWERSAVING,
-				BMG160_INIT_VALUE);
+				C_BMG160_Zero_U8X);
 				comres += p_bmg160->BMG160_BUS_WRITE_FUNC
 				(p_bmg160->dev_addr,
-			BMG160_MODE_LPM1_ADDR, &data1,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			p_bmg160->delay_msec(BMG160_POWER_MODE_DELAY);
-			/*A minimum delay of at least
+			BMG160_MODE_LPM1_ADDR, &data1, C_BMG160_One_U8X);
+			p_bmg160->delay_msec(1);/*A minimum delay of atleast
 			450us is required for Multiple write.*/
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
 				(p_bmg160->dev_addr,
-			BMG160_MODE_LPM2_ADDR, &data3,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
+			BMG160_MODE_LPM2_ADDR, &data3, C_BMG160_One_U8X);
 				break;
 			case BMG160_MODE_FASTPOWERUP:
 				data1  = BMG160_SET_BITSLICE(data1,
-				BMG160_MODE_LPM1, BMG160_BIT_MASK_MODE_LPM1);
+				BMG160_MODE_LPM1, C_BMG160_Four_U8X);
 				data2  = BMG160_SET_BITSLICE(data2,
 				BMG160_MODE_LPM2_ADDR_FAST_POWERUP,
-				BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				C_BMG160_One_U8X);
 				data3  = BMG160_SET_BITSLICE(data2,
 				BMG160_MODE_LPM2_ADDR_ADV_POWERSAVING,
-				BMG160_INIT_VALUE);
+				C_BMG160_Zero_U8X);
 				comres += p_bmg160->BMG160_BUS_WRITE_FUNC
 				(p_bmg160->dev_addr,
-			BMG160_MODE_LPM1_ADDR, &data1,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			p_bmg160->delay_msec(BMG160_POWER_MODE_DELAY);
-			/*A minimum delay of at least
+			BMG160_MODE_LPM1_ADDR, &data1, C_BMG160_One_U8X);
+			p_bmg160->delay_msec(1);/*A minimum delay of atleast
 			450us is required for Multiple write.*/
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MODE_LPM2_ADDR, &data3,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_MODE_LPM2_ADDR, &data3, C_BMG160_One_U8X);
 				break;
 			case BMG160_MODE_ADVANCEDPOWERSAVING:
 				/* Configuring the proper settings for auto
 				sleep duration */
 				bmg160_get_bw(&v_bw_u8r);
-				bmg160_get_auto_sleep_durn(
-					&v_autosleepduration);
-				bmg160_set_auto_sleep_durn(v_autosleepduration,
+				bmg160_get_autosleepdur(&v_autosleepduration);
+				bmg160_set_autosleepdur(v_autosleepduration,
 				v_bw_u8r);
 				comres += p_bmg160->BMG160_BUS_READ_FUNC
 					(p_bmg160->dev_addr,
 				BMG160_MODE_LPM2_ADDR, &data2,
-				BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				C_BMG160_One_U8X);
 				/* Configuring the advanced power saving mode*/
 				data1  = BMG160_SET_BITSLICE(data1,
-				BMG160_MODE_LPM1, BMG160_INIT_VALUE);
+				BMG160_MODE_LPM1, C_BMG160_Zero_U8X);
 				data2  = BMG160_SET_BITSLICE(data2,
 				BMG160_MODE_LPM2_ADDR_FAST_POWERUP,
-				BMG160_INIT_VALUE);
+				C_BMG160_Zero_U8X);
 				data3  = BMG160_SET_BITSLICE(data2,
 				BMG160_MODE_LPM2_ADDR_ADV_POWERSAVING,
-				BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				C_BMG160_One_U8X);
 				comres += p_bmg160->BMG160_BUS_WRITE_FUNC
 				(p_bmg160->dev_addr,
-			BMG160_MODE_LPM1_ADDR, &data1,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			p_bmg160->delay_msec(BMG160_POWER_MODE_DELAY);
-			/*A minimum delay of at least
+			BMG160_MODE_LPM1_ADDR, &data1, C_BMG160_One_U8X);
+			p_bmg160->delay_msec(1);/*A minimum delay of atleast
 			450us is required for Multiple write.*/
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
 				(p_bmg160->dev_addr,
-			BMG160_MODE_LPM2_ADDR, &data3,
-			BMG160_GEN_READ_WRITE_DATA_LENGTH);
+			BMG160_MODE_LPM2_ADDR, &data3, C_BMG160_One_U8X);
 				break;
 				}
 		} else {
@@ -6204,341 +6977,340 @@ BMG160_RETURN_FUNCTION_TYPE bmg160_set_power_mode(u8 v_power_mode_u8)
 	}
 	return comres;
 }
-/*!
- *	@brief This API is used to to do selftest to sensor
- *	sensor in the register 0x3C
- *
- *
- *
- *
- *  @param v_result_u8: The value of self test
- *
- *
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_selftest(u8 *v_result_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to to do selftest to sensor
+ * sensor
+ *
+ *
+ *
+ *
+ *\param unsigned char *result
+ *
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_selftest(unsigned char *result)
 	{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data1_u8 = BMG160_INIT_VALUE;
-	u8 v_data2_u8 = BMG160_INIT_VALUE;
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char data1 = C_BMG160_Zero_U8X;
+	unsigned char data2 = C_BMG160_Zero_U8X;
 
 	comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-	BMG160_SELFTEST_ADDR, &v_data1_u8,
-	BMG160_GEN_READ_WRITE_DATA_LENGTH);
-	v_data2_u8  = BMG160_GET_BITSLICE(v_data1_u8,
-	BMG160_SELFTEST_ADDR_RATEOK);
-	v_data1_u8  = BMG160_SET_BITSLICE(v_data1_u8,
-	BMG160_SELFTEST_ADDR_TRIGBIST,
-	BMG160_GEN_READ_WRITE_DATA_LENGTH);
+	BMG160_SELF_TEST_ADDR, &data1, C_BMG160_One_U8X);
+	data2  = BMG160_GET_BITSLICE(data1, BMG160_SELF_TEST_ADDR_RATEOK);
+	data1  = BMG160_SET_BITSLICE(data1, BMG160_SELF_TEST_ADDR_TRIGBIST,
+	C_BMG160_One_U8X);
 	comres += p_bmg160->BMG160_BUS_WRITE_FUNC(p_bmg160->dev_addr,
-	BMG160_SELFTEST_ADDR_TRIGBIST__REG, &v_data1_u8,
-	BMG160_GEN_READ_WRITE_DATA_LENGTH);
+	BMG160_SELF_TEST_ADDR_TRIGBIST__REG, &data1, C_BMG160_One_U8X);
 
 	/* Waiting time to complete the selftest process */
-	p_bmg160->delay_msec(BMG160_SELFTEST_DELAY);
+	p_bmg160->delay_msec(10);
 
-	/* Reading Selftest v_result_u8 bir bist_failure */
+	/* Reading Selftest result bir bist_failure */
 	comres += p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-	BMG160_SELFTEST_ADDR_BISTFAIL__REG, &v_data1_u8,
-	BMG160_GEN_READ_WRITE_DATA_LENGTH);
-	v_data1_u8  = BMG160_GET_BITSLICE(v_data1_u8,
-	BMG160_SELFTEST_ADDR_BISTFAIL);
-	if ((v_data1_u8 == BMG160_SELFTEST_BISTFAIL) &&
-	(v_data2_u8 == BMG160_SELFTEST_RATEOK))
-		*v_result_u8 = C_BMG160_SUCCESS;
+	BMG160_SELF_TEST_ADDR_BISTFAIL__REG, &data1, C_BMG160_One_U8X);
+	data1  = BMG160_GET_BITSLICE(data1, BMG160_SELF_TEST_ADDR_BISTFAIL);
+	if ((data1 == 0x00) && (data2 == 0x01))
+		*result = C_BMG160_SUCCESS;
 	else
-		*v_result_u8 = C_BMG160_FAILURE;
+		*result = C_BMG160_FAILURE;
 	return comres;
 }
-/*!
- *	@brief  This API is used to get the auto sleep duration
- *	in the register 0x12 bit 0 to 2
- *
- *
- *
- *  @param v_durn_u8 : The value of gyro auto sleep duration
- *           sleep duration     |   value
- *  ----------------------------|----------
- *	             not allowed    |   0
- *	             4ms            |   1
- *	             5ms            |   2
- *	             8ms            |   3
- *	             10ms           |   4
- *	             15ms           |   5
- *	             20ms           |   6
- *	             40ms           |   7
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_auto_sleep_durn(u8 *v_durn_u8)
+/*****************************************************************************
+ * Description: *//**brief  This API is used to get data auto sleep duration
+ *
+ *
+ *
+ *
+ *\param unsigned char *duration : Address of auto sleep duration
+ *                         Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_autosleepdur(unsigned char *duration)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read auto sleep duration*/
-		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		 BMG160_MODE_LPM2_ADDR_AUTO_SLEEP_DURN__REG,
-		 &v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_durn_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_MODE_LPM2_ADDR_AUTO_SLEEP_DURN);
-	}
-	return comres;
-}
-/*!
- *	@brief  This API is used to set the auto sleep duration
- *	in the register 0x12 bit 0 to 2
- *
- *
- *
- *  @param v_durn_u8 : The value of gyro auto sleep duration
- *           sleep duration     |   value
- *  ----------------------------|----------
- *	             not allowed    |   0
- *	             4ms            |   1
- *	             5ms            |   2
- *	             8ms            |   3
- *	             10ms           |   4
- *	             15ms           |   5
- *	             20ms           |   6
- *	             40ms           |   7
- *
- *	@param v_bw_u8 : The value of selected bandwidth
- *        v_bw_u8               |   value
- *  ----------------------------|----------
- *	C_BMG160_NO_FILTER_U8X      |   0
- *	C_BMG160_BW_230HZ_U8X       |   1
- *	C_BMG160_BW_116HZ_u8X       |   2
- *	C_BMG160_BW_47HZ_u8X        |   3
- *	C_BMG160_BW_23HZ_u8X        |   4
- *	C_BMG160_BW_12HZ_u8X        |   5
- *	C_BMG160_BW_64HZ_u8X        |   6
- *	C_BMG160_BW_32HZ_u8X        |   7
- *
- *	@note: sleep duration depends on selected power mode and bandwidth
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_auto_sleep_durn(u8 v_durn_u8,
-u8 v_bw_u8)
-{
-/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-u8 v_data_u8 = BMG160_INIT_VALUE;
-u8 v_auto_sleep_durn_u8r = BMG160_INIT_VALUE;
-/* check the p_bmg160 struct pointer is NULL*/
-if (p_bmg160 == BMG160_NULL) {
-	return  E_BMG160_NULL_PTR;
-} else {
-	/* write auto sleep duration*/
-	comres = p_bmg160->BMG160_BUS_READ_FUNC
-		(p_bmg160->dev_addr,
-		BMG160_MODE_LPM2_ADDR_AUTO_SLEEP_DURN__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		if (v_durn_u8 < BMG160_BIT_LENGTH_DURN) {
-			switch (v_bw_u8) {
-			case C_BMG160_NO_FILTER_U8X:
-				if (v_durn_u8 >
-				C_BMG160_4MS_AUTO_SLEEP_DURN_U8X)
-					v_auto_sleep_durn_u8r =
-					v_durn_u8;
-				else
-					v_auto_sleep_durn_u8r =
-					C_BMG160_4MS_AUTO_SLEEP_DURN_U8X;
-				break;
-			case C_BMG160_BW_230HZ_U8X:
-				if (v_durn_u8 >
-				C_BMG160_4MS_AUTO_SLEEP_DURN_U8X)
-					v_auto_sleep_durn_u8r =
-					v_durn_u8;
-				else
-					v_auto_sleep_durn_u8r =
-					C_BMG160_4MS_AUTO_SLEEP_DURN_U8X;
-				break;
-			case C_BMG160_BW_116HZ_U8X:
-				if (v_durn_u8 >
-				C_BMG160_4MS_AUTO_SLEEP_DURN_U8X)
-					v_auto_sleep_durn_u8r =
-					v_durn_u8;
-				else
-					v_auto_sleep_durn_u8r =
-					C_BMG160_4MS_AUTO_SLEEP_DURN_U8X;
-				break;
-			case C_BMG160_BW_47HZ_U8X:
-				if (v_durn_u8 >
-				C_BMG160_5MS_AUTO_SLEEP_DURN_U8X)
-					v_auto_sleep_durn_u8r =
-					v_durn_u8;
-				else
-					v_auto_sleep_durn_u8r =
-					C_BMG160_5MS_AUTO_SLEEP_DURN_U8X;
-				break;
-			case C_BMG160_BW_23HZ_U8X:
-				if (v_durn_u8 >
-				C_BMG160_10MS_AUTO_SLEEP_DURN_U8X)
-					v_auto_sleep_durn_u8r =
-					v_durn_u8;
-				else
-					v_auto_sleep_durn_u8r =
-					C_BMG160_10MS_AUTO_SLEEP_DURN_U8X;
-				break;
-			case C_BMG160_BW_12HZ_U8X:
-				if (v_durn_u8 >
-				C_BMG160_20MS_AUTO_SLEEP_DURN_U8X)
-					v_auto_sleep_durn_u8r =
-					v_durn_u8;
-				else
-				v_auto_sleep_durn_u8r =
-				C_BMG160_20MS_AUTO_SLEEP_DURN_U8X;
-				break;
-			case C_BMG160_BW_64HZ_U8X:
-				if (v_durn_u8 >
-				C_BMG160_10MS_AUTO_SLEEP_DURN_U8X)
-					v_auto_sleep_durn_u8r =
-					v_durn_u8;
-				else
-					v_auto_sleep_durn_u8r =
-					C_BMG160_10MS_AUTO_SLEEP_DURN_U8X;
-				break;
-			case C_BMG160_BW_32HZ_U8X:
-				if (v_durn_u8 >
-				C_BMG160_20MS_AUTO_SLEEP_DURN_U8X)
-					v_auto_sleep_durn_u8r =
-					v_durn_u8;
-				else
-					v_auto_sleep_durn_u8r =
-					C_BMG160_20MS_AUTO_SLEEP_DURN_U8X;
-				break;
-			default:
-			if (v_durn_u8 >
-				C_BMG160_4MS_AUTO_SLEEP_DURN_U8X)
-				v_auto_sleep_durn_u8r =
-					v_durn_u8;
-				else
-				v_auto_sleep_durn_u8r =
-				C_BMG160_4MS_AUTO_SLEEP_DURN_U8X;
-				break;
-			}
-		v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-		BMG160_MODE_LPM2_ADDR_AUTO_SLEEP_DURN,
-		v_auto_sleep_durn_u8r);
-		comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-		BMG160_MODE_LPM2_ADDR_AUTO_SLEEP_DURN__REG,
-		&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
 	} else {
-		comres = E_BMG160_OUT_OF_RANGE;
-	}
-}
-return comres;
-}
-/*!
- *	@brief  This API is used to get the sleep duration
- *	in the register 0x11 bit 1 to 3
- *
- *
- *
- *	@param v_durn_u8 : The value of sleep duration
- *           sleep duration     |   value
- *  ----------------------------|----------
- *	             2ms            |   0
- *	             4ms            |   1
- *	             5ms            |   2
- *	             8ms            |   3
- *	             10ms           |   4
- *	             15ms           |   5
- *	             18ms           |   6
- *	             20ms           |   7
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
-*/
-BMG160_RETURN_FUNCTION_TYPE bmg160_get_sleep_durn(u8 *v_durn_u8)
-{
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
-	if (p_bmg160 == BMG160_NULL) {
-		return  E_BMG160_NULL_PTR;
-		} else {
-		/* read sleep duration */
 		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
-		 BMG160_MODELPM1_ADDR_SLEEP_DURN__REG,
-		 &v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-		*v_durn_u8 = BMG160_GET_BITSLICE(v_data_u8,
-		BMG160_MODELPM1_ADDR_SLEEP_DURN);
+		 BMG160_MODE_LPM2_ADDR_AUTOSLEEPDUR__REG, &v_data_u8r, 1);
+		*duration = BMG160_GET_BITSLICE(v_data_u8r,
+		BMG160_MODE_LPM2_ADDR_AUTOSLEEPDUR);
 	}
 	return comres;
 }
-/*!
- *	@brief  This API is used to set the sleep duration
- *	in the register 0x11 bit 1 to 3
- *
- *
- *
- *	@param v_durn_u8 : The value of sleep duration
- *           sleep duration     |   value
- *  ----------------------------|----------
- *	             2ms            |   0
- *	             4ms            |   1
- *	             5ms            |   2
- *	             8ms            |   3
- *	             10ms           |   4
- *	             15ms           |   5
- *	             18ms           |   6
- *	             20ms           |   7
- *
- *
- *	@return results of bus communication function
- *	@retval 0 -> Success
- *	@retval -1 -> Error
- *
- *
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
 */
-BMG160_RETURN_FUNCTION_TYPE bmg160_set_sleep_durn(u8 v_durn_u8)
+/*****************************************************************************
+ * Description: *//**brief This API is used to set duration
+ *
+ *
+ *
+ *
+ *\param unsigned char duration:
+ *          Value to be written passed as a parameter
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_autosleepdur(unsigned char duration,
+unsigned char bandwith)
 {
-	/* variable used to return the bus communication status*/
-	BMG160_RETURN_FUNCTION_TYPE comres = ERROR;
-	u8 v_data_u8 = BMG160_INIT_VALUE;
-	/* check the p_bmg160 struct pointer is NULL*/
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
+	unsigned char v_autosleepduration_u8r = C_BMG160_Zero_U8X;
 	if (p_bmg160 == BMG160_NULL) {
 		return  E_BMG160_NULL_PTR;
-		} else {
-		if (v_durn_u8 < BMG160_BIT_LENGTH_DURN) {
-			/* write sleep duration*/
-			comres = p_bmg160->BMG160_BUS_READ_FUNC
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC
 			(p_bmg160->dev_addr,
-			BMG160_MODELPM1_ADDR_SLEEP_DURN__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
-			v_data_u8 = BMG160_SET_BITSLICE(v_data_u8,
-			BMG160_MODELPM1_ADDR_SLEEP_DURN, v_durn_u8);
+			BMG160_MODE_LPM2_ADDR_AUTOSLEEPDUR__REG,
+			&v_data_u8r, 1);
+			if (duration < C_BMG160_Eight_U8X) {
+				switch (bandwith) {
+				case C_BMG160_No_Filter_U8X:
+					if (duration >
+					C_BMG160_4ms_AutoSleepDur_U8X)
+						v_autosleepduration_u8r =
+						duration;
+					else
+						v_autosleepduration_u8r =
+						C_BMG160_4ms_AutoSleepDur_U8X;
+					break;
+				case C_BMG160_BW_230Hz_U8X:
+					if (duration >
+					C_BMG160_4ms_AutoSleepDur_U8X)
+						v_autosleepduration_u8r =
+						duration;
+					else
+						v_autosleepduration_u8r =
+						C_BMG160_4ms_AutoSleepDur_U8X;
+					break;
+				case C_BMG160_BW_116Hz_U8X:
+					if (duration >
+					C_BMG160_4ms_AutoSleepDur_U8X)
+						v_autosleepduration_u8r =
+						duration;
+					else
+						v_autosleepduration_u8r =
+						C_BMG160_4ms_AutoSleepDur_U8X;
+					break;
+				case C_BMG160_BW_47Hz_U8X:
+					if (duration >
+					C_BMG160_5ms_AutoSleepDur_U8X)
+						v_autosleepduration_u8r =
+						duration;
+					else
+						v_autosleepduration_u8r =
+						C_BMG160_5ms_AutoSleepDur_U8X;
+					break;
+				case C_BMG160_BW_23Hz_U8X:
+					if (duration >
+					C_BMG160_10ms_AutoSleepDur_U8X)
+						v_autosleepduration_u8r =
+						duration;
+					else
+						v_autosleepduration_u8r =
+						C_BMG160_10ms_AutoSleepDur_U8X;
+					break;
+				case C_BMG160_BW_12Hz_U8X:
+					if (duration >
+					C_BMG160_20ms_AutoSleepDur_U8X)
+						v_autosleepduration_u8r =
+						duration;
+					else
+					v_autosleepduration_u8r =
+					C_BMG160_20ms_AutoSleepDur_U8X;
+					break;
+				case C_BMG160_BW_64Hz_U8X:
+					if (duration >
+					C_BMG160_10ms_AutoSleepDur_U8X)
+						v_autosleepduration_u8r =
+						duration;
+					else
+						v_autosleepduration_u8r =
+						C_BMG160_10ms_AutoSleepDur_U8X;
+					break;
+				case C_BMG160_BW_32Hz_U8X:
+					if (duration >
+					C_BMG160_20ms_AutoSleepDur_U8X)
+						v_autosleepduration_u8r =
+						duration;
+					else
+						v_autosleepduration_u8r =
+						C_BMG160_20ms_AutoSleepDur_U8X;
+					break;
+				default:
+				if (duration >
+					C_BMG160_4ms_AutoSleepDur_U8X)
+					v_autosleepduration_u8r =
+						duration;
+					else
+					v_autosleepduration_u8r =
+					C_BMG160_4ms_AutoSleepDur_U8X;
+					break;
+				}
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_MODE_LPM2_ADDR_AUTOSLEEPDUR,
+			v_autosleepduration_u8r);
 			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
-			(p_bmg160->dev_addr,
-			BMG160_MODELPM1_ADDR_SLEEP_DURN__REG,
-			&v_data_u8, BMG160_GEN_READ_WRITE_DATA_LENGTH);
+				(p_bmg160->dev_addr,
+			BMG160_MODE_LPM2_ADDR_AUTOSLEEPDUR__REG,
+			&v_data_u8r, 1);
+		} else {
+			comres = E_BMG160_OUT_OF_RANGE;
+		}
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief  This API is used to get data sleep duration
+ *
+ *
+ *
+ *
+ *\param unsigned char *duration : Address of sleep duration
+ *                         Pointer to a variable passed as a parameter
+ *
+ *
+ *
+ *  \return
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_get_sleepdur(unsigned char *duration)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		comres = p_bmg160->BMG160_BUS_READ_FUNC(p_bmg160->dev_addr,
+		 BMG160_MODELPM1_ADDR_SLEEPDUR__REG, &v_data_u8r, 1);
+		*duration = BMG160_GET_BITSLICE(v_data_u8r,
+		BMG160_MODELPM1_ADDR_SLEEPDUR);
+	}
+	return comres;
+}
+/* Compiler Switch if applicable
+#ifdef
+
+#endif
+*/
+/*****************************************************************************
+ * Description: *//**brief This API is used to set duration
+ *
+ *
+ *
+ *
+ *\param unsigned char duration:
+ *          Value to be written passed as a parameter
+ *
+ *
+ *
+ *  \return communication results
+ *
+ *
+ *****************************************************************************/
+/* Scheduling:
+ *
+ *
+ *
+ * Usage guide:
+ *
+ *
+ * Remarks:
+ *
+ *****************************************************************************/
+BMG160_RETURN_FUNCTION_TYPE bmg160_set_sleepdur(unsigned char duration)
+{
+	BMG160_RETURN_FUNCTION_TYPE comres = C_BMG160_Zero_U8X;
+	unsigned char v_data_u8r = C_BMG160_Zero_U8X;
+	if (p_bmg160 == BMG160_NULL) {
+		return  E_BMG160_NULL_PTR;
+	} else {
+		if (duration < C_BMG160_Eight_U8X) {
+			comres = p_bmg160->BMG160_BUS_READ_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_MODELPM1_ADDR_SLEEPDUR__REG,
+			&v_data_u8r, 1);
+			v_data_u8r = BMG160_SET_BITSLICE(v_data_u8r,
+			BMG160_MODELPM1_ADDR_SLEEPDUR, duration);
+			comres += p_bmg160->BMG160_BUS_WRITE_FUNC
+				(p_bmg160->dev_addr,
+			BMG160_MODELPM1_ADDR_SLEEPDUR__REG,
+			&v_data_u8r, 1);
 		} else {
 			comres = E_BMG160_OUT_OF_RANGE;
 		}
