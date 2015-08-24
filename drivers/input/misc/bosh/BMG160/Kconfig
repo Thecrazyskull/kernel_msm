@@ -3,6 +3,7 @@
 #
 config SENSORS_BMG
 	tristate "Bosch Gyroscope Sensor Driver"
+	default n
 	depends on I2C
 	help
 	 If you say yes here, you get support for Bosch Sensortec's
@@ -10,12 +11,14 @@ config SENSORS_BMG
 
 config SENSORS_BMG_FIFO
 	tristate "Bosch Gyroscope FIFO Support"
+	default n
 	depends on SENSORS_BMG
 	help
 	 If you say yes here, you get support for Gyroscope sensor FIFO operations.
 
 config SENSORS_BMI058
 	tristate "BMI058 Sensor Support"
+	default n
 	depends on (SENSORS_BMG || SENSORS_BMA2X2)
 	help
 	 If you say yes here, you get support for Bosch Sensortec's

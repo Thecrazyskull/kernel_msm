@@ -1,5 +1,4 @@
 obj-$(CONFIG_SENSORS_BMA2X2)	+= bstclass.o
-
 obj-$(CONFIG_SENSORS_BMA2X2)	+= bma2x2.o
 
 ifeq ($(CONFIG_SENSORS_BMA2X2_ENABLE_INT1),y)
