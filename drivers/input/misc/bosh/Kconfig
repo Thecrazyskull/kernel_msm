@@ -1,3 +1,0 @@
-source "drivers/input/misc/bosh/BMA2X2/Kconfig"
-source "drivers/input/misc/bosh/BMG160/Kconfig"
-source "drivers/input/misc/bosh/BMM050/Kconfig"
