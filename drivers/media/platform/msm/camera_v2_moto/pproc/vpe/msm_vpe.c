@@ -25,7 +25,7 @@
 #include <media/v4l2-ioctl.h>
 #include <media/v4l2-subdev.h>
 #include <media/media-entity.h>
-#include <media/msmb_generic_buf_mgr_moto.h>
+#include <media/msmb_generic_buf_mgr.h>
 #include <media/msmb_pproc.h>
 #include "msm_vpe.h"
 #include "msm_camera_io_util.h"
@@ -1378,6 +1378,8 @@ static long msm_vpe_subdev_ioctl(struct v4l2_subdev *sd,
 				process_frame,
 				sizeof(struct msm_vpe_frame_info_t))) {
 					mutex_unlock(&vpe_dev->mutex);
+					kfree(process_frame);
+					kfree(event_qcmd);
 					return -EINVAL;
 		}
 

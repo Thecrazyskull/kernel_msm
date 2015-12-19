@@ -16,7 +16,7 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
-#include <mach/board.h>
+#include <mach/board_moto.h>
 #include <linux/of.h>
 #include <linux/fs.h>
 #include <linux/slab.h>

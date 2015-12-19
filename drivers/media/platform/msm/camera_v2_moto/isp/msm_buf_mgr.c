@@ -27,7 +27,7 @@
 #include <media/v4l2-device.h>
 #include <media/videobuf2-core.h>
 #include <media/msm_camera_moto.h>
-#include <media/msm_isp_moto.h>
+#include <media/msm_isp.h>
 
 #include <mach/iommu.h>
 

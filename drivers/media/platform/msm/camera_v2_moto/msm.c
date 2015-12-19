@@ -28,7 +28,7 @@
 #include "msm.h"
 #include "msm_vb2.h"
 #include "msm_sd.h"
-#include <media/msmb_generic_buf_mgr_moto.h>
+#include <media/msmb_generic_buf_mgr.h>
 
 
 static struct v4l2_device *msm_v4l2_dev;
@@ -1078,6 +1078,7 @@ probe_end:
 
 static const struct of_device_id msm_dt_match[] = {
 	{.compatible = "qcom,msm-cam"},
+	{}
 }
 
 MODULE_DEVICE_TABLE(of, msm_dt_match);

@@ -21,7 +21,7 @@
 #include <media/msm_gemini.h>
 #include <media/v4l2-device.h>
 #include <media/v4l2-subdev.h>
-#include <mach/board.h>
+#include <mach/board_moto.h>
 #include "../msm.h"
 #include "msm_gemini_sync.h"
 #include "msm_gemini_common.h"

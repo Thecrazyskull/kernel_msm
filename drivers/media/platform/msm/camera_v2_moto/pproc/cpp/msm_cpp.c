@@ -31,11 +31,11 @@
 #include <mach/iommu_domains.h>
 #include <mach/iommu.h>
 #include <mach/vreg.h>
-#include <media/msm_isp_moto.h>
+#include <media/msm_isp.h>
 #include <media/v4l2-event.h>
 #include <media/v4l2-ioctl.h>
 #include <media/msmb_camera_moto.h>
-#include <media/msmb_generic_buf_mgr_moto.h>
+#include <media/msmb_generic_buf_mgr.h>
 #include <media/msmb_pproc.h>
 #include "msm_cpp.h"
 #include "msm_isp_util.h"

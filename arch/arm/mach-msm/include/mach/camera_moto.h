@@ -22,7 +22,7 @@
 #include <linux/regulator/consumer.h>
 #include "linux/types.h"
 
-#include <mach/board.h>
+#include <mach/board_moto.h>
 #include <media/msm_camera_moto.h>
 #include <linux/msm_ion.h>
 #include <mach/iommu_domains.h>

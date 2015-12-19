@@ -15,7 +15,7 @@
 #define __CAMERA2_H__
 
 #include <media/msm_cam_sensor_moto.h>
-#include <mach/board.h>
+#include <mach/board_moto.h>
 
 enum msm_camera_device_type_t {
 	MSM_CAMERA_I2C_DEVICE,

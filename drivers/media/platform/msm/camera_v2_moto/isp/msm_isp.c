@@ -19,7 +19,7 @@
 #include <linux/videodev2.h>
 #include <media/v4l2-subdev.h>
 #include <media/v4l2-device.h>
-#include <mach/board.h>
+#include <mach/board_moto.h>
 #include <mach/vreg.h>
 #include <mach/iommu.h>
 
