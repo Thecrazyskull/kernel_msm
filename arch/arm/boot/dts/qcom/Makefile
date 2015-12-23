@@ -243,6 +243,15 @@ dtb-$(CONFIG_ARCH_MSM8916) += msm8916-osprey-p2ad.dtb
 dtb-$(CONFIG_ARCH_MSM8916) += msm8916-osprey-p2b.dtb
 dtb-$(CONFIG_ARCH_MSM8916) += msm8916-osprey-p2bd.dtb
 
+# Titan
+ifeq ($(CONFIG_MMI_TITAN_DTB),y)
+dtb-$(CONFIG_ARCH_MSM8226) += msm8226-titan-4b.dts
+dtb-$(CONFIG_ARCH_MSM8226) += msm8226-titan-4c.dts
+dtb-$(CONFIG_ARCH_MSM8226) += msm8226-titan-4d.dts
+dtb-$(CONFIG_ARCH_MSM8226) += msm8226-titan-4e.dts
+dtb-$(CONFIG_ARCH_MSM8226) += msm8226-titan-4f.dts
+endif
+
 # Motorola 8936 Devices
 dtb-$(CONFIG_ARCH_MSM8916) += msm8939-lux-p0.dtb
 dtb-$(CONFIG_ARCH_MSM8916) += msm8939-lux-p1.dtb
