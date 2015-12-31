@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2015, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -318,7 +318,7 @@ static u32 mdss_mdp_perf_calc_pipe_prefill_cmd(struct mdss_mdp_prefill_params
  */
 int mdss_mdp_perf_calc_pipe(struct mdss_mdp_pipe *pipe,
 	struct mdss_mdp_perf_params *perf, struct mdss_mdp_img_rect *roi,
-	bool apply_fudge, int tune)
+	bool apply_fudge)
 {
 	struct mdss_mdp_mixer *mixer;
 	int fps = DEFAULT_FRAME_RATE;
@@ -345,8 +345,7 @@ int mdss_mdp_perf_calc_pipe(struct mdss_mdp_pipe *pipe,
 			v_total = pinfo->panel_max_vtotal;
 		} else {
 			fps = mdss_panel_get_framerate(pinfo);
-			v_total = mdss_panel_get_vtotal_lcd(pinfo,
-+				tune ? &pinfo->lcdc_tune : &pinfo->lcdc);
+			v_total = mdss_panel_get_vtotal(pinfo);
 		}
 		xres = pinfo->xres;
 		is_fbc = pinfo->fbc.enabled;
@@ -522,7 +521,7 @@ static void mdss_mdp_perf_calc_mixer(struct mdss_mdp_mixer *mixer,
 			continue;
 
 		if (mdss_mdp_perf_calc_pipe(pipe, &tmp, &mixer->roi,
-			apply_fudge, 0))
+			apply_fudge))
 			continue;
 		prefill_bytes += tmp.prefill_bytes;
 		bw_overlap[i] = tmp.bw_overlap;
@@ -1508,7 +1507,6 @@ struct mdss_mdp_ctl *mdss_mdp_ctl_init(struct mdss_panel_data *pdata,
 	ctl->mfd = mfd;
 	ctl->panel_data = pdata;
 	ctl->is_video_mode = false;
-	ctl->no_solid_fill = false;
 
 	switch (pdata->panel_info.type) {
 	case EDP_PANEL:
@@ -1524,8 +1522,6 @@ struct mdss_mdp_ctl *mdss_mdp_ctl_init(struct mdss_panel_data *pdata,
 			ctl->intf_num = MDSS_MDP_INTF1;
 		else
 			ctl->intf_num = MDSS_MDP_INTF2;
-		if (pdata->panel_info.no_solid_fill)
-			ctl->no_solid_fill = true;
 		ctl->intf_type = MDSS_INTF_DSI;
 		ctl->opmode = MDSS_MDP_CTL_OP_VIDEO_MODE;
 		ctl->start_fnc = mdss_mdp_video_start;
@@ -1744,11 +1740,13 @@ void mdss_mdp_ctl_restore(struct mdss_mdp_ctl *ctl)
 {
 	u32 temp;
 
+	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_ON, false);
 	temp = readl_relaxed(ctl->mdata->mdp_base +
 		MDSS_MDP_REG_DISP_INTF_SEL);
 	temp |= (ctl->intf_type << ((ctl->intf_num - MDSS_MDP_INTF0) * 8));
 	writel_relaxed(temp, ctl->mdata->mdp_base +
 		MDSS_MDP_REG_DISP_INTF_SEL);
+	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_OFF, false);
 }
 
 static int mdss_mdp_ctl_start_sub(struct mdss_mdp_ctl *ctl, bool handoff)
@@ -2230,6 +2228,7 @@ int mdss_mdp_ctl_addr_setup(struct mdss_data_type *mdata,
 {
 	struct mdss_mdp_ctl *head;
 	struct mutex *shared_lock = NULL;
+	struct mutex *wb_lock = NULL;
 	u32 i;
 	u32 size = len;
 
@@ -2243,6 +2242,14 @@ int mdss_mdp_ctl_addr_setup(struct mdss_data_type *mdata,
 			return -ENOMEM;
 		}
 		mutex_init(shared_lock);
+		wb_lock = devm_kzalloc(&mdata->pdev->dev,
+					   sizeof(struct mutex),
+					   GFP_KERNEL);
+		if (!wb_lock) {
+			pr_err("unable to allocate mem for mutex\n");
+			return -ENOMEM;
+		}
+		mutex_init(wb_lock);
 	}
 
 	head = devm_kzalloc(&mdata->pdev->dev, sizeof(struct mdss_mdp_ctl) *
@@ -2262,6 +2269,7 @@ int mdss_mdp_ctl_addr_setup(struct mdss_data_type *mdata,
 
 	if (!mdata->has_wfd_blk) {
 		head[len - 1].shared_lock = shared_lock;
+		head[len - 1].wb_lock = wb_lock;
 		/*
 		 * Allocate a virtual ctl to be able to perform simultaneous
 		 * line mode and block mode operations on the same
@@ -2279,30 +2287,25 @@ struct mdss_mdp_mixer *mdss_mdp_mixer_get(struct mdss_mdp_ctl *ctl, int mux)
 {
 	struct mdss_mdp_mixer *mixer = NULL;
 	struct mdss_overlay_private *mdp5_data = NULL;
-	bool is_mixer_swapped = false;
-
-	if (!ctl) {
+	if (!ctl || !ctl->mfd) {
 		pr_err("ctl not initialized\n");
 		return NULL;
 	}
 
-	if (ctl->mfd) {
-		mdp5_data = mfd_to_mdp5_data(ctl->mfd);
-		if (!mdp5_data) {
-			pr_err("mdp5_data not initialized\n");
-			return NULL;
-		}
-		is_mixer_swapped = mdp5_data->mixer_swap;
+	mdp5_data = mfd_to_mdp5_data(ctl->mfd);
+	if (!mdp5_data) {
+		pr_err("ctl not initialized\n");
+		return NULL;
 	}
 
 	switch (mux) {
 	case MDSS_MDP_MIXER_MUX_DEFAULT:
 	case MDSS_MDP_MIXER_MUX_LEFT:
-		mixer = is_mixer_swapped ?
+		mixer = mdp5_data->mixer_swap ?
 			ctl->mixer_right : ctl->mixer_left;
 		break;
 	case MDSS_MDP_MIXER_MUX_RIGHT:
-		mixer = is_mixer_swapped ?
+		mixer = mdp5_data->mixer_swap ?
 			ctl->mixer_left : ctl->mixer_right;
 		break;
 	}

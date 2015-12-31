@@ -23,7 +23,6 @@
 
 #include "mdss_fb.h"
 #include "mdss_mdp.h"
-#include "mdss_debug.h"
 #include "splash.h"
 #include "mdss_mdp_splash_logo.h"
 
@@ -214,7 +213,7 @@ int mdss_mdp_splash_cleanup(struct msm_fb_data_type *mfd,
 		 * refresh from their internal memory if no data is sent
 		 * out on the dsi lanes.
 		 */
-		if (mdp5_data->handoff && ctl && ctl->is_video_mode && !ctl->no_solid_fill) {
+		if (mdp5_data->handoff && ctl && ctl->is_video_mode) {
 			rc = mdss_mdp_display_commit(ctl, NULL);
 			if (!IS_ERR_VALUE(rc)) {
 				mdss_mdp_display_wait4comp(ctl);
@@ -232,13 +231,10 @@ int mdss_mdp_splash_cleanup(struct msm_fb_data_type *mfd,
 	}
 
 	if (rc || mdp5_data->handoff) {
-		/* Add all the handed off pipes to the cleanup list after TG OFF*/
-		mdss_mdp_handoff_cleanup_pipes(mfd,
-						MDSS_MDP_PIPE_TYPE_RGB);
-		mdss_mdp_handoff_cleanup_pipes(mfd,
-						MDSS_MDP_PIPE_TYPE_VIG);
-		mdss_mdp_handoff_cleanup_pipes(mfd,
-						MDSS_MDP_PIPE_TYPE_DMA);
+		/* Add all the handed off pipes to the cleanup list */
+		mdss_mdp_handoff_cleanup_pipes(mfd, MDSS_MDP_PIPE_TYPE_RGB);
+		mdss_mdp_handoff_cleanup_pipes(mfd, MDSS_MDP_PIPE_TYPE_VIG);
+		mdss_mdp_handoff_cleanup_pipes(mfd, MDSS_MDP_PIPE_TYPE_DMA);
 	}
 
 	mdss_mdp_ctl_splash_finish(ctl, mdp5_data->handoff);
