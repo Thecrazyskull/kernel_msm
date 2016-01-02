@@ -21,13 +21,14 @@
 #include <linux/of_gpio.h>
 #endif
 
-#if defined(CONFIG_MMI_PANEL_NOTIFICATIONS) && defined(CONFIG_FB)
-#include <mach/mmi_panel_notifier.h>
+#ifdef CONFIG_FB
 #include <linux/notifier.h>
 #include <linux/fb.h>
-#elif defined(CONFIG_FB)
 #include <linux/notifier.h>
 #include <linux/fb.h>
+
+static int fb_notifier_callback(struct notifier_block *self,
+	unsigned long event, void *data);
 #endif
 
 #define DRIVER_NAME "aps_ts"
@@ -138,10 +139,7 @@ struct aps_ts_info {
 	struct i2c_client		*client;
 	struct input_dev		*input_dev;
 
-#if defined(CONFIG_MMI_PANEL_NOTIFICATIONS) && defined(CONFIG_FB)
-	struct mmi_notifier panel_nb;
-	struct notifier_block fb_notif;
-#elif defined(CONFIG_FB)
+#ifdef CONFIG_FB
 	struct notifier_block fb_notif;
 #endif
 	int				max_x;
@@ -1357,7 +1355,6 @@ static struct aps_ts_platform_data *aps_ts_of_init(struct i2c_client *client,
 }
 #endif
 
-#if defined(CONFIG_MMI_PANEL_NOTIFICATIONS) && defined(CONFIG_FB)
 /* Need both MMI notifications and frame buffer notifications.
    MMI notifications:
 	suspend - delay suspend while FW flashing is in progress
@@ -1367,85 +1364,6 @@ static struct aps_ts_platform_data *aps_ts_of_init(struct i2c_client *client,
    FB notifications:
 	unblank - activate touch IC if was inactive
 */
-static int aps_ts_suspend(struct device *dev)
-{
-	struct aps_ts_info *info = dev_get_drvdata(dev);
-	mutex_lock(&info->lock);
-	aps_ts_disable(info);
-	aps_clear_input_data(info);
-	mutex_unlock(&info->lock);
-	pr_debug("SUSPENDED\n");
-	return 0;
-}
-
-static int aps_ts_resume(struct device *dev)
-{
-	struct aps_ts_info *info = dev_get_drvdata(dev);
-	mutex_lock(&info->lock);
-	aps_ts_enable(info);
-	mutex_unlock(&info->lock);
-	pr_debug("RESUMED\n");
-	return 0;
-}
-
-static int fb_notifier_callback(struct notifier_block *self,
-	unsigned long event, void *data)
-{
-	struct fb_event *evdata = data;
-	int *blank;
-	struct aps_ts_info *info = container_of(self, struct aps_ts_info,
-		fb_notif);
-
-	if (!evdata || !evdata->data || event != FB_EVENT_BLANK
-		|| !info || !info->client)
-		return 0;
-
-	blank = evdata->data;
-	if (*blank == FB_BLANK_UNBLANK) {
-		if (info->bootmode == 0 && info->enabled) {
-			mutex_lock(&info->lock);
-			aps_query_device(info);
-			mutex_unlock(&info->lock);
-		}
-		pr_debug("DISPLAY-ON\n");
-	} else if (*blank == FB_BLANK_POWERDOWN) {
-		pr_debug("DISPLAY-OFF\n");
-	}
-
-	return 0;
-}
-#endif
-
-#if defined(CONFIG_FB) && !defined(CONFIG_MMI_PANEL_NOTIFICATIONS)
-static int fb_notifier_callback(struct notifier_block *self,
-	unsigned long event, void *data)
-{
-	struct fb_event *evdata = data;
-	int *blank;
-	struct aps_ts_info *info = container_of(self, struct aps_ts_info,
-		fb_notif);
-
-	if (!evdata || !evdata->data || event != FB_EVENT_BLANK
-		|| !info || !info->client)
-		return 0;
-
-	blank = evdata->data;
-	if (*blank == FB_BLANK_UNBLANK) {
-		pr_debug("DISPLAY-ON\n");
-		aps_ts_resume(&info->client->dev);
-		if (info->bootmode == 0) {
-			mutex_lock(&info->lock);
-			aps_query_device(info);
-			mutex_unlock(&info->lock);
-		}
-	} else if (*blank == FB_BLANK_POWERDOWN) {
-		aps_ts_suspend(&info->client->dev);
-		pr_debug("DISPLAY-OFF\n");
-	}
-
-	return 0;
-}
-#endif
 
 static int aps_ts_probe(struct i2c_client *client,
 				  const struct i2c_device_id *id)
@@ -1525,17 +1443,7 @@ static int aps_ts_probe(struct i2c_client *client,
 		ret = -EAGAIN;
 		goto out_free_irq;
 	}
-#if defined(CONFIG_MMI_PANEL_NOTIFICATIONS) && defined(CONFIG_FB)
-	info->panel_nb.pre_display_off = aps_ts_suspend;
-	info->panel_nb.display_on = aps_ts_resume;
-	info->panel_nb.dev = &client->dev;
-	if (!mmi_panel_register_notifier(&info->panel_nb))
-		pr_info("registered MMI panel notifier\n");
-	else {
-		dev_err(&client->dev, "unable to register MMI notifier");
-		goto out_sysfs_remove_group;
-	}
-
+#ifdef CONFIG_FB
 	info->fb_notif.notifier_call = fb_notifier_callback;
 	ret = fb_register_client(&info->fb_notif);
 	if (ret) {
@@ -1595,20 +1503,69 @@ static int aps_ts_remove(struct i2c_client *client)
 	gpio_free(info->pdata->gpio_reset);
 	gpio_free(info->pdata->gpio_irq);
 	kfree(info->perf_irq_data);
-#if defined(CONFIG_MMI_PANEL_NOTIFICATIONS) && defined(CONFIG_FB)
-	mmi_panel_unregister_notifier(&info->panel_nb);
-	fb_unregister_client(&info->fb_notif);
-#elif defined(CONFIG_FB)
-	fb_unregister_client(&info->fb_notif);
-#endif
 	kfree(info);
 
 	return 0;
 }
 
 #if defined(CONFIG_PM)
+static int aps_ts_suspend(struct device *dev)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct aps_ts_info *info = i2c_get_clientdata(client);
+
+	mutex_lock(&info->input_dev->mutex);
+	aps_ts_disable(info);
+	aps_clear_input_data(info);
+	mutex_unlock(&info->input_dev->mutex);
+
+	return 0;
+
+}
+
+static int aps_ts_resume(struct device *dev)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct aps_ts_info *info = i2c_get_clientdata(client);
+
+	mutex_lock(&info->input_dev->mutex);
+	aps_ts_enable(info);
+	mutex_unlock(&info->input_dev->mutex);
+
+	return 0;
+}
+
+#endif
+
+#ifdef CONFIG_FB
+static int fb_notifier_callback(struct notifier_block *self,
+	unsigned long event, void *data)
+{
+	struct fb_event *evdata = data;
+	int *blank;
+	struct aps_ts_info *info = container_of(self, struct aps_ts_info,
+		fb_notif);
+
+	if (!evdata || !evdata->data || !event == FB_EVENT_BLANK
+		|| !info || !info->client)
+		return 0;
+
+	blank = evdata->data;
+	if (*blank == FB_BLANK_UNBLANK) {
+		aps_ts_resume(&info->client->dev);
+		pr_debug("DISPLAY-ON\n");
+	} else if (*blank == FB_BLANK_POWERDOWN) {
+		aps_ts_suspend(&info->client->dev);
+		pr_debug("DISPLAY-OFF\n");
+	}
+
+	return 0;
+}
+#endif
+
+#if defined(CONFIG_PM)
 static const struct dev_pm_ops aps_ts_pm_ops = {
-#if defined(CONFIG_MMI_PANEL_NOTIFICATIONS) && defined(CONFIG_FB)
+#if !defined(CONFIG_FB)
 	.suspend	= aps_ts_suspend,
 	.resume		= aps_ts_resume,
 #endif
