@@ -52,6 +52,7 @@ static atomic_t ov_active_panels = ATOMIC_INIT(0);
 static int mdss_mdp_overlay_free_fb_pipe(struct msm_fb_data_type *mfd);
 static int mdss_mdp_overlay_fb_parse_dt(struct msm_fb_data_type *mfd);
 static int mdss_mdp_overlay_off(struct msm_fb_data_type *mfd);
+static struct kobject *lbm_kobj;
 static void __overlay_kickoff_requeue(struct msm_fb_data_type *mfd);
 static void __vsync_retire_signal(struct msm_fb_data_type *mfd, int val);
 
@@ -3422,14 +3423,13 @@ int mdss_mdp_overlay_init(struct msm_fb_data_type *mfd)
 		}
 	}
 
-	if (mfd->panel_info->lbm_feature_enabled) {
-		rc = sysfs_create_group(&dev->kobj,
-					&lbm_attrs_group);
+/*	if (mfd->panel_info->lbm_feature_enabled) {
+		rc = sysfs_create_group(lbm_kobj, &lbm_attrs_group);
 		if (rc) {
 			pr_err("Error for LBM sysfs creation ret = %d\n", rc);
 			goto init_fail;
 		}
-	}
+	}*/
 
 	mfd->mdp_sync_pt_data.async_wait_fences = true;
 	rc = sysfs_create_link_nowarn(&dev->kobj,
@@ -3470,6 +3470,26 @@ init_fail:
 	return rc;
 }
 
+int lbm_init(void)
+{
+	int lbm_retval;
+
+	lbm_kobj = kobject_create_and_add("Low Brightness Mode", kernel_kobj);
+	if (!lbm_retval)
+		return -ENOMEM;
+	}
+
+	lbm_retval = sysfs_create_group(lbm_kobj, &lbm_attrs_group);
+	if (lbm_retval)
+		kobject_put(lbm_kobj);
+	return (lbm_retval);
+}
+
+void lbm_exit(void)
+{
+	kobject_put(lbm_kobj);
+}
+
 static int mdss_mdp_overlay_fb_parse_dt(struct msm_fb_data_type *mfd)
 {
 	int rc = 0;
@@ -3485,3 +3505,6 @@ static int mdss_mdp_overlay_fb_parse_dt(struct msm_fb_data_type *mfd)
 
 	return rc;
 }
+
+module_init(lbm_init);
+module_exit(lbm_exit);
