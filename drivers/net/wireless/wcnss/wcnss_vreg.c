@@ -439,12 +439,6 @@ static void wcnss_vregs_off(struct vregs_info regulators[], uint size)
 	/* Regulators need to be turned off in the reverse order */
 	for (i = (size-1); i >= 0; i--) {
 
-		if(IS_ERR_OR_NULL(regulators[i].regulator))
-			continue;
-
-		if (regulators[i].state == VREG_NULL_CONFIG)
-			continue;
-
 		/* Remove PWM mode */
 		if (regulators[i].state & VREG_OPTIMUM_MODE_MASK) {
 			rc = regulator_set_optimum_mode(
